@@ -9,7 +9,6 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, description: 'User successfully registered' })
   @ApiResponse({ status: 400, description: 'User already exists' })
   @ApiBody({ type: RegisterDto })
@@ -23,7 +22,6 @@ export class AuthController {
   }
 
   @Post('login')
-  @ApiOperation({ summary: 'Login user and get access token' })
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   @ApiBody({ type: LoginDto })
