@@ -2,37 +2,47 @@
 
 import Input from "@/app/Components/Input";
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useSignUp } from "./data";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+const signUpSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
+
+type SignUpForm = z.infer<typeof signUpSchema>;
 
 export default function SignUpPage() {
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
-  const [password, setPassword] = useState("");
-
   const router = useRouter();
+  const { mutateAsync, isPending } = useSignUp();
 
-  const { mutateAsync, isPending, isError, error } = useSignUp();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<SignUpForm>({
+    resolver: zodResolver(signUpSchema),
+  });
 
-  const handleClick = () => {
-    mutateAsync(
-      {
-        name,
-        email,
-        password,
-      },
-      {
+  const onSubmit = async (data: SignUpForm) => {
+    try {
+      await mutateAsync(data, {
         onSuccess: () => {
           toast("Account created successfully");
           router.push("/login");
         },
-        onError: (err) => {
-          toast(err.response.data.message);
+        onError: (err: any) => {
+          toast(err.response?.data?.message || "Something went wrong");
         },
-      }
-    );
+      });
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -55,33 +65,34 @@ export default function SignUpPage() {
             community.
           </p>
 
-          <div className="flex flex-col space-y-4">
+          <form
+            className="flex flex-col space-y-4"
+            onSubmit={handleSubmit(onSubmit)}
+          >
             <Input
-              name="Name"
+              {...register("name")}
               placeholder="Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              error={errors.name?.message}
             />
             <Input
-              name="Password"
+              {...register("email")}
+              placeholder="Email"
+              error={errors.email?.message}
+            />
+            <Input
+              {...register("password")}
               type="password"
               placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <Input
-              name="Email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              error={errors.password?.message}
             />
             <button
-              onClick={handleClick}
-              className="bg-orange-300 text-white py-2 rounded-sm hover:opacity-90 transition"
+              type="submit"
+              disabled={isPending}
+              className="bg-orange-300 text-white py-2 rounded-sm hover:opacity-90 transition disabled:opacity-50"
             >
-              Sign up
+              {isPending ? "Signing up..." : "Sign up"}
             </button>
-          </div>
+          </form>
         </div>
       </main>
 

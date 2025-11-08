@@ -2,35 +2,46 @@
 
 import Input from "@/app/Components/Input";
 import Link from "next/link";
-import { useState } from "react";
 import { useLogin } from "./data/queries";
-import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+
+const loginSchema = z.object({
+  email: z.email(),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
+
+type LoginForm = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
   const router = useRouter();
+  const { mutateAsync, isPending } = useLogin();
 
-  const { mutateAsync, isPending, isError, error } = useLogin();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginForm>({
+    resolver: zodResolver(loginSchema),
+  });
 
-  const handleClick = () => {
-    mutateAsync(
-      {
-        email,
-        password,
-      },
-      {
+  const onSubmit = async (data: LoginForm) => {
+    try {
+      await mutateAsync(data, {
         onSuccess: () => {
           toast("Successfully logged in. Enjoy your session!");
           router.push("/");
         },
-        onError: (err) => {
-          toast(err.response.data.message);
+        onError: (err: any) => {
+          toast(err.response?.data?.message || "Something went wrong");
         },
-      }
-    );
+      });
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -46,36 +57,29 @@ export default function LoginPage() {
             Access your account to continue sharing and discovering.
           </p>
 
-          <div className="flex flex-col space-y-4">
+          <form
+            className="flex flex-col space-y-4"
+            onSubmit={handleSubmit(onSubmit)}
+          >
             <Input
-              name="email"
+              {...register("email")}
               placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              error={errors.email?.message}
             />
             <Input
-              name="password"
-              placeholder="Password"
+              {...register("password")}
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              error={errors.password?.message}
             />
             <button
-              onClick={handleClick}
-              className="bg-orange-300 text-white py-2 rounded-sm hover:opacity-90 transition"
+              type="submit"
+              disabled={isPending}
+              className="bg-orange-300 text-white py-2 rounded-sm hover:opacity-90 transition disabled:opacity-50"
             >
-              Log in
+              {isPending ? "Logging in..." : "Log in"}
             </button>
-          </div>
-
-          {/* <div className="mt-6 text-sm">
-            <Link
-              href="/forgot-password"
-              className="text-orange-300 hover:underline block"
-            >
-              Forgot your password?
-            </Link>
-          </div> */}
+          </form>
 
           <div className="mt-4 text-sm text-gray-600">
             Don't have an account?{" "}
@@ -86,7 +90,6 @@ export default function LoginPage() {
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="py-4 text-center text-gray-500 text-sm border-t border-gray-200">
         © 2025 Share Shelf
       </footer>
