@@ -12,6 +12,11 @@ async function bootstrap() {
     .setVersion('1.0')
     .build();
 
+  app.enableCors({
+    origin: 'http://localhost:3001',
+    credentials: true,
+  });
+
   const document = SwaggerModule.createDocument(app, config);
 
   const theme = new SwaggerTheme();
