@@ -30,19 +30,15 @@ export default function SignUpPage() {
   });
 
   const onSubmit = async (data: SignUpForm) => {
-    try {
-      await mutateAsync(data, {
-        onSuccess: () => {
-          toast("Account created successfully");
-          router.push("/login");
-        },
-        onError: (err: any) => {
-          toast(err.response?.data?.message || "Something went wrong");
-        },
-      });
-    } catch (err) {
-      console.error(err);
-    }
+    await mutateAsync(data, {
+      onSuccess: () => {
+        toast("Account created successfully");
+        router.push(`/verify?email=${data.email}`);
+      },
+      onError: (err: any) => {
+        toast(err.response?.data?.message || "Something went wrong");
+      },
+    });
   };
 
   return (
@@ -60,7 +56,7 @@ export default function SignUpPage() {
       <main className="grow flex flex-col items-center justify-center text-center px-4">
         <div className="w-full max-w-sm">
           <h1 className="heading-2 font-bold mb-6">Sign Up</h1>
-          <p className="text-gray-600 mb-12">
+          <p className="text-gray-400 mb-12">
             Create an account to discover, share, and connect with the
             community.
           </p>
