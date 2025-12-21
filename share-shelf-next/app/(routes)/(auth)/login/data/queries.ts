@@ -2,7 +2,7 @@ import { axios } from "@/app/lib";
 import { useMutation } from "@tanstack/react-query";
 
 interface SignUpResponse {
-  access_token: String;
+  access_token: string;
 }
 
 interface SignUpBody {

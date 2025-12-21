@@ -15,7 +15,7 @@ const BookCard = ({
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer">
       <div className="relative w-full h-[432px]">
-        <Image src={img} alt="Books" layout="fill" objectFit="cover" />
+        <Image src={img} alt="Books" fill style={{ objectFit: "cover" }} />
       </div>
       <div className="p-6 text-black">
         <p className="tag font-bold mb-2">{tag}</p>

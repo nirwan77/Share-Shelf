@@ -1,1 +1,1 @@
-export { default as axios } from "./axios";
+export { WithAxios, instance as axios } from "./axios";

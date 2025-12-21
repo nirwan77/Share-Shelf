@@ -6,8 +6,6 @@ import { BookImage } from "@/components/manual/bookImage";
 export const Choices = () => {
   const { data } = useGetChoices();
 
-  console.log(data);
-
   return (
     <>
       <div className="text-center container mx-auto">

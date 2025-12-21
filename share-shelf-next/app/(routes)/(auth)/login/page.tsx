@@ -8,6 +8,8 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { useContext } from "react";
+import { AuthContext } from "@/contexts";
 
 const loginSchema = z.object({
   email: z.email(),
@@ -19,6 +21,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const { mutateAsync, isPending } = useLogin();
+  const { setAuthData } = useContext(AuthContext);
 
   const {
     register,
@@ -31,7 +34,10 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginForm) => {
     try {
       await mutateAsync(data, {
-        onSuccess: () => {
+        onSuccess: (response) => {
+          setAuthData({
+            accessToken: response.access_token,
+          });
           toast("Successfully logged in. Enjoy your session!");
           router.push("/");
         },

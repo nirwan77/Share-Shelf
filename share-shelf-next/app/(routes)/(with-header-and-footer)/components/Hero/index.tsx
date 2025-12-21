@@ -1,11 +1,13 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 export const Hero = () => {
   const router = useRouter();
+  const { token } = useAuth();
 
   return (
     <div className="h-dvh relative bg-cover flex justify-center items-center">
@@ -23,18 +25,26 @@ export const Hero = () => {
           explore new literary landscapes with passionate book lovers.
         </p>
         <div className="flex gap-6 mt-12 justify-center">
-          <Button
-            onClick={() => router.push("/sign-up")}
-            className="bg-gray-500"
-          >
-            Join for free
-          </Button>
-          <Button
-            onClick={() => router.push("/login")}
-            className="hover:bg-gray-800"
-          >
-            login
-          </Button>
+          {token ? (
+            <Button onClick={() => router.push("/")} className="bg-gray-500">
+              Explore
+            </Button>
+          ) : (
+            <>
+              <Button
+                onClick={() => router.push("/sign-up")}
+                className="bg-gray-500"
+              >
+                Join for free
+              </Button>
+              <Button
+                onClick={() => router.push("/login")}
+                className="hover:bg-gray-800"
+              >
+                login
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </div>
