@@ -10,6 +10,17 @@ async function bootstrap() {
     .setTitle('Share Shelf')
     .setDescription('Share Shelf API')
     .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'JWT-auth', // Make sure this matches what you use in @ApiBearerAuth()
+    )
     .build();
 
   app.enableCors({
