@@ -8,6 +8,8 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { useContext } from "react";
+import { AuthContext } from "@/contexts";
 
 const loginSchema = z.object({
   email: z.email(),
@@ -19,6 +21,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const { mutateAsync, isPending } = useLogin();
+  const { setAuthData } = useContext(AuthContext);
 
   const {
     register,
@@ -31,7 +34,10 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginForm) => {
     try {
       await mutateAsync(data, {
-        onSuccess: () => {
+        onSuccess: (response) => {
+          setAuthData({
+            accessToken: response.access_token,
+          });
           toast("Successfully logged in. Enjoy your session!");
           router.push("/");
         },
@@ -53,7 +59,7 @@ export default function LoginPage() {
       <main className="grow flex flex-col items-center justify-center px-4">
         <div className="w-full max-w-sm lg:max-w-md border rounded-lg border-gray-300 p-12 text-center">
           <h1 className="heading-3 font-semibold mb-2">Log In</h1>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-400 mb-6">
             Access your account to continue sharing and discovering.
           </p>
 

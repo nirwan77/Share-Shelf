@@ -4,6 +4,9 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma.module';
 import { JwtModule } from '@nestjs/jwt';
+import { HomeModule } from './home/home.module';
+import { ProfileModule } from './profile/profile.module';
+import { AuthService } from './auth/auth.service';
 
 @Module({
   imports: [
@@ -14,6 +17,8 @@ import { JwtModule } from '@nestjs/jwt';
       secret: process.env.JWT_SECRET || 'supersecret',
       signOptions: { expiresIn: '1d' },
     }),
+    HomeModule,
+    ProfileModule,
   ],
   controllers: [AppController],
   providers: [AppService],

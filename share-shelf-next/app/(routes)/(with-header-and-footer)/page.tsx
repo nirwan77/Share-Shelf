@@ -1,5 +1,15 @@
-import Image from "next/image";
+import { Choices, Connect, Hero, PopularBooks } from "./components";
 
 export default function Home() {
-  return <h1 className="heading-1">Share Shelf Home Page</h1>;
+  return (
+    <main>
+      <Hero />
+
+      <Connect />
+
+      <Choices />
+
+      <PopularBooks />
+    </main>
+  );
 }

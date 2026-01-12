@@ -1,5 +1,12 @@
-import { Controller, Post, Body, UnauthorizedException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import {
+  Controller,
+  Post,
+  Body,
+  UnauthorizedException,
+  BadRequestException,
+  Query,
+} from '@nestjs/common';
+import { ApiTags, ApiResponse, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto, RegisterDto } from './dto';
 
@@ -9,24 +16,30 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  @ApiResponse({ status: 201, description: 'User successfully registered' })
-  @ApiResponse({ status: 400, description: 'User already exists' })
   @ApiBody({ type: RegisterDto })
-  async register(@Body() registerDto: RegisterDto) {
-    const { email, password, name } = registerDto;
+  @ApiResponse({ status: 201 })
+  async register(@Body() dto: RegisterDto) {
+    const { email, password, name } = dto;
     try {
       return await this.authService.register(email, password, name);
     } catch (err) {
-      throw new UnauthorizedException(err.message);
+      throw new BadRequestException(err.message);
     }
   }
 
   @Post('login')
-  @ApiResponse({ status: 200, description: 'Login successful' })
-  @ApiResponse({ status: 401, description: 'Invalid credentials' })
   @ApiBody({ type: LoginDto })
-  async login(@Body() loginDto: LoginDto) {
-    const { email, password } = loginDto;
+  @ApiResponse({ status: 200 })
+  async login(@Body() dto: LoginDto) {
+    const { email, password } = dto;
     return await this.authService.login(email, password);
+  }
+
+  @Post('verify-otp')
+  @ApiQuery({ name: 'email', required: true, type: String })
+  @ApiQuery({ name: 'code', required: true, type: String })
+  @ApiResponse({ status: 200 })
+  async verifyOtp(@Query('email') email: string, @Query('code') code: string) {
+    return await this.authService.verifyOtp(email, code);
   }
 }

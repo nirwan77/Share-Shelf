@@ -10,17 +10,87 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // url      = env("DATABASE_URL")
 }
 
 model User {
-  id       String @id @default(cuid())
-  email    String @unique
-  password String
+  id         String  @id @default(cuid())
+  email      String  @unique
+  password   String
+  isVerified Boolean @default(false)
 
   name   String
   avatar String?
 
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  userBookStatuses UserBookStatus[]
+  userBookReviews  UserBookReview[]
+  userRatedBy      UserRating[]     @relation("userRatingBy")
+  userRatingBy     UserRating[]     @relation("userRatedBy")
+}
+
+model Otp {
+  id        String   @id @default(nanoid())
+  email     String
+  code      String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Books {
+  id String @id @default(nanoid())
+
+  name             String
+  author           String
+  description      String
+  genre            String
+  image            String
+  userBookStatuses UserBookStatus[]
+  userBookReviews  UserBookReview[]
+}
+
+enum BookStatus {
+  READING
+  PLAN_TO_READ
+  READ
+}
+
+model UserBookStatus {
+  id     String     @id @default(nanoid())
+  status BookStatus
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId String
+  book   Books  @relation(fields: [bookId], references: [id], onDelete: Cascade)
+}
+
+model UserBookReview {
+  id      String @id @default(nanoid())
+  comment String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId String
+  book   Books  @relation(fields: [bookId], references: [id], onDelete: Cascade)
+}
+
+model UserRating {
+  id     String @id @default(nanoid())
+  rating Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ratingUserId String
+  ratingUser   User   @relation(fields: [ratingUserId], references: [id], onDelete: Cascade, name: "userRatingBy")
+  ratedUserId  String
+  ratedUser    User   @relation(fields: [ratedUserId], references: [id], onDelete: Cascade, name: "userRatedBy")
 }
