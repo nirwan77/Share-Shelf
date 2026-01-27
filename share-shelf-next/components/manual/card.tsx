@@ -12,6 +12,7 @@ const BookCard = ({
   title: string;
   isPopularBook?: boolean;
 }) => {
+  console.log(img, tag, title, isPopularBook);
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer">
       <div className="relative w-full h-[432px]">
@@ -22,7 +23,7 @@ const BookCard = ({
         <h2
           className={twMerge(
             isPopularBook ? "heading-4" : "heading-3",
-            "font-medium tracking-tighter"
+            "font-medium tracking-tighter",
           )}
         >
           {title}

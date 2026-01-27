@@ -6,6 +6,8 @@ import { useGetChoices } from "../../action";
 export const PopularBooks = () => {
   const { data } = useGetChoices();
 
+  console.log(data);
+
   return (
     <div className="py-30 text-center container mx-auto">
       <h2 className="heading-2 mb-16">Popular books</h2>
@@ -15,7 +17,7 @@ export const PopularBooks = () => {
             isPopularBook={true}
             img={item.image}
             key={idx}
-            tag={item.genre}
+            tag={item.bookGenres[0].genre.name}
             title={item.name}
           />
         ))}
