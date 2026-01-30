@@ -56,11 +56,12 @@ function readCsvSync(): { books: BookSeed[]; genres: string[] } {
       const coverImg =
         cols[21]?.replace(/"/g, '').trim() ||
         'https://via.placeholder.com/300x400?text=Book';
-      const genresRaw = cols[8]?.replace(/"/g, '').trim() || '';
 
-      const priceRaw = cols[10]?.replace(/"/g, '').trim() || '';
+      const priceRaw = cols[cols.length - 1]?.replace(/"/g, '').trim() || '';
       const price =
         priceRaw && !isNaN(Number(priceRaw)) ? Number(priceRaw) : undefined;
+
+      const genresRaw = cols[8]?.replace(/"/g, '').trim() || '';
 
       const genres = genresRaw
         .replace(/^\[|\]$/g, '')
@@ -81,6 +82,12 @@ function readCsvSync(): { books: BookSeed[]; genres: string[] } {
         genres,
         price,
       });
+
+      if (lineIndex < 3) {
+        console.log(
+          `Line ${lineIndex + 1}: "${title}" priceRaw="${priceRaw}" → ${price}`,
+        );
+      }
     } catch (e) {
       console.log(`⚠️ Skip line ${lineIndex + 1}: ${e}`);
     }
@@ -89,7 +96,13 @@ function readCsvSync(): { books: BookSeed[]; genres: string[] } {
   console.log(
     `📖 Successfully parsed ${books.length} books from ${lines.length} lines`,
   );
-  console.log('Sample:', books[0]?.name, 'by', books[0]?.author);
+  console.log(
+    'Sample:',
+    books[0]?.name,
+    'by',
+    books[0]?.author,
+    `$${books[0]?.price || 'N/A'}`,
+  );
 
   return { books, genres: Array.from(genresSet) };
 }
@@ -120,8 +133,14 @@ async function main() {
       const rawPrice = bookData.price;
       const price =
         typeof rawPrice === 'number' && !isNaN(rawPrice)
-          ? rawPrice * 100
+          ? Math.round(rawPrice * 100)
           : 1000;
+
+      if (i < 5) {
+        console.log(
+          `Seeding "${bookData.name}": $${rawPrice || 0} → ${price}¢`,
+        );
+      }
 
       const book = await prisma.books.create({
         data: {
@@ -134,24 +153,35 @@ async function main() {
         },
       });
 
+      // Link genres (max 3)
       for (const genreName of bookData.genres.slice(0, 3)) {
-        await prisma.bookGenre.upsert({
-          where: {
-            bookId_genreId: { bookId: book.id, genreId: genreMap[genreName] },
-          },
-          update: {},
-          create: { bookId: book.id, genreId: genreMap[genreName] },
-        });
+        if (genreMap[genreName]) {
+          await prisma.bookGenre.upsert({
+            where: {
+              bookId_genreId: { bookId: book.id, genreId: genreMap[genreName] },
+            },
+            update: {},
+            create: { bookId: book.id, genreId: genreMap[genreName] },
+          });
+        }
       }
 
       if ((i + 1) % 100 === 0 || i === books.length - 1) {
-        console.log(`${i + 1}/${books.length} seeded`);
+        console.log(`${i + 1}/${Math.min(1000, books.length)} seeded`);
       }
     }
 
-    // Verify
     const [booksCount, genresCount, relationsCount] = await prisma.$transaction(
       [prisma.books.count(), prisma.genre.count(), prisma.bookGenre.count()],
+    );
+
+    const sampleBooks = await prisma.books.findMany({
+      take: 3,
+      select: { name: true, price: true },
+    });
+    console.log(
+      'Sample DB prices:',
+      sampleBooks.map((b) => `${b.name}: ${b.price}¢`),
     );
 
     console.log(`✅ FINAL STATS:

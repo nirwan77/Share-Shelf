@@ -7,6 +7,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { HomeModule } from './home/home.module';
 import { ProfileModule } from './profile/profile.module';
 import { AuthService } from './auth/auth.service';
+import { ExploreModule } from './explore/explore.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { AuthService } from './auth/auth.service';
     }),
     HomeModule,
     ProfileModule,
+    ExploreModule,
   ],
   controllers: [AppController],
   providers: [AppService],
