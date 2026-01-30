@@ -1,4 +1,3 @@
-// script/seed.ts - PERFECT CSV PARSER for Goodreads format
 import { PrismaClient } from '@prisma/client';
 import { customAlphabet } from 'nanoid';
 
@@ -11,6 +10,7 @@ interface BookSeed {
   description: string;
   image: string;
   genres: string[];
+  price?: number;
 }
 
 function readCsvSync(): { books: BookSeed[]; genres: string[] } {
@@ -22,7 +22,7 @@ function readCsvSync(): { books: BookSeed[]; genres: string[] } {
   }
 
   const content = fs.readFileSync(csvPath, 'utf8');
-  const lines = content.split('\n').slice(1); // skip header
+  const lines = content.split('\n').slice(1);
   const books: BookSeed[] = [];
   const genresSet = new Set<string>();
 
@@ -30,8 +30,6 @@ function readCsvSync(): { books: BookSeed[]; genres: string[] } {
     if (!line.trim() || lineIndex >= 1000) return;
 
     try {
-      // ✅ GOODREADS CSV FORMAT: "id","title","series","author",...
-      // Split handling quoted fields with commas INSIDE
       const cols: string[] = [];
       let current = '';
       let inQuotes = false;
@@ -51,7 +49,6 @@ function readCsvSync(): { books: BookSeed[]; genres: string[] } {
 
       if (cols.length < 22) return; // invalid row
 
-      // Extract fields (Goodreads CSV column indexes)
       const title = cols[1]?.replace(/"/g, '').trim() || 'Book Title';
       const author = cols[3]?.replace(/"/g, '').trim() || 'Author';
       let desc = cols[5]?.replace(/"/g, '').trim() || 'Amazing book!';
@@ -61,7 +58,10 @@ function readCsvSync(): { books: BookSeed[]; genres: string[] } {
         'https://via.placeholder.com/300x400?text=Book';
       const genresRaw = cols[8]?.replace(/"/g, '').trim() || '';
 
-      // Parse genres array like "['Fiction', 'Romance']"
+      const priceRaw = cols[10]?.replace(/"/g, '').trim() || '';
+      const price =
+        priceRaw && !isNaN(Number(priceRaw)) ? Number(priceRaw) : undefined;
+
       const genres = genresRaw
         .replace(/^\[|\]$/g, '')
         .split(',')
@@ -79,6 +79,7 @@ function readCsvSync(): { books: BookSeed[]; genres: string[] } {
         description: desc,
         image: coverImg,
         genres,
+        price,
       });
     } catch (e) {
       console.log(`⚠️ Skip line ${lineIndex + 1}: ${e}`);
@@ -93,7 +94,6 @@ function readCsvSync(): { books: BookSeed[]; genres: string[] } {
   return { books, genres: Array.from(genresSet) };
 }
 
-// Rest unchanged...
 async function main() {
   try {
     const { books, genres } = readCsvSync();
@@ -116,6 +116,13 @@ async function main() {
 
     for (let i = 0; i < Math.min(1000, books.length); i++) {
       const bookData = books[i];
+
+      const rawPrice = bookData.price;
+      const price =
+        typeof rawPrice === 'number' && !isNaN(rawPrice)
+          ? rawPrice * 100
+          : 1000;
+
       const book = await prisma.books.create({
         data: {
           id: nanoid(),
@@ -123,6 +130,7 @@ async function main() {
           author: bookData.author,
           description: bookData.description,
           image: bookData.image,
+          price,
         },
       });
 

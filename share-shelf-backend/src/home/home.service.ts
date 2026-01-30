@@ -17,7 +17,6 @@ export class HomeService {
         id: true,
         image: true,
         name: true,
-        genre: true,
       },
     });
   }

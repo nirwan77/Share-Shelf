@@ -45,6 +45,7 @@ model Books {
   author           String
   description      String
   image            String
+  price            Int
   userBookStatuses UserBookStatus[]
   userBookReviews  UserBookReview[]
   bookGenres       BookGenre[]
