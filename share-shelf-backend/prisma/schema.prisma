@@ -41,11 +41,13 @@ model Otp {
 model Books {
   id String @id @default(nanoid())
 
-  name             String
-  author           String
-  description      String
-  image            String
-  price            Int
+  name        String
+  author      String
+  description String
+  image       String
+  price       Int
+  releaseDate DateTime
+
   userBookStatuses UserBookStatus[]
   userBookReviews  UserBookReview[]
   bookGenres       BookGenre[]

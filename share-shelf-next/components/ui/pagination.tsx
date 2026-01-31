@@ -54,11 +54,16 @@ function PaginationLink({
       data-slot="pagination-link"
       data-active={isActive}
       className={cn(
-        "cursor-pointer",
+        "cursor-pointer transition-all duration-200 hover:scale-105",
         buttonVariants({
           variant: isActive ? "outline" : "ghost",
           size,
         }),
+        // Custom FF8D28 orange for active/hover only
+        isActive &&
+          "bg-[#FF8D28] text-white shadow-md border-[#FF8D28] font-semibold hover:bg-[#e67e22]",
+        !isActive &&
+          "hover:bg-[#FF8D28] hover:text-white hover:shadow-md border-transparent",
         className,
       )}
       {...props}
@@ -77,7 +82,7 @@ function PaginationPrevious({
       className={cn("gap-1 px-2.5 sm:pl-2.5", className)}
       {...props}
     >
-      <ChevronLeftIcon />
+      <ChevronLeftIcon className="h-4 w-4" />
       <span className="hidden sm:block">Previous</span>
     </PaginationLink>
   );
@@ -95,7 +100,7 @@ function PaginationNext({
       {...props}
     >
       <span className="hidden sm:block">Next</span>
-      <ChevronRightIcon />
+      <ChevronRightIcon className="h-4 w-4" />
     </PaginationLink>
   );
 }

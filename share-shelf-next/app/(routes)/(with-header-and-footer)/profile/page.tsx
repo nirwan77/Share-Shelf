@@ -20,8 +20,6 @@ export default function Profile() {
 
   const { data, isLoading } = useGetProfile();
 
-  console.log(data);
-
   return (
     <div className="mt-34 container mx-auto">
       {isLoading ? (

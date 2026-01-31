@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ExploreCard } from "@/components/manual/ExploreBooksCard";
-import { useGetBooks } from "./action";
+import { useGetBooks, type BookFilters } from "./action";
 import {
   Pagination,
   PaginationContent,
@@ -19,35 +19,54 @@ export default function Explore() {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Sync state with search params
   const [page, setPage] = useState(0);
   const [publishedDate, setPublishedDate] = useState<string | undefined>();
   const [priceRange, setPriceRange] = useState<string | undefined>();
   const [categories, setCategories] = useState<string[]>([]);
 
   useEffect(() => {
-    // Sync page
     const pageParam = searchParams.get("page");
-    if (pageParam !== null) setPage(Number(pageParam));
+    setPage(pageParam !== null ? Number(pageParam) : 0);
 
-    // Sync published date
-    const pubDate = searchParams.get("published");
-    if (pubDate) setPublishedDate(pubDate);
-    else setPublishedDate(undefined);
+    const pubDate = searchParams.get("publishedDate");
+    setPublishedDate(pubDate || undefined);
 
-    // Sync price
-    const price = searchParams.get("price");
-    if (price) setPriceRange(price);
-    else setPriceRange(undefined);
+    const price = searchParams.get("priceRange");
+    setPriceRange(price || undefined);
 
-    // Sync categories
     const cats = searchParams.get("categories");
-    if (cats) setCategories(cats.split(","));
-    else setCategories([]);
+    setCategories(cats ? cats.split(",") : []);
   }, [searchParams]);
 
   const limit = 12;
-  const { data, isLoading, isFetching } = useGetBooks(page, limit);
+
+  const filters: BookFilters = useMemo(() => {
+    const result: BookFilters = {};
+
+    if (priceRange) {
+      const priceMap: Record<string, { minPrice?: number; maxPrice?: number }> =
+        {
+          "below-1000": { maxPrice: 999 },
+          "1000-1500": { minPrice: 1000, maxPrice: 1499 },
+          "1500-2000": { minPrice: 1500, maxPrice: 1999 },
+          "2000-2500": { minPrice: 2000, maxPrice: 2499 },
+          "2500-3000": { minPrice: 2500, maxPrice: 2999 },
+        };
+      Object.assign(result, priceMap[priceRange]);
+    }
+
+    if (publishedDate) {
+      result.publishedDate = publishedDate;
+    }
+
+    if (categories.length > 0) {
+      result.categories = categories;
+    }
+
+    return result;
+  }, [priceRange, publishedDate, categories]);
+
+  const { data, isFetching } = useGetBooks(page, limit, filters);
   const totalPages = Math.ceil((data?.total ?? 0) / limit);
 
   const updateParams = (updates: Record<string, string | string[] | null>) => {
@@ -63,34 +82,39 @@ export default function Explore() {
       }
     });
 
-    if (updates.publishedDate || updates.priceRange || updates.categories) {
+    if (
+      Object.keys(updates).some((key) =>
+        ["publishedDate", "priceRange", "categories"].includes(key),
+      )
+    ) {
       params.delete("page");
+      setPage(0);
     }
 
     router.replace(`${pathname}?${params.toString()}`);
   };
 
   const updatePage = (newPage: number) => {
+    setPage(newPage);
     const params = new URLSearchParams(searchParams);
     params.set("page", newPage.toString());
     router.replace(`${pathname}?${params.toString()}`);
   };
 
-  console.log(data);
-
   return (
     <div className="pt-[138px] container mx-auto grid grid-cols-12 gap-4">
-      {/* Filters */}
       <div className="col-span-3">
         <h2 className="heading-4 mb-6">Filters</h2>
 
-        {/* Category filter */}
         <div className="border-t border-[#dbdcd2]">
           <div className="flex items-center">
             <h2 className="body-lg py-5 grow">Category</h2>
             <button
               className="text-sm"
-              onClick={() => updateParams({ categories: null })}
+              onClick={() => {
+                setCategories([]);
+                updateParams({ categories: null });
+              }}
             >
               Clear
             </button>
@@ -119,22 +143,25 @@ export default function Explore() {
           </div>
         </div>
 
-        {/* Published Date filter */}
         <div className="border-t border-[#dbdcd2]">
           <div className="flex items-center">
             <h2 className="body-lg py-5 grow">Published Date</h2>
             <button
               className="text-sm"
-              onClick={() => updateParams({ publishedDate: null })}
+              onClick={() => {
+                setPublishedDate(undefined);
+                updateParams({ publishedDate: null });
+              }}
             >
               Clear
             </button>
           </div>
           <RadioGroup
-            value={publishedDate}
+            key={publishedDate ?? "none"}
+            value={publishedDate || ""}
             onValueChange={(value) => {
-              setPublishedDate(value);
-              updateParams({ publishedDate: value });
+              setPublishedDate(value || undefined);
+              updateParams({ publishedDate: value || null });
             }}
             className="space-y-2 mb-6"
           >
@@ -156,22 +183,25 @@ export default function Explore() {
           </RadioGroup>
         </div>
 
-        {/* Price Filter */}
         <div className="border-y pb-6 border-[#dbdcd2]">
           <div className="flex items-center">
             <h2 className="body-lg py-5 grow">Price</h2>
             <button
               className="text-sm"
-              onClick={() => updateParams({ priceRange: null })}
+              onClick={() => {
+                setPriceRange(undefined);
+                updateParams({ priceRange: null });
+              }}
             >
               Clear
             </button>
           </div>
           <RadioGroup
-            value={priceRange}
+            key={priceRange ?? "none"}
+            value={priceRange || ""}
             onValueChange={(value) => {
-              setPriceRange(value);
-              updateParams({ priceRange: value });
+              setPriceRange(value || undefined);
+              updateParams({ priceRange: value || null });
             }}
             className="space-y-2"
           >
@@ -193,7 +223,6 @@ export default function Explore() {
         </div>
       </div>
 
-      {/* Books Grid + Pagination */}
       <div className="col-start-4 col-span-9">
         <div className="grid grid-cols-3 gap-4">
           {(data?.data ?? []).map((book) => (
@@ -211,7 +240,6 @@ export default function Explore() {
           <div className="mt-8 flex justify-center">
             <Pagination>
               <PaginationContent className="flex gap-1">
-                {/* First page */}
                 <PaginationItem>
                   <PaginationLink
                     isActive={page === 0}
@@ -222,16 +250,14 @@ export default function Explore() {
                   </PaginationLink>
                 </PaginationItem>
 
-                {/* Ellipsis after first */}
                 {page > 3 && (
                   <PaginationItem>
                     <span className="px-2 py-1 text-muted-foreground">...</span>
                   </PaginationItem>
                 )}
 
-                {/* Current page ±2 (5 pages total max) */}
                 {Array.from({ length: 5 }, (_, i) => {
-                  const pageNum = page - 2 + i; // ±2 range: page-2, page-1, page, page+1, page+2
+                  const pageNum = page - 2 + i;
                   if (pageNum >= 1 && pageNum <= totalPages - 2) {
                     return (
                       <PaginationItem key={pageNum}>
@@ -247,14 +273,12 @@ export default function Explore() {
                   return null;
                 }).filter(Boolean)}
 
-                {/* Ellipsis before last */}
                 {page < totalPages - 4 && totalPages > 6 && (
                   <PaginationItem>
                     <span className="px-2 py-1 text-muted-foreground">...</span>
                   </PaginationItem>
                 )}
 
-                {/* Last page */}
                 <PaginationItem>
                   <PaginationLink
                     isActive={page === totalPages - 1}

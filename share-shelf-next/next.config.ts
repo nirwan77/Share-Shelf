@@ -10,10 +10,8 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "covers.openlibrary.org",
-      },
-      {
-        protocol: "https",
-        hostname: "i.gr-assets.com",
+        port: "",
+        pathname: "/**", // allow all paths
       },
     ],
   },
