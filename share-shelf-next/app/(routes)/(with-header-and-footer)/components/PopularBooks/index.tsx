@@ -15,7 +15,7 @@ export const PopularBooks = () => {
             isPopularBook={true}
             img={item.image}
             key={idx}
-            tag={item.genre}
+            tag={item.bookGenres[0].genre.name}
             title={item.name}
           />
         ))}

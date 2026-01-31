@@ -3,17 +3,12 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import axios from "axios";
-
 import {
   InputOTP,
   InputOTPGroup,
-  InputOTPSeparator,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
-
 import { Button } from "@/components/ui/button";
-import { useSignUp } from "../sign-up/data";
 import { useVerifyOTP } from "./data";
 
 export default function VerifyOtpPage() {
@@ -48,7 +43,7 @@ export default function VerifyOtpPage() {
         onError: (err) => {
           toast(err.response.data.message ?? "error");
         },
-      }
+      },
     );
   };
 

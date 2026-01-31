@@ -22,7 +22,7 @@ const BookCard = ({
         <h2
           className={twMerge(
             isPopularBook ? "heading-4" : "heading-3",
-            "font-medium tracking-tighter"
+            "font-medium tracking-tighter",
           )}
         >
           {title}

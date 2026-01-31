@@ -41,7 +41,7 @@ export const Navbar = () => {
               Home
             </a>
             <a
-              href="#"
+              href="/explore"
               className="text-gray-300 hover:text-white transition-colors"
             >
               Explore

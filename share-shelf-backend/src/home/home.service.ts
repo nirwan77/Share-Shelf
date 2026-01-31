@@ -17,7 +17,9 @@ export class HomeService {
         id: true,
         image: true,
         name: true,
+        bookGenres: { select: { genre: { select: { name: true } } } },
       },
+      take: 20,
     });
   }
 

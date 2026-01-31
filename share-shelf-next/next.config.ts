@@ -1,8 +1,19 @@
 import type { NextConfig } from "next";
 
-const nextConfig = {
+const nextConfig: NextConfig = {
   images: {
-    domains: ["picsum.photos", "covers.openlibrary.org"], // allow picsum
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "picsum.photos",
+      },
+      {
+        protocol: "https",
+        hostname: "covers.openlibrary.org",
+        port: "",
+        pathname: "/**", // allow all paths
+      },
+    ],
   },
 };
 
