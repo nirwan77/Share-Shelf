@@ -102,7 +102,7 @@ export default function Explore() {
   };
 
   return (
-    <div className="pt-[138px] container mx-auto grid grid-cols-12 gap-4">
+    <div className="pt-[138px] pb-20 container mx-auto grid grid-cols-12 gap-4">
       <div className="col-span-3">
         <h2 className="heading-4 mb-6">Filters</h2>
 
@@ -120,7 +120,7 @@ export default function Explore() {
             </button>
           </div>
           <div className="space-y-4 mb-6">
-            {["fiction", "non-fiction", "history", "science", "biography"].map(
+            {["fiction", "historical", "romance", "classics", "adventure"].map(
               (item) => (
                 <div key={item} className="flex items-center gap-2">
                   <Checkbox
@@ -227,6 +227,7 @@ export default function Explore() {
         <div className="grid grid-cols-3 gap-4">
           {(data?.data ?? []).map((book) => (
             <ExploreCard
+              link={`book-detail/${book.id}`}
               key={book.id}
               aurthur={book.author}
               name={book.name}

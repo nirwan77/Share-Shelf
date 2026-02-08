@@ -8,6 +8,7 @@ import { HomeModule } from './home/home.module';
 import { ProfileModule } from './profile/profile.module';
 import { AuthService } from './auth/auth.service';
 import { ExploreModule } from './explore/explore.module';
+import { TopupModule } from './topup/topup.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ExploreModule } from './explore/explore.module';
     HomeModule,
     ProfileModule,
     ExploreModule,
+    TopupModule,
   ],
   controllers: [AppController],
   providers: [AppService],

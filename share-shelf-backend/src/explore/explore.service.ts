@@ -33,28 +33,27 @@ export class ExploreService {
 
     const where: Prisma.BooksWhereInput = {};
 
-    // Price range filter
     if (minPrice !== undefined || maxPrice !== undefined) {
       where.price = {};
       if (minPrice !== undefined) where.price.gte = minPrice;
       if (maxPrice !== undefined) where.price.lte = maxPrice;
     }
 
-    // Category filter - FIXED ✅
     if (categories && categories.length > 0) {
-      where.bookGenres = {
-        some: {
-          genre: {
-            name: {
-              in: categories,
-              mode: 'insensitive',
+      where.AND = categories.map((category) => ({
+        bookGenres: {
+          some: {
+            genre: {
+              name: {
+                equals: category,
+                mode: 'insensitive',
+              },
             },
           },
         },
-      };
+      }));
     }
 
-    // Published date filter
     if (publishedDate) {
       const yearRanges = {
         'before-1990': { lte: new Date('1989-12-31') },
@@ -117,6 +116,7 @@ export class ExploreService {
         userBookReviews: {
           select: {
             comment: true,
+            rating: true,
             user: { select: { name: true, avatar: true } },
           },
         },
@@ -125,6 +125,7 @@ export class ExploreService {
             status: true,
           },
         },
+        _count: { select: { userBookReviews: true } },
       },
     });
   }
