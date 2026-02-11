@@ -29,7 +29,7 @@ export const ExploreCard = ({
       </div>
       <h3 className="body-lg font-bold xl:mt-4 mt-2">{name}</h3>
       <span className="body-md block mt-0.5">{aurthur}</span>
-      <span className="body-md block mt-3 text-[#CACBC3]">Rs. {price}</span>
+      {/* <span className="body-md block mt-3 text-[#CACBC3]">Rs. {price}</span> */}
     </Link>
   );
 };

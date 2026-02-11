@@ -13,11 +13,9 @@ const BookDetail = () => {
   const id = params.id as string;
 
   const { data, isLoading } = useGetBookDetail(id);
-  console.log(data);
   const [rating, setRating] = useState(0);
   const handleRatingChange = (newRating: number) => {
     setRating(newRating);
-    console.log("New rating:", newRating);
   };
 
   const [isBookmarkActive, setIsBookmarkActive] = useState(false);
@@ -154,7 +152,7 @@ const BookDetail = () => {
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="Description">{data?.description}</TabsContent>
-              <TabsContent value="Review">Change your Review here.</TabsContent>
+              <TabsContent value="Review">No review for now.</TabsContent>
             </Tabs>
           </div>
         </div>

@@ -1,15 +1,31 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
 import { TopupService } from './topup.service';
 import { CreateTopupDto } from './dto/create-topup.dto';
 import { UpdateTopupDto } from './dto/update-topup.dto';
+import { GetDashboardUserReqObject, JwtHeaderAuthGuard } from 'src/shared';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('topup')
 export class TopupController {
   constructor(private readonly topupService: TopupService) {}
 
   @Post()
-  create(@Body() createTopupDto: CreateTopupDto) {
-    return this.topupService.create(createTopupDto);
+  @UseGuards(JwtHeaderAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  async verifyPayment(
+    @GetDashboardUserReqObject('id') userId: string,
+    @Body() payload: any,
+  ) {
+    return this.topupService.verifyPayment(userId, payload);
   }
 
   @Get()
