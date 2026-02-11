@@ -34,6 +34,7 @@ export default function Profile() {
                 <span>0 followers</span>
                 <span>0 books exchanged</span>
               </div>
+              <h3 className="text-2xl mt-3">Rs. {data?.money}</h3>
             </div>
             <figure className="rounded-full overflow-hidden">
               <Image

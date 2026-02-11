@@ -20,6 +20,7 @@ export class ProfileService {
       where: { id },
       select: {
         avatar: true,
+        money: true,
         email: true,
         isVerified: true,
         name: true,

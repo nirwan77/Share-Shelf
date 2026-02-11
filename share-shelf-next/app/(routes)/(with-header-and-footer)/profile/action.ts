@@ -6,6 +6,7 @@ export interface ProfileData {
   email: string;
   isVerified: string;
   name: string;
+  money: true;
 }
 
 export const useGetProfile = () => {

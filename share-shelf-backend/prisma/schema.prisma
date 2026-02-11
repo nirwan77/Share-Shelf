@@ -19,6 +19,8 @@ model User {
   password   String
   isVerified Boolean @default(false)
 
+  money Int @default(0)
+
   name   String
   avatar String?
 
@@ -28,6 +30,7 @@ model User {
   userBookReviews  UserBookReview[]
   userRatedBy      UserRating[]     @relation("userRatingBy")
   userRatingBy     UserRating[]     @relation("userRatedBy")
+  payments         Payment[]
 }
 
 model Otp {
@@ -89,6 +92,7 @@ model UserBookStatus {
 
 model UserBookReview {
   id      String @id @default(nanoid())
+  rating  Int
   comment String
 
   createdAt DateTime @default(now())
@@ -111,4 +115,27 @@ model UserRating {
   ratingUser   User   @relation(fields: [ratingUserId], references: [id], onDelete: Cascade, name: "userRatingBy")
   ratedUserId  String
   ratedUser    User   @relation(fields: [ratedUserId], references: [id], onDelete: Cascade, name: "userRatedBy")
+}
+
+model Payment {
+  id               String        @id @default(cuid())
+  transaction_uuid String        @unique
+  product_code     String
+  amount           Float
+  tax_amount       Float
+  total_amount     Float
+  status           PaymentStatus @default(PENDING)
+  userId           String?
+  user             User?         @relation(fields: [userId], references: [id])
+  signature        String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@index([userId])
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
 }
