@@ -24,18 +24,19 @@ model User {
   name   String
   avatar String?
 
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
-  userBookStatuses    UserBookStatus[]
-  userBookReviews     UserBookReview[]
-  userRatedBy         UserRating[]          @relation("userRatingBy")
-  userRatingBy        UserRating[]          @relation("userRatedBy")
-  payments            Payment[]
-  posts               Posts[]
-  postReactions       PostReactions[]
-  postMentions        PostMentions[]
-  postComments        PostComments[]
-  postCommentMentions PostCommentMentions[]
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  userBookStatuses     UserBookStatus[]
+  userBookReviews      UserBookReview[]
+  userRatedBy          UserRating[]           @relation("userRatingBy")
+  userRatingBy         UserRating[]           @relation("userRatedBy")
+  payments             Payment[]
+  posts                Posts[]
+  postReactions        PostReactions[]
+  postMentions         PostMentions[]
+  postComments         PostComments[]
+  postCommentMentions  PostCommentMentions[]
+  postCommentReactions PostCommentReactions[]
 }
 
 model Otp {
@@ -206,10 +207,11 @@ model PostComments {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  parentCommentId     String?
-  parentComment       PostComments?         @relation("CommentReplies", fields: [parentCommentId], references: [id], onDelete: Cascade)
-  replies             PostComments[]        @relation("CommentReplies")
-  postCommentMentions PostCommentMentions[]
+  parentCommentId      String?
+  parentComment        PostComments?          @relation("CommentReplies", fields: [parentCommentId], references: [id], onDelete: Cascade)
+  replies              PostComments[]         @relation("CommentReplies")
+  postCommentMentions  PostCommentMentions[]
+  postCommentReactions PostCommentReactions[]
 
   @@map("post_comments")
 }
@@ -225,4 +227,21 @@ model PostCommentMentions {
   user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("post_comment_mentions")
+}
+
+model PostCommentReactions {
+  id       String @id @default(nanoid())
+  reaction String
+
+  postCommentId String
+  comment       PostComments @relation(fields: [postCommentId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([postCommentId, userId, reaction])
+  @@map("post_comment_reactions")
 }
