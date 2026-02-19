@@ -24,7 +24,7 @@ export const Navbar = () => {
 
   return (
     <nav className="bg-gray-950 fixed top-0 w-full z-50">
-      <div className="max-w-7xl mx-auto px-4">
+      <div className="container mx-auto">
         <div className="flex items-center justify-between h-16">
           <div
             className="shrink-0 cursor-pointer"
@@ -47,7 +47,7 @@ export const Navbar = () => {
               Explore
             </a>
             <a
-              href="#"
+              href="/discuss"
               className="text-gray-300 hover:text-white transition-colors"
             >
               Discuss

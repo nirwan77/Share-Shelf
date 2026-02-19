@@ -24,13 +24,19 @@ model User {
   name   String
   avatar String?
 
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  userBookStatuses UserBookStatus[]
-  userBookReviews  UserBookReview[]
-  userRatedBy      UserRating[]     @relation("userRatingBy")
-  userRatingBy     UserRating[]     @relation("userRatedBy")
-  payments         Payment[]
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  userBookStatuses     UserBookStatus[]
+  userBookReviews      UserBookReview[]
+  userRatedBy          UserRating[]           @relation("userRatingBy")
+  userRatingBy         UserRating[]           @relation("userRatedBy")
+  payments             Payment[]
+  posts                Posts[]
+  postReactions        PostReactions[]
+  postMentions         PostMentions[]
+  postComments         PostComments[]
+  postCommentMentions  PostCommentMentions[]
+  postCommentReactions PostCommentReactions[]
 }
 
 model Otp {
@@ -138,4 +144,105 @@ enum PaymentStatus {
   PENDING
   SUCCESS
   FAILED
+}
+
+model Posts {
+  id            String  @id @default(nanoid())
+  title         String
+  content       String?
+  image         String?
+  systemPayload Json?
+
+  createdById   String
+  createdByUser User   @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  isPinned Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  mentions        PostMentions[]
+  reactions       PostReactions[]
+  comments        PostComments[]
+  commentMentions PostCommentMentions[]
+
+  @@map("posts")
+}
+
+model PostReactions {
+  id       String @id @default(nanoid())
+  reaction String
+
+  postId String
+  post   Posts  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([postId, userId, reaction])
+  @@map("post_reactions")
+}
+
+model PostMentions {
+  id String @id @default(nanoid())
+
+  postId String
+  post   Posts  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("post_mentions")
+}
+
+model PostComments {
+  id      String @id @default(nanoid())
+  comment String
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId String
+  post   Posts   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  parentCommentId      String?
+  parentComment        PostComments?          @relation("CommentReplies", fields: [parentCommentId], references: [id], onDelete: Cascade)
+  replies              PostComments[]         @relation("CommentReplies")
+  postCommentMentions  PostCommentMentions[]
+  postCommentReactions PostCommentReactions[]
+
+  @@map("post_comments")
+}
+
+model PostCommentMentions {
+  id String @id @default(nanoid())
+
+  postId        String
+  post          Posts        @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postCommentId String
+  postComment   PostComments @relation(fields: [postCommentId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("post_comment_mentions")
+}
+
+model PostCommentReactions {
+  id       String @id @default(nanoid())
+  reaction String
+
+  postCommentId String
+  comment       PostComments @relation(fields: [postCommentId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([postCommentId, userId, reaction])
+  @@map("post_comment_reactions")
 }
