@@ -7,14 +7,6 @@ import { PrismaService } from 'src/prisma.service';
 export class ProfileService {
   constructor(private prisma: PrismaService) {}
 
-  create(createProfileDto: CreateProfileDto) {
-    return 'This action adds a new profile';
-  }
-
-  findAll() {
-    return `This action returns all profile`;
-  }
-
   async findOne(id: string) {
     return this.prisma.user.findUniqueOrThrow({
       where: { id },
@@ -26,13 +18,5 @@ export class ProfileService {
         name: true,
       },
     });
-  }
-
-  update(id: number, updateProfileDto: UpdateProfileDto) {
-    return `This action updates a #${id} profile`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} profile`;
   }
 }

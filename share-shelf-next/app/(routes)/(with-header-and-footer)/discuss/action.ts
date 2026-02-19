@@ -1,5 +1,5 @@
 import { axios } from "@/app/lib";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 export type DiscussData = Array<{
   _count: {
@@ -14,6 +14,8 @@ export type DiscussData = Array<{
     name: string;
   };
   createdAt: string;
+  id: string;
+  isLikedByMe: boolean;
 }>;
 
 export const useGetPostData = () => {
@@ -21,6 +23,15 @@ export const useGetPostData = () => {
     queryKey: ["post"],
     queryFn: async () => {
       const { data } = await axios.get<DiscussData>("/discuss");
+      return data;
+    },
+  });
+};
+
+export const useLikePost = () => {
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await axios.post<DiscussData>(`/discuss/${id}/like`);
       return data;
     },
   });

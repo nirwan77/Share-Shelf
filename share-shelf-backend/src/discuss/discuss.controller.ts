@@ -38,10 +38,15 @@ export class DiscussController {
     description: 'Sort order',
   })
   async findAll(
+    @GetDashboardUserReqObject('id') userId: string,
     @Query('sortBy') sortBy?: 'popular' | 'recent',
     @Query('sortOrder') sortOrder?: 'asc' | 'desc',
   ) {
-    return this.discussService.findAll(sortBy || 'recent', sortOrder || 'desc');
+    return this.discussService.findAll(
+      sortBy || 'recent',
+      sortOrder || 'desc',
+      userId,
+    );
   }
 
   @Get(':id')
@@ -55,7 +60,7 @@ export class DiscussController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Create a new post' })
   async createPost(
-    @Body() body: { content?: string; image?: string },
+    @Body() body: { content?: string; image?: string; title: string },
     @GetDashboardUserReqObject('id') userId: string,
   ) {
     return this.discussService.createPost({ ...body, createdById: userId });
@@ -85,13 +90,8 @@ export class DiscussController {
   async togglePostReaction(
     @Param('id') postId: string,
     @GetDashboardUserReqObject('id') userId: string,
-    @Body() body: { reaction: string },
   ) {
-    return this.discussService.togglePostReaction(
-      postId,
-      userId,
-      body.reaction,
-    );
+    return this.discussService.togglePostReaction(postId, userId);
   }
 
   @Delete(':id')

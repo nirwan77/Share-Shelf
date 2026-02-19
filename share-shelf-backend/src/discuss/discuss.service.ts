@@ -6,13 +6,15 @@ import { PrismaService } from 'src/prisma.service';
 export class DiscussService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(sortBy: string, sortOrder: 'asc' | 'desc') {
+  async findAll(sortBy: string, sortOrder: 'asc' | 'desc', userId: string) {
     const orderBy =
       sortBy === 'popular'
         ? { mentions: { _count: sortOrder } }
         : { createdAt: sortOrder };
-    return await this.prisma.posts.findMany({
+
+    const posts = await this.prisma.posts.findMany({
       select: {
+        id: true,
         _count: { select: { comments: true, reactions: true } },
         content: true,
         image: true,
@@ -23,19 +25,32 @@ export class DiscussService {
             name: true,
           },
         },
+        title: true,
         createdAt: true,
+        reactions: {
+          where: { userId },
+          select: { id: true },
+        },
       },
       orderBy,
     });
+
+    return posts.map((post) => ({
+      ...post,
+      isLikedByMe: post.reactions.length > 0,
+      reactions: undefined,
+    }));
   }
 
   async createPost(data: {
+    title: string;
     content?: string;
     image?: string;
     createdById: string;
   }) {
     return this.prisma.posts.create({
       data: {
+        title: data.title,
         content: data.content,
         image: data.image,
         createdById: data.createdById,
@@ -82,8 +97,9 @@ export class DiscussService {
     });
   }
 
-  async togglePostReaction(postId: string, userId: string, reaction: string) {
-    // Check if the reaction already exists
+  async togglePostReaction(postId: string, userId: string) {
+    const reaction = 'like';
+
     const existing = await this.prisma.postReactions.findUnique({
       where: { postId_userId_reaction: { postId, userId, reaction } },
     });

@@ -9,9 +9,14 @@ import { ProfileModule } from './profile/profile.module';
 import { ExploreModule } from './explore/explore.module';
 import { TopupModule } from './topup/topup.module';
 import { DiscussModule } from './discuss/discuss.module';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true, // so process.env works everywhere
+    }),
     AuthModule,
     PrismaModule,
     JwtModule.register({
@@ -24,6 +29,7 @@ import { DiscussModule } from './discuss/discuss.module';
     ExploreModule,
     TopupModule,
     DiscussModule,
+    CloudinaryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

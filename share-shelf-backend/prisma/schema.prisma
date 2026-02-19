@@ -148,6 +148,7 @@ enum PaymentStatus {
 
 model Posts {
   id            String  @id @default(nanoid())
+  title         String
   content       String?
   image         String?
   systemPayload Json?
