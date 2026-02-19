@@ -11,7 +11,7 @@ export class DiscussService {
       sortBy === 'popular'
         ? { mentions: { _count: sortOrder } }
         : { createdAt: sortOrder };
-    await this.prisma.posts.findMany({
+    return await this.prisma.posts.findMany({
       select: {
         _count: { select: { comments: true, reactions: true } },
         content: true,
