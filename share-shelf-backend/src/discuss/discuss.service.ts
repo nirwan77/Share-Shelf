@@ -58,8 +58,8 @@ export class DiscussService {
     });
   }
 
-  async findOne(postId: string) {
-    return this.prisma.posts.findUnique({
+  async findOne(postId: string, currentUserId: string) {
+    const post = await this.prisma.posts.findUnique({
       where: { id: postId },
       select: {
         _count: { select: { comments: true, reactions: true } },
@@ -74,11 +74,52 @@ export class DiscussService {
             comment: true,
             user: { select: { id: true, name: true, avatar: true } },
             createdAt: true,
+            _count: { select: { postCommentReactions: true } }, // ← add
+            postCommentReactions: { select: { userId: true, reaction: true } }, // ← add
           },
+          orderBy: { createdAt: 'asc' },
         },
         createdAt: true,
       },
     });
+
+    if (!post) return null;
+
+    const isLikedByMe = post.reactions.some((r) => r.userId === currentUserId);
+
+    return {
+      ...post,
+      isLikedByMe,
+      comments: post.comments.map(({ postCommentReactions, ...comment }) => ({
+        ...comment,
+        isLikedByMe: postCommentReactions.some(
+          (r) => r.userId === currentUserId && r.reaction === 'like',
+        ),
+      })),
+    };
+  }
+
+  async findComments(postId: string, currentUserId: string) {
+    const comments = await this.prisma.postComments.findMany({
+      where: { postId },
+      select: {
+        id: true,
+        comment: true,
+        createdAt: true,
+        user: { select: { id: true, name: true, avatar: true } },
+        _count: { select: { postCommentReactions: true } },
+        postCommentReactions: { select: { userId: true, reaction: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return comments.map(({ postCommentReactions, _count, ...comment }) => ({
+      ...comment,
+      isLikedByMe: postCommentReactions.some(
+        (r) => r.userId === currentUserId && r.reaction === 'like',
+      ),
+      _count: { reactions: _count.postCommentReactions },
+    }));
   }
 
   async addComment(

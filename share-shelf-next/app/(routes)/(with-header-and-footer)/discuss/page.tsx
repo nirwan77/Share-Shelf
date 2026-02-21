@@ -156,6 +156,7 @@ export default function SocialFeed() {
             <div className="flex flex-col gap-3.5">
               {data?.map((post) => (
                 <div
+                  onClick={() => push(`/discuss/${post.id}`)}
                   key={post.id}
                   className="bg-[#242424] rounded-2xl border border-[#2e2e2e] p-4 flex gap-4 items-start transition-colors duration-200 hover:border-[#e8630a55]"
                 >
