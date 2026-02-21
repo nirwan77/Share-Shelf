@@ -51,8 +51,21 @@ export class DiscussController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a single post by ID' })
-  async findOne(@Param('id') id: string) {
-    return this.discussService.findOne(id);
+  async findOne(
+    @Param('id') id: string,
+    @GetDashboardUserReqObject('id') userId: string,
+  ) {
+    return this.discussService.findOne(id, userId);
+  }
+
+  @Get(':id/comments')
+  @UseGuards(JwtHeaderAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  async getComments(
+    @Param('id') postId: string,
+    @GetDashboardUserReqObject('id') userId: string,
+  ) {
+    return this.discussService.findComments(postId, userId);
   }
 
   @Post()
