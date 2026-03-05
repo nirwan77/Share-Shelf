@@ -37,17 +37,7 @@ export default function CreatePost() {
 
   const handleSubmit = () => {
     if (!title.trim()) return;
-    createPost(
-      { title, description, image },
-      {
-        onSuccess: (data) => {
-          console.log("Post created:", data);
-        },
-        onError: (error) => {
-          console.error("Failed to create post:", error);
-        },
-      },
-    );
+    createPost({ title, description, image });
   };
 
   return (
