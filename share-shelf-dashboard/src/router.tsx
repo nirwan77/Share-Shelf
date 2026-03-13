@@ -8,6 +8,9 @@ export function getRouter() {
     scrollRestoration: true,
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 0,
+    context: {
+      isLoggedIn: false,
+    },
   })
 
   return router
