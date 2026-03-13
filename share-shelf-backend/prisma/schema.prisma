@@ -14,7 +14,7 @@ datasource db {
 }
 
 model User {
-  id         String  @id @default(cuid())
+  id         String  @id @default(nanoid())
   email      String  @unique
   password   String
   isVerified Boolean @default(false)
@@ -45,6 +45,14 @@ model Otp {
   code      String
   expiresAt DateTime
   createdAt DateTime @default(now())
+}
+
+model DashboardUser {
+  id       String  @id @default(nanoid())
+  email    String  @unique
+  password String
+  name     String
+  avatar   String?
 }
 
 model Books {

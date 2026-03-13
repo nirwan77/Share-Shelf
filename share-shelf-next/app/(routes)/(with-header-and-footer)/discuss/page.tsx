@@ -103,7 +103,7 @@ export default function SocialFeed() {
         <div className="flex-1 px-6 py-5">
           <div className="flex items-center gap-3 bg-[#2a2a2a] rounded-xl px-4 py-2.5 mb-5 border border-[#333]">
             <img
-              src="https://i.pravatar.cc/36?img=47"
+              src="https://res.cloudinary.com/dwcbbaa20/image/upload/v1771497788/posts/bzx4ztaownrnqbiqhrwx.png"
               alt="me"
               className="w-9 h-9 rounded-full object-cover"
             />
@@ -158,7 +158,7 @@ export default function SocialFeed() {
                 <div
                   onClick={() => push(`/discuss/${post.id}`)}
                   key={post.id}
-                  className="bg-[#242424] rounded-2xl border border-[#2e2e2e] p-4 flex gap-4 items-start transition-colors duration-200 hover:border-[#e8630a55]"
+                  className="bg-[#242424] cursor-pointer rounded-2xl border border-[#2e2e2e] p-4 flex gap-4 items-start transition-colors duration-200 hover:border-[#e8630a55]"
                 >
                   {post.image && (
                     <img
@@ -199,7 +199,11 @@ export default function SocialFeed() {
                         </span>
                         <span>{post._count?.comments ?? 0} comments</span>
                         <button
-                          onClick={() => toggleLike(post.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            toggleLike(post.id);
+                          }}
                           className={`bg-transparent border-none cursor-pointer text-lg transition-all duration-200 ${
                             liked[post.id]
                               ? "text-[#e8630a] scale-125"
