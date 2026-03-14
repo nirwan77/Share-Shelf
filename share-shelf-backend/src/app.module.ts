@@ -11,11 +11,12 @@ import { TopupModule } from './topup/topup.module';
 import { DiscussModule } from './discuss/discuss.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { ConfigModule } from '@nestjs/config';
+import { DashboardAuthModule } from './dashboard-auth/dashboard-auth.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, // so process.env works everywhere
+      isGlobal: true,
     }),
     AuthModule,
     PrismaModule,
@@ -30,8 +31,9 @@ import { ConfigModule } from '@nestjs/config';
     TopupModule,
     DiscussModule,
     CloudinaryModule,
+    DashboardAuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
