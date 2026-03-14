@@ -1,6 +1,8 @@
-import { AppShell, Container } from "@mantine/core";
+import { AppShell, Container, Stack, NavLink, Group, Button } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, Link, useLocation } from "@tanstack/react-router";
+import { IconLayoutDashboard, IconUsers, IconLogout } from "@tabler/icons-react";
+import { useAuth } from "../contexts/AuthContext";
 
 export const Route = createFileRoute("/_withLayout")({
   component: RouteComponent,
@@ -15,6 +17,16 @@ export const Route = createFileRoute("/_withLayout")({
 
 function RouteComponent() {
   const [opened] = useDisclosure();
+  const location = useLocation();
+  const { setAuthData } = useAuth();
+
+  const handleLogout = () => {
+    setAuthData(null);
+    throw redirect({
+      to: "/sign-in",
+    });
+  };
+
   return (
     <AppShell
       header={{ height: { base: 60, md: 64 } }}
@@ -27,11 +39,37 @@ function RouteComponent() {
       padding={0}
     >
       <AppShell.Header p="md">
-        <span style={{ fontWeight: 700 }}>Share Shelf Dashboard</span>
+        <Group justify="space-between" h="100%">
+          <span style={{ fontWeight: 700 }}>Share Shelf Dashboard</span>
+          <Button
+            variant="light"
+            color="red"
+            size="xs"
+            leftSection={<IconLogout size={16} />}
+            onClick={handleLogout}
+          >
+            Log out
+          </Button>
+        </Group>
       </AppShell.Header>
 
-      <AppShell.Navbar px="md" zIndex={101}>
-        <span>Navigation</span>
+      <AppShell.Navbar px="md" py="xl" zIndex={101}>
+        <Stack gap="xs">
+          <NavLink
+            component={Link}
+            to="/"
+            label="Dashboard"
+            leftSection={<IconLayoutDashboard size={18} stroke={1.5} />}
+            active={location.pathname === '/'}
+          />
+          <NavLink
+            component={Link}
+            to="/users"
+            label="Users"
+            leftSection={<IconUsers size={18} stroke={1.5} />}
+            active={location.pathname.startsWith('/users')}
+          />
+        </Stack>
       </AppShell.Navbar>
 
       <AppShell.Main>
