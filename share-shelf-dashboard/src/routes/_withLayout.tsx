@@ -1,7 +1,25 @@
-import { AppShell, Container, Stack, NavLink, Group, Button } from "@mantine/core";
+import {
+  AppShell,
+  Container,
+  Stack,
+  NavLink,
+  Group,
+  Button,
+} from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { createFileRoute, Outlet, redirect, Link, useLocation } from "@tanstack/react-router";
-import { IconLayoutDashboard, IconUsers, IconLogout } from "@tabler/icons-react";
+import {
+  createFileRoute,
+  Outlet,
+  redirect,
+  Link,
+  useLocation,
+  useNavigate,
+} from "@tanstack/react-router";
+import {
+  IconLayoutDashboard,
+  IconUsers,
+  IconLogout,
+} from "@tabler/icons-react";
 import { useAuth } from "../contexts/AuthContext";
 
 export const Route = createFileRoute("/_withLayout")({
@@ -19,12 +37,11 @@ function RouteComponent() {
   const [opened] = useDisclosure();
   const location = useLocation();
   const { setAuthData } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogout = () => {
     setAuthData(null);
-    throw redirect({
-      to: "/sign-in",
-    });
+    navigate({ to: "/sign-in" });
   };
 
   return (
@@ -60,14 +77,14 @@ function RouteComponent() {
             to="/"
             label="Dashboard"
             leftSection={<IconLayoutDashboard size={18} stroke={1.5} />}
-            active={location.pathname === '/'}
+            active={location.pathname === "/"}
           />
           <NavLink
             component={Link}
             to="/users"
             label="Users"
             leftSection={<IconUsers size={18} stroke={1.5} />}
-            active={location.pathname.startsWith('/users')}
+            active={location.pathname.startsWith("/users")}
           />
         </Stack>
       </AppShell.Navbar>
@@ -85,4 +102,3 @@ function RouteComponent() {
     </AppShell>
   );
 }
-

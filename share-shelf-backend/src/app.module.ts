@@ -12,6 +12,8 @@ import { DiscussModule } from './discuss/discuss.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { ConfigModule } from '@nestjs/config';
 import { DashboardAuthModule } from './dashboard-auth/dashboard-auth.module';
+import { DashboardStatsModule } from './dashboard-stats/dashboard-stats.module';
+import { DashboardUserStatsModule } from './dashboard-user-stats/dashboard-user-stats.module';
 
 @Module({
   imports: [
@@ -32,6 +34,8 @@ import { DashboardAuthModule } from './dashboard-auth/dashboard-auth.module';
     DiscussModule,
     CloudinaryModule,
     DashboardAuthModule,
+    DashboardStatsModule,
+    DashboardUserStatsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
