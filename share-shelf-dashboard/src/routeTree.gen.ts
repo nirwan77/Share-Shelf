@@ -11,6 +11,9 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WithLayoutRouteImport } from './routes/_withLayout'
 import { Route as AuthRouteImport } from './routes/_auth'
+import { Route as WithLayoutIndexRouteImport } from './routes/_withLayout/index'
+import { Route as WithLayoutUsersRouteImport } from './routes/_withLayout/users'
+import { Route as WithLayoutBooksRouteImport } from './routes/_withLayout/books'
 import { Route as AuthSignInRouteImport } from './routes/_auth/sign-in'
 
 const WithLayoutRoute = WithLayoutRouteImport.update({
@@ -21,6 +24,21 @@ const AuthRoute = AuthRouteImport.update({
   id: '/_auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WithLayoutIndexRoute = WithLayoutIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => WithLayoutRoute,
+} as any)
+const WithLayoutUsersRoute = WithLayoutUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => WithLayoutRoute,
+} as any)
+const WithLayoutBooksRoute = WithLayoutBooksRouteImport.update({
+  id: '/books',
+  path: '/books',
+  getParentRoute: () => WithLayoutRoute,
+} as any)
 const AuthSignInRoute = AuthSignInRouteImport.update({
   id: '/sign-in',
   path: '/sign-in',
@@ -28,30 +46,44 @@ const AuthSignInRoute = AuthSignInRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof WithLayoutRoute
+  '/': typeof WithLayoutIndexRoute
   '/sign-in': typeof AuthSignInRoute
+  '/books': typeof WithLayoutBooksRoute
+  '/users': typeof WithLayoutUsersRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof WithLayoutRoute
+  '/': typeof WithLayoutIndexRoute
   '/sign-in': typeof AuthSignInRoute
+  '/books': typeof WithLayoutBooksRoute
+  '/users': typeof WithLayoutUsersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_auth': typeof AuthRouteWithChildren
-  '/_withLayout': typeof WithLayoutRoute
+  '/_withLayout': typeof WithLayoutRouteWithChildren
   '/_auth/sign-in': typeof AuthSignInRoute
+  '/_withLayout/books': typeof WithLayoutBooksRoute
+  '/_withLayout/users': typeof WithLayoutUsersRoute
+  '/_withLayout/': typeof WithLayoutIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/sign-in'
+  fullPaths: '/' | '/sign-in' | '/books' | '/users'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/sign-in'
-  id: '__root__' | '/_auth' | '/_withLayout' | '/_auth/sign-in'
+  to: '/' | '/sign-in' | '/books' | '/users'
+  id:
+    | '__root__'
+    | '/_auth'
+    | '/_withLayout'
+    | '/_auth/sign-in'
+    | '/_withLayout/books'
+    | '/_withLayout/users'
+    | '/_withLayout/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AuthRoute: typeof AuthRouteWithChildren
-  WithLayoutRoute: typeof WithLayoutRoute
+  WithLayoutRoute: typeof WithLayoutRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -69,6 +101,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_withLayout/': {
+      id: '/_withLayout/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof WithLayoutIndexRouteImport
+      parentRoute: typeof WithLayoutRoute
+    }
+    '/_withLayout/users': {
+      id: '/_withLayout/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof WithLayoutUsersRouteImport
+      parentRoute: typeof WithLayoutRoute
+    }
+    '/_withLayout/books': {
+      id: '/_withLayout/books'
+      path: '/books'
+      fullPath: '/books'
+      preLoaderRoute: typeof WithLayoutBooksRouteImport
+      parentRoute: typeof WithLayoutRoute
     }
     '/_auth/sign-in': {
       id: '/_auth/sign-in'
@@ -90,9 +143,25 @@ const AuthRouteChildren: AuthRouteChildren = {
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
+interface WithLayoutRouteChildren {
+  WithLayoutBooksRoute: typeof WithLayoutBooksRoute
+  WithLayoutUsersRoute: typeof WithLayoutUsersRoute
+  WithLayoutIndexRoute: typeof WithLayoutIndexRoute
+}
+
+const WithLayoutRouteChildren: WithLayoutRouteChildren = {
+  WithLayoutBooksRoute: WithLayoutBooksRoute,
+  WithLayoutUsersRoute: WithLayoutUsersRoute,
+  WithLayoutIndexRoute: WithLayoutIndexRoute,
+}
+
+const WithLayoutRouteWithChildren = WithLayoutRoute._addFileChildren(
+  WithLayoutRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRouteWithChildren,
-  WithLayoutRoute: WithLayoutRoute,
+  WithLayoutRoute: WithLayoutRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
