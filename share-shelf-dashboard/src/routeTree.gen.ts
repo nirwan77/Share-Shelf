@@ -13,6 +13,7 @@ import { Route as WithLayoutRouteImport } from './routes/_withLayout'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as WithLayoutIndexRouteImport } from './routes/_withLayout/index'
 import { Route as WithLayoutUsersRouteImport } from './routes/_withLayout/users'
+import { Route as WithLayoutBooksRouteImport } from './routes/_withLayout/books'
 import { Route as AuthSignInRouteImport } from './routes/_auth/sign-in'
 
 const WithLayoutRoute = WithLayoutRouteImport.update({
@@ -33,6 +34,11 @@ const WithLayoutUsersRoute = WithLayoutUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => WithLayoutRoute,
 } as any)
+const WithLayoutBooksRoute = WithLayoutBooksRouteImport.update({
+  id: '/books',
+  path: '/books',
+  getParentRoute: () => WithLayoutRoute,
+} as any)
 const AuthSignInRoute = AuthSignInRouteImport.update({
   id: '/sign-in',
   path: '/sign-in',
@@ -42,11 +48,13 @@ const AuthSignInRoute = AuthSignInRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof WithLayoutIndexRoute
   '/sign-in': typeof AuthSignInRoute
+  '/books': typeof WithLayoutBooksRoute
   '/users': typeof WithLayoutUsersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof WithLayoutIndexRoute
   '/sign-in': typeof AuthSignInRoute
+  '/books': typeof WithLayoutBooksRoute
   '/users': typeof WithLayoutUsersRoute
 }
 export interface FileRoutesById {
@@ -54,19 +62,21 @@ export interface FileRoutesById {
   '/_auth': typeof AuthRouteWithChildren
   '/_withLayout': typeof WithLayoutRouteWithChildren
   '/_auth/sign-in': typeof AuthSignInRoute
+  '/_withLayout/books': typeof WithLayoutBooksRoute
   '/_withLayout/users': typeof WithLayoutUsersRoute
   '/_withLayout/': typeof WithLayoutIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/sign-in' | '/users'
+  fullPaths: '/' | '/sign-in' | '/books' | '/users'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/sign-in' | '/users'
+  to: '/' | '/sign-in' | '/books' | '/users'
   id:
     | '__root__'
     | '/_auth'
     | '/_withLayout'
     | '/_auth/sign-in'
+    | '/_withLayout/books'
     | '/_withLayout/users'
     | '/_withLayout/'
   fileRoutesById: FileRoutesById
@@ -106,6 +116,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WithLayoutUsersRouteImport
       parentRoute: typeof WithLayoutRoute
     }
+    '/_withLayout/books': {
+      id: '/_withLayout/books'
+      path: '/books'
+      fullPath: '/books'
+      preLoaderRoute: typeof WithLayoutBooksRouteImport
+      parentRoute: typeof WithLayoutRoute
+    }
     '/_auth/sign-in': {
       id: '/_auth/sign-in'
       path: '/sign-in'
@@ -127,11 +144,13 @@ const AuthRouteChildren: AuthRouteChildren = {
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 interface WithLayoutRouteChildren {
+  WithLayoutBooksRoute: typeof WithLayoutBooksRoute
   WithLayoutUsersRoute: typeof WithLayoutUsersRoute
   WithLayoutIndexRoute: typeof WithLayoutIndexRoute
 }
 
 const WithLayoutRouteChildren: WithLayoutRouteChildren = {
+  WithLayoutBooksRoute: WithLayoutBooksRoute,
   WithLayoutUsersRoute: WithLayoutUsersRoute,
   WithLayoutIndexRoute: WithLayoutIndexRoute,
 }

@@ -1,5 +1,5 @@
-import { useDidUpdate, useLocalStorage } from "@mantine/hooks";
-import { createContext, useContext, type ReactNode } from "react";
+import { useLocalStorage } from "@mantine/hooks";
+import { createContext, useContext, useEffect, useRef, type ReactNode } from "react";
 
 type Auth = {
   id: string;
@@ -26,16 +26,20 @@ export const AuthContextProvider = (props: Props) => {
     key: "token",
   });
 
+  const prevTokenRef = useRef<Auth | undefined>(token);
+
   const setAuthData = (data: Auth | null) =>
     data ? setToken(data) : removeToken();
 
-  useDidUpdate(() => {
+  useEffect(() => {
     if (
+      prevTokenRef.current?.accessToken &&
       !token?.accessToken &&
       window.location.pathname !== "/"
     ) {
       window.location.href = "/";
     }
+    prevTokenRef.current = token;
   }, [token]);
 
   return (
