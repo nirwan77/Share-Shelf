@@ -11,11 +11,25 @@ export class ProfileService {
     return this.prisma.user.findUniqueOrThrow({
       where: { id },
       select: {
+        id: true,
         avatar: true,
         money: true,
         email: true,
         isVerified: true,
         name: true,
+        userBookStatuses: {
+          select: {
+            status: true,
+            book: {
+              select: {
+                id: true,
+                name: true,
+                author: true,
+                image: true,
+              },
+            },
+          },
+        },
       },
     });
   }

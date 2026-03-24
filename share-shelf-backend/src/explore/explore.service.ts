@@ -20,6 +20,7 @@ export class ExploreService {
       maxPrice?: number;
       categories?: string[];
       publishedDate?: string;
+      sortBy?: string;
     } = {},
   ) {
     const {
@@ -29,6 +30,7 @@ export class ExploreService {
       maxPrice,
       categories,
       publishedDate,
+      sortBy,
     } = filters;
 
     const where: Prisma.BooksWhereInput = {};
@@ -82,7 +84,7 @@ export class ExploreService {
       }
     }
 
-    const data = await this.prisma.books.findMany({
+    const books = await this.prisma.books.findMany({
       where,
       select: {
         id: true,
@@ -92,11 +94,41 @@ export class ExploreService {
         image: true,
         price: true,
         releaseDate: true,
+        bookOffers: {
+          where: { isActive: true },
+          select: { price: true, type: true },
+        },
       },
       take: limit,
       skip,
       orderBy: { releaseDate: 'desc' },
     });
+
+    const data = books.map((book) => {
+      const { bookOffers, ...rest } = book;
+      const sellOffers = bookOffers.filter((o) => o.type === 'SELL');
+      const tradeOffers = bookOffers.filter((o) => o.type === 'TRADE');
+      const lowestPrice =
+        sellOffers.length > 0
+          ? Math.min(...sellOffers.map((o) => o.price))
+          : null;
+      return {
+        ...rest,
+        lowestPrice,
+        sellCount: sellOffers.length,
+        tradeCount: tradeOffers.length,
+      };
+    });
+
+    // Sort by lowest offer price if requested
+    if (sortBy === 'price') {
+      data.sort((a, b) => {
+        if (a.lowestPrice === null && b.lowestPrice === null) return 0;
+        if (a.lowestPrice === null) return 1;
+        if (b.lowestPrice === null) return -1;
+        return a.lowestPrice - b.lowestPrice;
+      });
+    }
 
     const total = await this.prisma.books.count({ where });
 
@@ -123,7 +155,21 @@ export class ExploreService {
         userBookStatuses: {
           select: {
             status: true,
+            userId: true,
           },
+        },
+        bookOffers: {
+          where: { isActive: true },
+          select: {
+            id: true,
+            price: true,
+            condition: true,
+            type: true,
+            note: true,
+            createdAt: true,
+            user: { select: { id: true, name: true, avatar: true } },
+          },
+          orderBy: { price: 'asc' },
         },
         _count: { select: { userBookReviews: true } },
       },

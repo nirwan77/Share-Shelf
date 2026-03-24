@@ -58,12 +58,32 @@ export class DashboardBooksService {
               genre: true,
             },
           },
+          bookOffers: {
+            where: { isActive: true },
+            select: { price: true, type: true },
+          },
         },
       }),
     ]);
 
+    const formattedBooks = books.map((book) => {
+      const { bookOffers, ...rest } = book as any;
+      const sellOffers = bookOffers.filter((o: any) => o.type === 'SELL');
+      const tradeOffers = bookOffers.filter((o: any) => o.type === 'TRADE');
+      const lowestPrice =
+        sellOffers.length > 0
+          ? Math.min(...sellOffers.map((o: any) => o.price))
+          : null;
+      return {
+        ...rest,
+        lowestPrice,
+        sellCount: sellOffers.length,
+        tradeCount: tradeOffers.length,
+      };
+    });
+
     return {
-      data: books,
+      data: formattedBooks,
       meta: {
         total,
         page,
