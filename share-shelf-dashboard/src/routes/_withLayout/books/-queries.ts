@@ -15,6 +15,9 @@ export interface Book {
       name: string;
     };
   }[];
+  lowestPrice: number | null;
+  sellCount: number;
+  tradeCount: number;
 }
 
 export interface BooksResponse {

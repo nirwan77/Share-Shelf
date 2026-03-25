@@ -239,9 +239,14 @@ function BooksManagement() {
         </Group>
       </Table.Td>
       <Table.Td>
-        <Text size="sm" fw={600}>
-          Rs. {book.price}
-        </Text>
+        <Stack gap={2}>
+          <Text size="sm" fw={600} c={book.lowestPrice !== null ? "green" : "dimmed"}>
+            {book.lowestPrice !== null ? `From Rs. ${book.lowestPrice}` : "No active offers"}
+          </Text>
+          <Text size="xs" c="dimmed">
+            {book.sellCount} selling · {book.tradeCount} trading
+          </Text>
+        </Stack>
       </Table.Td>
       <Table.Td>
         <Text size="sm">
@@ -378,7 +383,7 @@ function BooksManagement() {
                       <Table.Tr>
                         <Table.Th>Book</Table.Th>
                         <Table.Th>Genres</Table.Th>
-                        <Table.Th>Price</Table.Th>
+                        <Table.Th>Market Info</Table.Th>
                         <Table.Th>Release Date</Table.Th>
                         <Table.Th />
                       </Table.Tr>
@@ -438,13 +443,6 @@ function BooksManagement() {
               {...form.getInputProps("description")}
             />
             <Group grow>
-              <NumberInput
-                label="Price (Rs.)"
-                placeholder="0"
-                required
-                min={0}
-                {...form.getInputProps("price")}
-              />
               <DateInput
                 label="Release Date"
                 placeholder="Pick date"
