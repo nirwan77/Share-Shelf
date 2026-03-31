@@ -235,7 +235,7 @@ export default function Explore() {
           </RadioGroup>
         </div>
 
-        <div className="border-y pb-6 border-[#dbdcd2]">
+        {/* <div className="border-y pb-6 border-[#dbdcd2]">
           <div className="flex items-center">
             <h2 className="body-lg py-5 grow">Price</h2>
             <button
@@ -272,7 +272,7 @@ export default function Explore() {
               </div>
             ))}
           </RadioGroup>
-        </div>
+        </div> */}
       </div>
 
       <div className="col-start-4 col-span-9">

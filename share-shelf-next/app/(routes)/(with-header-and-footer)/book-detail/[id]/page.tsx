@@ -1,7 +1,12 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useGetBookDetail, useCreateOffer, useToggleBookStatus } from "./action";
+import {
+  useGetBookDetail,
+  useCreateOffer,
+  useToggleBookStatus,
+  useCreateReview,
+} from "./action";
 import { useGetProfile } from "@/app/(routes)/(with-header-and-footer)/profile/action";
 import type { BookOffer } from "./action";
 import Image from "next/image";
@@ -10,7 +15,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bookmark, Eye, Check } from "lucide-react";
+import { Bookmark, Eye, Check, Star, BookOpen, Lock, Pen } from "lucide-react";
+import { toast } from "sonner";
 
 const BookDetail = () => {
   const params = useParams();
@@ -19,14 +25,16 @@ const BookDetail = () => {
   const { data, isLoading } = useGetBookDetail(id);
   const createOffer = useCreateOffer();
   const toggleStatus = useToggleBookStatus();
+  const createReview = useCreateReview();
   const { data: profile } = useGetProfile();
 
   const [rating, setRating] = useState(0);
-  const handleRatingChange = (newRating: number) => {
-    setRating(newRating);
-  };
+  const [hoveredRating, setHoveredRating] = useState(0);
+  const handleRatingChange = (newRating: number) => setRating(newRating);
 
-  const myStatusObj = (data?.userBookStatuses ?? []).find((s) => s.userId === profile?.id);
+  const myStatusObj = (data?.userBookStatuses ?? []).find(
+    (s) => s.userId === profile?.id,
+  );
   const myStatus = myStatusObj?.status;
 
   const isBookmarkActive = myStatus === "PLAN_TO_READ";
@@ -35,18 +43,36 @@ const BookDetail = () => {
 
   const handleToggleStatus = (status: "READING" | "PLAN_TO_READ" | "READ") => {
     if (!profile) {
-      alert("Please log in to track books.");
+      toast.error("Please log in to track books.");
       return;
     }
-    toggleStatus.mutate({ bookId: id, status });
+    toggleStatus.mutate(
+      { bookId: id, status },
+      {
+        onSuccess: (data: any) => {
+          const statusLabels: Record<string, string> = {
+            READING: "Currently Reading",
+            PLAN_TO_READ: "Plan to Read",
+            READ: "Read",
+          };
+          if (data?.message === "Status removed") {
+            toast.success(`Removed from ${statusLabels[status]}`);
+          } else {
+            toast.success(`Added to ${statusLabels[status]}`);
+          }
+        },
+        onError: () =>
+          toast.error("Failed to update status. Please try again."),
+      },
+    );
   };
 
-  // Sell form state
   const [showSellForm, setShowSellForm] = useState(false);
   const [offerPrice, setOfferPrice] = useState("");
   const [offerCondition, setOfferCondition] = useState("Good");
   const [offerType, setOfferType] = useState<"SELL" | "TRADE">("SELL");
   const [offerNote, setOfferNote] = useState("");
+  const [reviewComment, setReviewComment] = useState("");
 
   const handleCreateOffer = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,8 +98,22 @@ const BookDetail = () => {
   const tradeOffers = (data?.bookOffers ?? []).filter(
     (o) => o.type === "TRADE",
   );
+  const hasActiveOffer = (data?.bookOffers ?? []).some(
+    (o) => o.user.id === profile?.id,
+  );
 
-  const hasActiveOffer = (data?.bookOffers ?? []).some((o) => o.user.id === profile?.id);
+  const reviews = data?.userBookReviews ?? [];
+  const alreadyReviewed = profile
+    ? reviews.some((r: any) => r.user.name === profile.name)
+    : false;
+
+  const avgRating =
+    reviews.length > 0
+      ? reviews.reduce((sum: number, r: any) => sum + r.rating, 0) /
+        reviews.length
+      : 0;
+
+  const ratingLabels = ["", "Poor", "Fair", "Good", "Great", "Excellent"];
 
   return (
     <>
@@ -81,6 +121,7 @@ const BookDetail = () => {
         <>loading...</>
       ) : (
         <div className="pt-[138px] container mx-auto grid grid-cols-12 gap-4">
+          {/* Book image col */}
           <div className="col-span-4">
             <div className="pt-[100%] relative bg-[#F7F8EE] hover:bg-gray-200">
               <figure className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 cursor-pointer max-h-[420px] max-w-[90%] shadow-[10px_10px_20px_5px_rgba(0,0,0,0.12)]">
@@ -94,6 +135,8 @@ const BookDetail = () => {
               </figure>
             </div>
           </div>
+
+          {/* Book info col */}
           <div className="col-start-5 col-span-4">
             <h1 className="heading-3 mb-2">{data?.name}</h1>
             <p className="text-sm">
@@ -101,18 +144,17 @@ const BookDetail = () => {
               {data?.author}
             </p>
             <p className="my-[18px] text-sm text-gray-400">
-              {sellOffers.length > 0 &&
-                `${sellOffers.length} available to buy`}
+              {sellOffers.length > 0 && `${sellOffers.length} available to buy`}
               {sellOffers.length > 0 && tradeOffers.length > 0 && " · "}
-              {tradeOffers.length > 0 &&
-                `${tradeOffers.length} open for trade`}
+              {tradeOffers.length > 0 && `${tradeOffers.length} open for trade`}
               {sellOffers.length === 0 &&
                 tradeOffers.length === 0 &&
                 "No offers yet"}
             </p>
             {hasActiveOffer ? (
               <div className="text-sm font-medium text-green-600 bg-green-50 p-3 rounded-xl border border-green-200 mt-2">
-                You already have an active offer for this book. Check your profile to manage it!
+                You already have an active offer for this book. Check your
+                profile to manage it!
               </div>
             ) : (
               <div className="flex gap-2">
@@ -137,7 +179,6 @@ const BookDetail = () => {
               </div>
             )}
 
-            {/* Sell / Trade Form */}
             {showSellForm && (
               <form
                 onSubmit={handleCreateOffer}
@@ -148,9 +189,7 @@ const BookDetail = () => {
                 </h3>
                 {offerType === "SELL" && (
                   <div>
-                    <Label htmlFor="offer-price">
-                      Price (Rs.) *
-                    </Label>
+                    <Label htmlFor="offer-price">Price (Rs.) *</Label>
                     <Input
                       id="offer-price"
                       type="number"
@@ -198,7 +237,10 @@ const BookDetail = () => {
                     type="submit"
                     size="sm"
                     className="bg-[#FF8D28] hover:bg-[#e67d1f]"
-                    disabled={createOffer.isPending || (offerType === "SELL" && !offerPrice)}
+                    disabled={
+                      createOffer.isPending ||
+                      (offerType === "SELL" && !offerPrice)
+                    }
                   >
                     {createOffer.isPending ? "Posting..." : "Post Offer"}
                   </Button>
@@ -206,93 +248,54 @@ const BookDetail = () => {
               </form>
             )}
           </div>
+
+          {/* Status icons col */}
           <div className="col-start-11 col-span-2">
             <div className="flex items-center justify-center gap-4 rounded-2xl backdrop-blur-sm">
-              <button
-                onClick={() => handleToggleStatus("PLAN_TO_READ")}
-                disabled={toggleStatus.isPending && toggleStatus.variables?.status === "PLAN_TO_READ"}
-                className={`group transition-transform duration-200 hover:scale-110 ${toggleStatus.isPending ? 'opacity-50' : ''}`}
-                title="Want to Read"
-              >
-                <div
-                  className={`
-                w-10 h-10 rounded-full flex items-center justify-center
-                border-2 transition-all duration-300
-                ${
-                  isBookmarkActive
-                    ? "bg-white border-white"
-                    : "bg-transparent border-white/80"
-                }
-              `}
+              {[
+                {
+                  status: "PLAN_TO_READ" as const,
+                  icon: Bookmark,
+                  active: isBookmarkActive,
+                  title: "Want to Read",
+                },
+                {
+                  status: "READING" as const,
+                  icon: Eye,
+                  active: isEyeActive,
+                  title: "Currently Reading",
+                },
+                {
+                  status: "READ" as const,
+                  icon: Check,
+                  active: isCheckActive,
+                  title: "Read",
+                },
+              ].map(({ status, icon: Icon, active, title }) => (
+                <button
+                  key={status}
+                  onClick={() => handleToggleStatus(status)}
+                  disabled={
+                    toggleStatus.isPending &&
+                    toggleStatus.variables?.status === status
+                  }
+                  className={`group transition-transform duration-200 hover:scale-110 ${toggleStatus.isPending ? "opacity-50" : ""}`}
+                  title={title}
                 >
-                  <Bookmark
-                    className={`
-                  w-6 h-6 transition-colors duration-300
-                  ${isBookmarkActive ? "text-slate-700" : "text-white"}
-                `}
-                    strokeWidth={2}
-                  />
-                </div>
-              </button>
-
-              {/* Eye Button */}
-              <button
-                onClick={() => handleToggleStatus("READING")}
-                disabled={toggleStatus.isPending && toggleStatus.variables?.status === "READING"}
-                className={`group transition-transform duration-200 hover:scale-110 ${toggleStatus.isPending ? 'opacity-50' : ''}`}
-                title="Currently Reading"
-              >
-                <div
-                  className={`
-                w-10 h-10 rounded-full flex items-center justify-center
-                border-2 transition-all duration-300
-                ${
-                  isEyeActive
-                    ? "bg-white border-white"
-                    : "bg-transparent border-white/80"
-                }
-              `}
-                >
-                  <Eye
-                    className={`
-                  w-6 h-6 transition-colors duration-300
-                  ${isEyeActive ? "text-slate-700" : "text-white"}
-                `}
-                    strokeWidth={2}
-                  />
-                </div>
-              </button>
-
-              {/* Check Button */}
-              <button
-                onClick={() => handleToggleStatus("READ")}
-                disabled={toggleStatus.isPending && toggleStatus.variables?.status === "READ"}
-                className={`group transition-transform duration-200 hover:scale-110 ${toggleStatus.isPending ? 'opacity-50' : ''}`}
-                title="Read"
-              >
-                <div
-                  className={`
-                w-10 h-10 rounded-full flex items-center justify-center
-                border-2 transition-all duration-300
-                ${
-                  isCheckActive
-                    ? "bg-white border-white"
-                    : "bg-transparent border-white/80"
-                }
-              `}
-                >
-                  <Check
-                    className={`
-                  w-6 h-6 transition-colors duration-300
-                  ${isCheckActive ? "text-slate-700" : "text-white"}
-                `}
-                    strokeWidth={2}
-                  />
-                </div>
-              </button>
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${active ? "bg-white border-white" : "bg-transparent border-white/80"}`}
+                  >
+                    <Icon
+                      className={`w-6 h-6 transition-colors duration-300 ${active ? "text-slate-700" : "text-white"}`}
+                      strokeWidth={2}
+                    />
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
 
+          {/* Tabs */}
           <div className="col-span-12">
             <Tabs defaultValue="Description" className="my-10">
               <TabsList>
@@ -309,7 +312,9 @@ const BookDetail = () => {
                   Review
                 </TabsTrigger>
               </TabsList>
+
               <TabsContent value="Description">{data?.description}</TabsContent>
+
               <TabsContent value="Sellers">
                 {sellOffers.length === 0 ? (
                   <p className="text-sm text-gray-400 py-4">
@@ -342,8 +347,7 @@ const BookDetail = () => {
                             </p>
                             <p className="text-xs text-gray-400">
                               {offer.condition && `${offer.condition} · `}
-                              Selling
-                              {offer.note && ` · ${offer.note}`}
+                              Selling{offer.note && ` · ${offer.note}`}
                             </p>
                           </div>
                         </div>
@@ -355,6 +359,7 @@ const BookDetail = () => {
                   </div>
                 )}
               </TabsContent>
+
               <TabsContent value="Traders">
                 {tradeOffers.length === 0 ? (
                   <p className="text-sm text-gray-400 py-4">
@@ -387,8 +392,7 @@ const BookDetail = () => {
                             </p>
                             <p className="text-xs text-gray-400">
                               {offer.condition && `${offer.condition} · `}
-                              Trading
-                              {offer.note && ` · ${offer.note}`}
+                              Trading{offer.note && ` · ${offer.note}`}
                             </p>
                           </div>
                         </div>
@@ -400,7 +404,298 @@ const BookDetail = () => {
                   </div>
                 )}
               </TabsContent>
-              <TabsContent value="Review">No review for now.</TabsContent>
+
+              {/* ── REVIEW TAB — redesigned ── */}
+              <TabsContent value="Review">
+                <div className="py-8 space-y-8">
+                  {/* ── Rating summary hero ── */}
+                  {reviews.length > 0 && (
+                    <div className="rounded-2xl border border-[#ebebdf] overflow-hidden">
+                      <div className="grid grid-cols-[auto_1fr]">
+                        {/* Left: big score */}
+                        <div className="flex flex-col items-center justify-center gap-2 px-10 py-8 bg-[#FF8D28] text-white">
+                          <span className="text-6xl font-black leading-none tracking-tighter">
+                            {avgRating.toFixed(1)}
+                          </span>
+                          <div className="flex gap-0.5">
+                            {[1, 2, 3, 4, 5].map((s) => (
+                              <Star
+                                key={s}
+                                className={`w-3.5 h-3.5 ${s <= Math.round(avgRating) ? "fill-white text-white" : "fill-white/30 text-white/30"}`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-[11px] font-medium text-white/80 mt-0.5">
+                            {reviews.length} review
+                            {reviews.length !== 1 ? "s" : ""}
+                          </span>
+                        </div>
+
+                        {/* Right: bar chart */}
+                        <div className="flex flex-col justify-center gap-2 px-8 py-6 bg-[#fafaf7]">
+                          {[5, 4, 3, 2, 1].map((s) => {
+                            const count = reviews.filter(
+                              (r: any) => r.rating === s,
+                            ).length;
+                            const pct = reviews.length
+                              ? Math.round((count / reviews.length) * 100)
+                              : 0;
+                            return (
+                              <div key={s} className="flex items-center gap-3">
+                                <div className="flex items-center gap-1 w-8 shrink-0">
+                                  <span className="text-xs text-gray-500 font-medium">
+                                    {s}
+                                  </span>
+                                  <Star className="w-3 h-3 fill-[#FF8D28] text-[#FF8D28]" />
+                                </div>
+                                <div className="flex-1 h-2 bg-[#ebebdf] rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-[#FF8D28] rounded-full transition-all duration-500"
+                                    style={{ width: `${pct}%` }}
+                                  />
+                                </div>
+                                <span className="text-xs text-gray-400 w-5 text-right shrink-0">
+                                  {count}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── Write a review / gated states ── */}
+                  {!profile ? (
+                    <div className="flex items-center gap-4 px-6 py-5 rounded-2xl border border-dashed border-gray-200 bg-gray-50">
+                      <div className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center shrink-0 shadow-sm">
+                        <Lock className="w-4 h-4 text-gray-400" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-700">
+                          Log in to leave a review
+                        </p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          Share your thoughts with fellow readers.
+                        </p>
+                      </div>
+                    </div>
+                  ) : alreadyReviewed ? (
+                    <div className="flex items-center gap-4 px-6 py-5 rounded-2xl bg-green-50 border border-green-100">
+                      <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                        <Star className="w-4 h-4 fill-green-500 text-green-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-green-800">
+                          Review submitted
+                        </p>
+                        <p className="text-xs text-green-600 mt-0.5">
+                          Thanks for sharing your thoughts!
+                        </p>
+                      </div>
+                    </div>
+                  ) : !isCheckActive ? (
+                    <div className="flex items-center gap-4 px-6 py-5 rounded-2xl border border-dashed border-[#FF8D28]/25 bg-[#fff9f4]">
+                      <div className="w-10 h-10 rounded-full bg-[#FF8D28]/10 flex items-center justify-center shrink-0">
+                        <BookOpen className="w-4 h-4 text-[#FF8D28]" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-700">
+                          Finish the book first
+                        </p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          Mark as{" "}
+                          <span className="font-semibold text-[#FF8D28]">
+                            Read
+                          </span>{" "}
+                          using the ✓ button above to unlock reviews.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    /* ── Actual review form ── */
+                    <div className="rounded-2xl border border-[#ebebdf] overflow-hidden">
+                      {/* Header bar */}
+                      <div className="flex items-center gap-2.5 px-6 py-4 border-b border-[#ebebdf] bg-[#fafaf7]">
+                        <div className="w-8 h-8 rounded-full bg-[#FF8D28]/10 flex items-center justify-center">
+                          <Pen className="w-3.5 h-3.5 text-[#FF8D28]" />
+                        </div>
+                        <p className="text-sm font-semibold text-gray-800">
+                          Write a Review
+                        </p>
+                      </div>
+
+                      <div className="p-6 space-y-5">
+                        {/* Star picker */}
+                        <div>
+                          <p className="text-xs font-medium text-gray-500 uppercase tracking-widest mb-3">
+                            Your Rating
+                          </p>
+                          <div className="flex items-center gap-3">
+                            <div className="flex gap-1.5">
+                              {[1, 2, 3, 4, 5].map((s) => (
+                                <button
+                                  key={s}
+                                  onClick={() => handleRatingChange(s)}
+                                  onMouseEnter={() => setHoveredRating(s)}
+                                  onMouseLeave={() => setHoveredRating(0)}
+                                  className="focus:outline-none transition-transform hover:scale-110 duration-100"
+                                >
+                                  <Star
+                                    className={`w-8 h-8 transition-all duration-150 ${
+                                      s <= (hoveredRating || rating)
+                                        ? "fill-[#FF8D28] text-[#FF8D28]"
+                                        : "text-gray-200 fill-gray-100"
+                                    }`}
+                                  />
+                                </button>
+                              ))}
+                            </div>
+                            {(hoveredRating || rating) > 0 && (
+                              <span className="text-sm font-semibold text-[#FF8D28]">
+                                {ratingLabels[hoveredRating || rating]}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Textarea */}
+                        <div>
+                          <p className="text-xs font-medium text-gray-500 uppercase tracking-widest mb-3">
+                            Your Thoughts
+                          </p>
+                          <div className="relative">
+                            <textarea
+                              className="w-full bg-[#fafaf7] border border-[#ebebdf] rounded-xl px-4 pt-3.5 pb-9 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#FF8D28]/20 focus:border-[#FF8D28]/40 min-h-[120px] resize-none leading-relaxed placeholder:text-gray-300 transition-colors"
+                              placeholder="What did you think? Would you recommend it?"
+                              value={reviewComment}
+                              onChange={(e) => setReviewComment(e.target.value)}
+                            />
+                            <span className="absolute bottom-3 right-4 text-[11px] text-gray-300 pointer-events-none select-none">
+                              {reviewComment.length} chars
+                            </span>
+                          </div>
+                        </div>
+
+                        <Button
+                          className="bg-[#FF8D28] hover:bg-[#e67d1f] h-10 px-7 rounded-xl text-sm font-semibold tracking-wide"
+                          disabled={
+                            createReview.isPending ||
+                            rating === 0 ||
+                            !reviewComment.trim()
+                          }
+                          onClick={() => {
+                            createReview.mutate(
+                              { bookId: id, rating, comment: reviewComment },
+                              {
+                                onSuccess: () => {
+                                  toast.success(
+                                    "Review submitted successfully!",
+                                  );
+                                  setRating(0);
+                                  setReviewComment("");
+                                },
+                                onError: (error: any) => {
+                                  toast.error(
+                                    error?.response?.data?.message ||
+                                      "Failed to submit review",
+                                  );
+                                },
+                              },
+                            );
+                          }}
+                        >
+                          {createReview.isPending
+                            ? "Submitting…"
+                            : "Post Review"}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── Reviews list ── */}
+                  {reviews.length > 0 && (
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between mb-5">
+                        <h3 className="text-sm font-semibold text-white">
+                          Reader Reviews
+                        </h3>
+                        <span className="text-xs text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full font-medium">
+                          {reviews.length} review
+                          {reviews.length !== 1 ? "s" : ""}
+                        </span>
+                      </div>
+
+                      <div className="divide-y divide-[#f0f0e8]">
+                        {reviews.map((review: any, index: number) => (
+                          <div
+                            key={index}
+                            className="flex gap-4 py-6 first:pt-0"
+                          >
+                            {/* Avatar */}
+                            <div className="w-10 h-10 rounded-full bg-[#F7F8EE] border border-[#e8e9df] flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden">
+                              {review.user.avatar ? (
+                                <Image
+                                  src={review.user.avatar}
+                                  alt={review.user.name}
+                                  width={40}
+                                  height={40}
+                                  className="rounded-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-white">
+                                  {review.user.name.charAt(0).toUpperCase()}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Content */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-3 mb-2">
+                                <p className="text-sm font-semibold text-white truncate">
+                                  {review.user.name}
+                                </p>
+                                {/* Stars grouped with label */}
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <div className="flex gap-0.5">
+                                    {[1, 2, 3, 4, 5].map((s) => (
+                                      <Star
+                                        key={s}
+                                        className={`w-3.5 h-3.5 ${s <= review.rating ? "fill-[#FF8D28] text-[#FF8D28]" : "fill-gray-200 text-gray-200"}`}
+                                      />
+                                    ))}
+                                  </div>
+                                  <span className="text-[11px] font-semibold text-gray-400">
+                                    {review.rating}.0
+                                  </span>
+                                </div>
+                              </div>
+                              <p className="text-sm text-gray-600 leading-relaxed">
+                                {review.comment}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Empty state */}
+                  {reviews.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-14 text-center">
+                      <div className="w-14 h-14 rounded-2xl bg-[#F7F8EE] flex items-center justify-center mb-4 shadow-inner">
+                        <Star className="w-6 h-6 text-gray-300" />
+                      </div>
+                      <p className="text-sm font-semibold text-gray-600">
+                        No reviews yet
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Be the first to share your thoughts!
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
             </Tabs>
           </div>
         </div>

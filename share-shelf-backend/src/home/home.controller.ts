@@ -25,6 +25,16 @@ export class HomeController {
     return this.homeService.findAll();
   }
 
+  @Get('/featured')
+  findFeatured() {
+    return this.homeService.findFeatured();
+  }
+
+  @Get('/popular')
+  findPopular() {
+    return this.homeService.findPopular();
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.homeService.findOne(+id);

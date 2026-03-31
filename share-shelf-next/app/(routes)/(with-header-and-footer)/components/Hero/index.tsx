@@ -4,6 +4,12 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay, EffectFade, Pagination } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/effect-fade";
+import "swiper/css/pagination";
+import { useGetFeatured } from "../../action";
 
 export const Hero = () => {
   const router = useRouter();
@@ -18,7 +24,7 @@ export const Hero = () => {
         height={1800}
         width={1800}
       />
-      <div className="realtive z-10">
+      <div className="relative z-10">
         <h1 className="heading-1 text-center text-white">SHARE SHELF</h1>
         <p className="max-w-[649px] text-white text-center">
           Discover a world where books connect readers. Exchange, buy, and

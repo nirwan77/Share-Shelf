@@ -70,7 +70,25 @@ export const useSubmitBookRequest = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["my-book-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["my-requests"] });
     },
   });
 };
+export const useGetMyBookRequests = () => {
+  return useQuery<BookRequest[]>({
+    queryKey: ["my-requests"],
+    queryFn: async () => {
+      const { data } = await axios.get("/book-requests/my");
+      return data;
+    },
+  });
+};
+
+export interface BookRequest {
+  id: string;
+  title: string;
+  author: string;
+  description: string | null;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  createdAt: string;
+}

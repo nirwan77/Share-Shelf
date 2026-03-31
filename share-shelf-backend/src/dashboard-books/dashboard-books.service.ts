@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma.service';
 
 @Injectable()
 export class DashboardBooksService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async getGenres() {
     return this.prisma.genre.findMany({
@@ -114,6 +114,8 @@ export class DashboardBooksService {
     price: number;
     releaseDate: string | Date;
     genres: string[];
+    isPopular?: boolean;
+    isFeatured?: boolean;
   }) {
     const { genres, ...bookData } = data;
 
@@ -152,6 +154,8 @@ export class DashboardBooksService {
       price?: number;
       releaseDate?: string | Date;
       genres?: string[];
+      isPopular?: boolean;
+      isFeatured?: boolean;
     },
   ) {
     const { genres, ...bookData } = data;

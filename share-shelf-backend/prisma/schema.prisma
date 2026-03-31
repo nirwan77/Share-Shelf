@@ -67,6 +67,9 @@ model Books {
   price       Int
   releaseDate DateTime
 
+  isPopular   Boolean @default(false)
+  isFeatured  Boolean @default(false)
+
   userBookStatuses UserBookStatus[]
   userBookReviews  UserBookReview[]
   bookGenres       BookGenre[]

@@ -85,3 +85,23 @@ export const useToggleBookStatus = () => {
     },
   });
 };
+
+export const useCreateReview = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (body: {
+      bookId: string;
+      rating: number;
+      comment: string;
+    }) => {
+      const { data } = await axios.post("/book-reviews", body);
+      return data;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["book-detail", variables.bookId],
+      });
+    },
+  });
+};

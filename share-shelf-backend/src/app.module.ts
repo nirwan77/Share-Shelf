@@ -18,6 +18,8 @@ import { DashboardBooksModule } from './dashboard-books/dashboard-books.module';
 import { BookOffersModule } from './book-offers/book-offers.module';
 import { BookStatusModule } from './book-status/book-status.module';
 import { DashboardBookRequestsModule } from './dashboard-book-requests/dashboard-book-requests.module';
+import { BookReviewsModule } from './book-reviews/book-reviews.module';
+import { BookRequestsModule } from './book-requests/book-requests.module';
 
 @Module({
   imports: [
@@ -44,6 +46,8 @@ import { DashboardBookRequestsModule } from './dashboard-book-requests/dashboard
     BookOffersModule,
     BookStatusModule,
     DashboardBookRequestsModule,
+    BookReviewsModule,
+    BookRequestsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

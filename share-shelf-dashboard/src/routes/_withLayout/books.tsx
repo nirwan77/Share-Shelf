@@ -17,13 +17,13 @@ import {
   Divider,
   ScrollArea,
   ActionIcon,
-  NumberInput,
   Textarea,
   MultiSelect,
   Image,
   FileButton,
   rem,
   Select,
+  Switch,
 } from "@mantine/core";
 import { useDisclosure, useDebouncedValue } from "@mantine/hooks";
 import {
@@ -102,6 +102,8 @@ function BooksManagement() {
       image: "",
       releaseDate: new Date(),
       genres: [] as string[],
+      isPopular: false,
+      isFeatured: false,
     },
     validate: {
       name: (value) => (value.length < 2 ? "Name is too short" : null),
@@ -122,6 +124,8 @@ function BooksManagement() {
         image: editingBook.image,
         releaseDate: new Date(editingBook.releaseDate),
         genres: editingBook.bookGenres.map((bg) => bg.genre.name),
+        isPopular: editingBook.isPopular,
+        isFeatured: editingBook.isFeatured,
       });
       setImagePreview(editingBook.image);
     } else {
@@ -252,6 +256,36 @@ function BooksManagement() {
         <Text size="sm">
           {new Date(book.releaseDate).toLocaleDateString()}
         </Text>
+      </Table.Td>
+      <Table.Td>
+        <Group gap="xs">
+          <Switch
+            checked={book.isPopular}
+            onChange={(e) =>
+              updateMutation.mutate({
+                id: book.id,
+                isPopular: e.currentTarget.checked,
+              })
+            }
+            size="xs"
+            color="orange"
+            label="Popular"
+            disabled={updateMutation.isPending}
+          />
+          <Switch
+            checked={book.isFeatured}
+            onChange={(e) =>
+              updateMutation.mutate({
+                id: book.id,
+                isFeatured: e.currentTarget.checked,
+              })
+            }
+            size="xs"
+            color="blue"
+            label="Featured"
+            disabled={updateMutation.isPending}
+          />
+        </Group>
       </Table.Td>
       <Table.Td>
         <Group gap="xs" justify="flex-end">
@@ -385,6 +419,7 @@ function BooksManagement() {
                         <Table.Th>Genres</Table.Th>
                         <Table.Th>Market Info</Table.Th>
                         <Table.Th>Release Date</Table.Th>
+                        <Table.Th>Status Flags</Table.Th>
                         <Table.Th />
                       </Table.Tr>
                     </Table.Thead>
@@ -560,6 +595,16 @@ function BooksManagement() {
               searchable
               {...form.getInputProps("genres")}
             />
+            <Group>
+              <Switch
+                label="Mark as Popular"
+                {...form.getInputProps("isPopular", { type: "checkbox" })}
+              />
+              <Switch
+                label="Mark as Featured"
+                {...form.getInputProps("isFeatured", { type: "checkbox" })}
+              />
+            </Group>
 
             <Group justify="flex-end" mt="xl">
               <Button

@@ -9,6 +9,8 @@ export interface Book {
   image: string;
   price: number;
   releaseDate: string;
+  isPopular: boolean;
+  isFeatured: boolean;
   bookGenres: {
     genre: {
       id: string;
