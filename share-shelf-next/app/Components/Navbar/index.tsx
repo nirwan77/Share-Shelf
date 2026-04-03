@@ -12,6 +12,8 @@ import {
 import { LogOut, User, Bell } from "lucide-react";
 import { useGetNotifications, useMarkNotificationRead, useGetUnreadCount } from "./notifications-action";
 import { useContext } from "react";
+import { useGetProfile } from "@/app/(routes)/(with-header-and-footer)/profile/action";
+import Image from "next/image";
 
 export const Navbar = () => {
   const router = useRouter();
@@ -21,6 +23,7 @@ export const Navbar = () => {
   const { data: notifications } = useGetNotifications();
   const { data: unreadCount } = useGetUnreadCount();
   const markRead = useMarkNotificationRead();
+  const { data: profile } = useGetProfile();
 
   const handleLogout = () => {
     setAuthData(null);
@@ -118,9 +121,23 @@ export const Navbar = () => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="rounded-full hover:bg-gray-700"
+                      className="rounded-full hover:bg-gray-700 w-8 h-8 flex items-center justify-center bg-gray-800 overflow-hidden p-0"
                     >
-                      <User className="h-5 w-5 text-white" />
+                      {profile?.avatar ? (
+                        <Image
+                          src={profile.avatar}
+                          alt={profile.name}
+                          width={32}
+                          height={32}
+                          className="object-cover w-full h-full"
+                        />
+                      ) : (
+                        <span className="text-sm font-bold text-gray-400 capitalize">
+                          {profile?.name?.charAt(0) || (
+                            <User className="h-5 w-5 text-white" />
+                          )}
+                        </span>
+                      )}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">

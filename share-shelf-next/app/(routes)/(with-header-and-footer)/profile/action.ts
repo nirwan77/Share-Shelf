@@ -17,6 +17,17 @@ export interface ProfileData {
       image: string;
     }
   }>;
+  userBookReviews: Array<{
+    id: string;
+    rating: number;
+    comment: string;
+    createdAt: string;
+    book: {
+      id: string;
+      name: string;
+      image: string;
+    };
+  }>;
 }
 
 export const useGetProfile = () => {

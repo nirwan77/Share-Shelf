@@ -30,6 +30,21 @@ export class ProfileService {
             },
           },
         },
+        userBookReviews: {
+          select: {
+            id: true,
+            rating: true,
+            comment: true,
+            createdAt: true,
+            book: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+              },
+            },
+          },
+        },
       },
     });
   }
