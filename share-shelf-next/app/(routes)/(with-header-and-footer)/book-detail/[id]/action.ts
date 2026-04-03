@@ -15,6 +15,21 @@ export type BookOffer = {
   };
 };
 
+export type BookReview = {
+  id: string;
+  rating: number;
+  comment: string;
+  upvotes: number;
+  downvotes: number;
+  myVote: "UPVOTE" | "DOWNVOTE" | null;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string;
+    avatar: string | null;
+  };
+};
+
 export type BookDetailResponse = {
   author: string;
   description: string;
@@ -26,7 +41,7 @@ export type BookDetailResponse = {
   name: string;
   image: string;
   price: number;
-  userBookReviews: Array<any>;
+  userBookReviews: BookReview[];
   userBookStatuses: Array<{
     status: "READING" | "PLAN_TO_READ" | "READ";
     userId: string;
@@ -102,6 +117,42 @@ export const useCreateReview = () => {
       queryClient.invalidateQueries({
         queryKey: ["book-detail", variables.bookId],
       });
+    },
+  });
+};
+
+export const useVoteReview = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (body: {
+      reviewId: string;
+      bookId: string;
+      voteType: "UPVOTE" | "DOWNVOTE";
+    }) => {
+      const { data } = await axios.patch(
+        `/book-reviews/${body.reviewId}/vote`,
+        { voteType: body.voteType },
+      );
+      return data;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["book-detail", variables.bookId],
+      });
+    },
+  });
+};
+
+export const useInitiatePurchase = () => {
+  return useMutation({
+    mutationFn: async (offerId: string) => {
+      const { data } = await axios.post<{
+        purchaseId: string;
+        price: number;
+        bookName: string;
+      }>("/book-purchases/initiate", { offerId });
+      return data;
     },
   });
 };

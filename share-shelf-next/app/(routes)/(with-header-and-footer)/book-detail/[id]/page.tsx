@@ -1,22 +1,37 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   useGetBookDetail,
   useCreateOffer,
   useToggleBookStatus,
   useCreateReview,
+  useVoteReview,
+  useInitiatePurchase,
 } from "./action";
+import type { BookOffer, BookReview } from "./action";
+import { ReviewCard } from "./ReviewCard";
 import { useGetProfile } from "@/app/(routes)/(with-header-and-footer)/profile/action";
-import type { BookOffer } from "./action";
 import Image from "next/image";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bookmark, Eye, Check, Star, BookOpen, Lock, Pen } from "lucide-react";
+import {
+  Bookmark,
+  Eye,
+  Check,
+  Star,
+  BookOpen,
+  Lock,
+  Pen,
+} from "lucide-react";
 import { toast } from "sonner";
+
+const ratingLabels = ["", "Poor", "Fair", "Good", "Great", "Excellent"];
+
+/* ─────────────────────────────── page ────────────────────────────────── */
 
 const BookDetail = () => {
   const params = useParams();
@@ -26,6 +41,9 @@ const BookDetail = () => {
   const createOffer = useCreateOffer();
   const toggleStatus = useToggleBookStatus();
   const createReview = useCreateReview();
+  const voteReview = useVoteReview();
+  const initiatePurchase = useInitiatePurchase();
+  const router = useRouter();
   const { data: profile } = useGetProfile();
 
   const [rating, setRating] = useState(0);
@@ -102,18 +120,15 @@ const BookDetail = () => {
     (o) => o.user.id === profile?.id,
   );
 
-  const reviews = data?.userBookReviews ?? [];
+  const reviews: BookReview[] = data?.userBookReviews ?? [];
   const alreadyReviewed = profile
-    ? reviews.some((r: any) => r.user.name === profile.name)
+    ? reviews.some((r) => r.user.id === profile.id)
     : false;
 
   const avgRating =
     reviews.length > 0
-      ? reviews.reduce((sum: number, r: any) => sum + r.rating, 0) /
-        reviews.length
+      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
       : 0;
-
-  const ratingLabels = ["", "Poor", "Fair", "Good", "Great", "Excellent"];
 
   return (
     <>
@@ -151,12 +166,7 @@ const BookDetail = () => {
                 tradeOffers.length === 0 &&
                 "No offers yet"}
             </p>
-            {hasActiveOffer ? (
-              <div className="text-sm font-medium text-green-600 bg-green-50 p-3 rounded-xl border border-green-200 mt-2">
-                You already have an active offer for this book. Check your
-                profile to manage it!
-              </div>
-            ) : (
+            {!hasActiveOffer && (
               <div className="flex gap-2">
                 <Button
                   className="bg-[#FF8D28] hover:bg-[#e67d1f] h-[51px] w-[133px] rounded-2xl"
@@ -309,7 +319,7 @@ const BookDetail = () => {
                   Traders ({tradeOffers.length})
                 </TabsTrigger>
                 <TabsTrigger value="Review" className="body-lg">
-                  Review
+                  Reviews {reviews.length > 0 && `(${reviews.length})`}
                 </TabsTrigger>
               </TabsList>
 
@@ -351,9 +361,42 @@ const BookDetail = () => {
                             </p>
                           </div>
                         </div>
-                        <span className="font-semibold text-[#FF8D28]">
-                          Rs. {offer.price}
-                        </span>
+                        <div className="flex items-center gap-4">
+                          <span className="font-semibold text-[#FF8D28]">
+                            Rs. {offer.price}
+                          </span>
+                          {offer.user.id !== profile?.id && (
+                            <Button
+                              size="sm"
+                              className="bg-[#FF8D28] hover:bg-[#e67d1f] rounded-lg h-8"
+                              onClick={() => {
+                                if (!profile) {
+                                  toast.error("Please log in to buy books.");
+                                  return;
+                                }
+                                initiatePurchase.mutate(offer.id, {
+                                  onSuccess: (data) => {
+                                    router.push(
+                                      `/topup?purchaseId=${data.purchaseId}&amount=${data.price}`,
+                                    );
+                                  },
+                                  onError: (error: any) => {
+                                    toast.error(
+                                      error?.response?.data?.message ||
+                                        "Failed to initiate purchase",
+                                    );
+                                  },
+                                });
+                              }}
+                              disabled={initiatePurchase.isPending}
+                            >
+                              {initiatePurchase.isPending &&
+                              initiatePurchase.variables === offer.id
+                                ? "Processing..."
+                                : "Buy"}
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -405,15 +448,16 @@ const BookDetail = () => {
                 )}
               </TabsContent>
 
-              {/* ── REVIEW TAB — redesigned ── */}
+              {/* ── REVIEW TAB ── */}
               <TabsContent value="Review">
                 <div className="py-8 space-y-8">
+
                   {/* ── Rating summary hero ── */}
                   {reviews.length > 0 && (
                     <div className="rounded-2xl border border-[#ebebdf] overflow-hidden">
                       <div className="grid grid-cols-[auto_1fr]">
                         {/* Left: big score */}
-                        <div className="flex flex-col items-center justify-center gap-2 px-10 py-8 bg-[#FF8D28] text-white">
+                        <div className="flex flex-col items-center justify-center gap-2 px-10 py-8 bg-gradient-to-br from-[#FF8D28] to-[#e67d1f] text-white">
                           <span className="text-6xl font-black leading-none tracking-tighter">
                             {avgRating.toFixed(1)}
                           </span>
@@ -432,10 +476,10 @@ const BookDetail = () => {
                         </div>
 
                         {/* Right: bar chart */}
-                        <div className="flex flex-col justify-center gap-2 px-8 py-6 bg-[#fafaf7]">
+                        <div className="flex flex-col justify-center gap-2.5 px-8 py-6 bg-[#fafaf7]">
                           {[5, 4, 3, 2, 1].map((s) => {
                             const count = reviews.filter(
-                              (r: any) => r.rating === s,
+                              (r) => r.rating === s,
                             ).length;
                             const pct = reviews.length
                               ? Math.round((count / reviews.length) * 100)
@@ -450,7 +494,7 @@ const BookDetail = () => {
                                 </div>
                                 <div className="flex-1 h-2 bg-[#ebebdf] rounded-full overflow-hidden">
                                   <div
-                                    className="h-full bg-[#FF8D28] rounded-full transition-all duration-500"
+                                    className="h-full bg-gradient-to-r from-[#FF8D28] to-[#e67d1f] rounded-full transition-all duration-700"
                                     style={{ width: `${pct}%` }}
                                   />
                                 </div>
@@ -481,18 +525,11 @@ const BookDetail = () => {
                       </div>
                     </div>
                   ) : alreadyReviewed ? (
-                    <div className="flex items-center gap-4 px-6 py-5 rounded-2xl bg-green-50 border border-green-100">
-                      <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-                        <Star className="w-4 h-4 fill-green-500 text-green-500" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-green-800">
-                          Review submitted
-                        </p>
-                        <p className="text-xs text-green-600 mt-0.5">
-                          Thanks for sharing your thoughts!
-                        </p>
-                      </div>
+                    <div className="flex items-center gap-3 px-5 py-4 rounded-xl bg-emerald-50 border border-emerald-200">
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <p className="text-sm font-medium text-emerald-700">
+                        You&apos;ve already reviewed this book — thanks!
+                      </p>
                     </div>
                   ) : !isCheckActive ? (
                     <div className="flex items-center gap-4 px-6 py-5 rounded-2xl border border-dashed border-[#FF8D28]/25 bg-[#fff9f4]">
@@ -514,7 +551,7 @@ const BookDetail = () => {
                     </div>
                   ) : (
                     /* ── Actual review form ── */
-                    <div className="rounded-2xl border border-[#ebebdf] overflow-hidden">
+                    <div className="rounded-2xl border border-[#ebebdf] overflow-hidden shadow-sm">
                       {/* Header bar */}
                       <div className="flex items-center gap-2.5 px-6 py-4 border-b border-[#ebebdf] bg-[#fafaf7]">
                         <div className="w-8 h-8 rounded-full bg-[#FF8D28]/10 flex items-center justify-center">
@@ -615,66 +652,26 @@ const BookDetail = () => {
 
                   {/* ── Reviews list ── */}
                   {reviews.length > 0 && (
-                    <div className="space-y-1">
+                    <div>
                       <div className="flex items-center justify-between mb-5">
-                        <h3 className="text-sm font-semibold text-white">
+                        <h3 className="text-base font-bold text-gray-900">
                           Reader Reviews
                         </h3>
-                        <span className="text-xs text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full font-medium">
+                        <span className="text-xs text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full font-medium">
                           {reviews.length} review
                           {reviews.length !== 1 ? "s" : ""}
                         </span>
                       </div>
 
-                      <div className="divide-y divide-[#f0f0e8]">
-                        {reviews.map((review: any, index: number) => (
-                          <div
-                            key={index}
-                            className="flex gap-4 py-6 first:pt-0"
-                          >
-                            {/* Avatar */}
-                            <div className="w-10 h-10 rounded-full bg-[#F7F8EE] border border-[#e8e9df] flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden">
-                              {review.user.avatar ? (
-                                <Image
-                                  src={review.user.avatar}
-                                  alt={review.user.name}
-                                  width={40}
-                                  height={40}
-                                  className="rounded-full object-cover"
-                                />
-                              ) : (
-                                <span className="text-white">
-                                  {review.user.name.charAt(0).toUpperCase()}
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Content */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between gap-3 mb-2">
-                                <p className="text-sm font-semibold text-white truncate">
-                                  {review.user.name}
-                                </p>
-                                {/* Stars grouped with label */}
-                                <div className="flex items-center gap-1.5 shrink-0">
-                                  <div className="flex gap-0.5">
-                                    {[1, 2, 3, 4, 5].map((s) => (
-                                      <Star
-                                        key={s}
-                                        className={`w-3.5 h-3.5 ${s <= review.rating ? "fill-[#FF8D28] text-[#FF8D28]" : "fill-gray-200 text-gray-200"}`}
-                                      />
-                                    ))}
-                                  </div>
-                                  <span className="text-[11px] font-semibold text-gray-400">
-                                    {review.rating}.0
-                                  </span>
-                                </div>
-                              </div>
-                              <p className="text-sm text-gray-600 leading-relaxed">
-                                {review.comment}
-                              </p>
-                            </div>
-                          </div>
+                      <div className="grid gap-4">
+                        {reviews.map((review) => (
+                          <ReviewCard
+                            key={review.id}
+                            review={review}
+                            bookId={id}
+                            canVote={!!profile}
+                            voteReview={voteReview}
+                          />
                         ))}
                       </div>
                     </div>

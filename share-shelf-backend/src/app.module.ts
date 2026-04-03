@@ -20,6 +20,9 @@ import { BookStatusModule } from './book-status/book-status.module';
 import { DashboardBookRequestsModule } from './dashboard-book-requests/dashboard-book-requests.module';
 import { BookReviewsModule } from './book-reviews/book-reviews.module';
 import { BookRequestsModule } from './book-requests/book-requests.module';
+import { BookPurchasesModule } from './book-purchases/book-purchases.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { DashboardPurchasesModule } from './dashboard-purchases/dashboard-purchases.module';
 
 @Module({
   imports: [
@@ -48,6 +51,9 @@ import { BookRequestsModule } from './book-requests/book-requests.module';
     DashboardBookRequestsModule,
     BookReviewsModule,
     BookRequestsModule,
+    BookPurchasesModule,
+    NotificationsModule,
+    DashboardPurchasesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

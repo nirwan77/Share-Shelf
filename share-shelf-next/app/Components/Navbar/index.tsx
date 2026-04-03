@@ -9,13 +9,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, User } from "lucide-react";
+import { LogOut, User, Bell } from "lucide-react";
+import { useGetNotifications, useMarkNotificationRead, useGetUnreadCount } from "./notifications-action";
 import { useContext } from "react";
 
 export const Navbar = () => {
   const router = useRouter();
   const { token } = useAuth();
   const { setAuthData } = useContext(AuthContext);
+
+  const { data: notifications } = useGetNotifications();
+  const { data: unreadCount } = useGetUnreadCount();
+  const markRead = useMarkNotificationRead();
 
   const handleLogout = () => {
     setAuthData(null);
@@ -60,35 +65,82 @@ export const Navbar = () => {
             </a>
           </div>
 
-          <div className="flex gap-6 justify-center">
+          <div className="flex gap-4 items-center justify-center">
             {token ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full hover:bg-gray-700"
+              <>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="relative rounded-full hover:bg-gray-700"
+                    >
+                      <Bell className="h-5 w-5 text-white" />
+                      {unreadCount && unreadCount.count > 0 && (
+                        <span className="absolute top-1 right-1 h-4 w-4 bg-red-500 rounded-full text-[10px] flex items-center justify-center text-white">
+                          {unreadCount.count}
+                        </span>
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-80 max-h-96 overflow-y-auto"
                   >
-                    <User className="h-5 w-5 text-white" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem
-                    onClick={() => router.push("/profile")}
-                    className="cursor-pointer"
-                  >
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="cursor-pointer"
-                    onClick={handleLogout}
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Logout</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    <div className="p-2 font-bold border-b text-sm">
+                      Notifications
+                    </div>
+                    {notifications?.length === 0 ? (
+                      <div className="p-4 text-center text-gray-500 text-sm">
+                        No notifications
+                      </div>
+                    ) : (
+                      notifications?.map((n) => (
+                        <DropdownMenuItem
+                          key={n.id}
+                          className={`cursor-pointer p-3 border-b flex flex-col items-start gap-1 ${
+                            !n.isRead ? "bg-blue-50" : ""
+                          }`}
+                          onClick={() => !n.isRead && markRead.mutate(n.id)}
+                        >
+                          <p className="text-xs">{n.message}</p>
+                          <span className="text-[10px] text-gray-400">
+                            {new Date(n.createdAt).toLocaleString()}
+                          </span>
+                        </DropdownMenuItem>
+                      ))
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-full hover:bg-gray-700"
+                    >
+                      <User className="h-5 w-5 text-white" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem
+                      onClick={() => router.push("/profile")}
+                      className="cursor-pointer"
+                    >
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      onClick={handleLogout}
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Logout</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
             ) : (
               <>
                 <Button

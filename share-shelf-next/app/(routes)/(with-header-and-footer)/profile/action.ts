@@ -87,3 +87,35 @@ export const useDeleteOffer = () => {
     },
   });
 };
+
+export const useUploadImage = () => {
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const { data } = await axios.post<{ url: string; public_id: string }>(
+        "/upload/image",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+      return data;
+    },
+  });
+};
+
+export const useUpdateAvatar = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (avatarUrl: string) => {
+      const { data } = await axios.patch("/profile/avatar", { avatarUrl });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+    },
+  });
+};

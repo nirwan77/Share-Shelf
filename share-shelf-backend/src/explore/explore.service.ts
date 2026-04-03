@@ -147,10 +147,15 @@ export class ExploreService {
         price: true,
         userBookReviews: {
           select: {
+            id: true,
             comment: true,
             rating: true,
-            user: { select: { name: true, avatar: true } },
+            upvotes: true,
+            downvotes: true,
+            createdAt: true,
+            user: { select: { id: true, name: true, avatar: true } },
           },
+          orderBy: { createdAt: 'desc' },
         },
         userBookStatuses: {
           select: {

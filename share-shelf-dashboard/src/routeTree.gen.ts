@@ -13,6 +13,7 @@ import { Route as WithLayoutRouteImport } from './routes/_withLayout'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as WithLayoutIndexRouteImport } from './routes/_withLayout/index'
 import { Route as WithLayoutUsersRouteImport } from './routes/_withLayout/users'
+import { Route as WithLayoutTransactionsRouteImport } from './routes/_withLayout/transactions'
 import { Route as WithLayoutBooksRouteImport } from './routes/_withLayout/books'
 import { Route as AuthSignInRouteImport } from './routes/_auth/sign-in'
 import { Route as WithLayoutBookRequestsIndexRouteImport } from './routes/_withLayout/book-requests/index'
@@ -33,6 +34,11 @@ const WithLayoutIndexRoute = WithLayoutIndexRouteImport.update({
 const WithLayoutUsersRoute = WithLayoutUsersRouteImport.update({
   id: '/users',
   path: '/users',
+  getParentRoute: () => WithLayoutRoute,
+} as any)
+const WithLayoutTransactionsRoute = WithLayoutTransactionsRouteImport.update({
+  id: '/transactions',
+  path: '/transactions',
   getParentRoute: () => WithLayoutRoute,
 } as any)
 const WithLayoutBooksRoute = WithLayoutBooksRouteImport.update({
@@ -56,6 +62,7 @@ export interface FileRoutesByFullPath {
   '/': typeof WithLayoutIndexRoute
   '/sign-in': typeof AuthSignInRoute
   '/books': typeof WithLayoutBooksRoute
+  '/transactions': typeof WithLayoutTransactionsRoute
   '/users': typeof WithLayoutUsersRoute
   '/book-requests/': typeof WithLayoutBookRequestsIndexRoute
 }
@@ -63,6 +70,7 @@ export interface FileRoutesByTo {
   '/': typeof WithLayoutIndexRoute
   '/sign-in': typeof AuthSignInRoute
   '/books': typeof WithLayoutBooksRoute
+  '/transactions': typeof WithLayoutTransactionsRoute
   '/users': typeof WithLayoutUsersRoute
   '/book-requests': typeof WithLayoutBookRequestsIndexRoute
 }
@@ -72,21 +80,35 @@ export interface FileRoutesById {
   '/_withLayout': typeof WithLayoutRouteWithChildren
   '/_auth/sign-in': typeof AuthSignInRoute
   '/_withLayout/books': typeof WithLayoutBooksRoute
+  '/_withLayout/transactions': typeof WithLayoutTransactionsRoute
   '/_withLayout/users': typeof WithLayoutUsersRoute
   '/_withLayout/': typeof WithLayoutIndexRoute
   '/_withLayout/book-requests/': typeof WithLayoutBookRequestsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/sign-in' | '/books' | '/users' | '/book-requests/'
+  fullPaths:
+    | '/'
+    | '/sign-in'
+    | '/books'
+    | '/transactions'
+    | '/users'
+    | '/book-requests/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/sign-in' | '/books' | '/users' | '/book-requests'
+  to:
+    | '/'
+    | '/sign-in'
+    | '/books'
+    | '/transactions'
+    | '/users'
+    | '/book-requests'
   id:
     | '__root__'
     | '/_auth'
     | '/_withLayout'
     | '/_auth/sign-in'
     | '/_withLayout/books'
+    | '/_withLayout/transactions'
     | '/_withLayout/users'
     | '/_withLayout/'
     | '/_withLayout/book-requests/'
@@ -127,6 +149,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WithLayoutUsersRouteImport
       parentRoute: typeof WithLayoutRoute
     }
+    '/_withLayout/transactions': {
+      id: '/_withLayout/transactions'
+      path: '/transactions'
+      fullPath: '/transactions'
+      preLoaderRoute: typeof WithLayoutTransactionsRouteImport
+      parentRoute: typeof WithLayoutRoute
+    }
     '/_withLayout/books': {
       id: '/_withLayout/books'
       path: '/books'
@@ -163,6 +192,7 @@ const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 interface WithLayoutRouteChildren {
   WithLayoutBooksRoute: typeof WithLayoutBooksRoute
+  WithLayoutTransactionsRoute: typeof WithLayoutTransactionsRoute
   WithLayoutUsersRoute: typeof WithLayoutUsersRoute
   WithLayoutIndexRoute: typeof WithLayoutIndexRoute
   WithLayoutBookRequestsIndexRoute: typeof WithLayoutBookRequestsIndexRoute
@@ -170,6 +200,7 @@ interface WithLayoutRouteChildren {
 
 const WithLayoutRouteChildren: WithLayoutRouteChildren = {
   WithLayoutBooksRoute: WithLayoutBooksRoute,
+  WithLayoutTransactionsRoute: WithLayoutTransactionsRoute,
   WithLayoutUsersRoute: WithLayoutUsersRoute,
   WithLayoutIndexRoute: WithLayoutIndexRoute,
   WithLayoutBookRequestsIndexRoute: WithLayoutBookRequestsIndexRoute,
