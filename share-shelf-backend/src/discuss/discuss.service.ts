@@ -1,45 +1,124 @@
 import { Injectable } from '@nestjs/common';
-
 import { PrismaService } from 'src/prisma.service';
+import {
+  FeedFilter,
+  FeedQueryDto,
+  FeedSortBy,
+  FeedTimeRange,
+} from './dto/feed-query.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class DiscussService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(sortBy: string, sortOrder: 'asc' | 'desc', userId: string) {
-    const orderBy =
-      sortBy === 'popular'
-        ? { mentions: { _count: sortOrder } }
-        : { createdAt: sortOrder };
+  async getFeed(query: FeedQueryDto, userId?: string) {
+    const { filter, timeRange, sortBy } = query;
 
-    const posts = await this.prisma.posts.findMany({
-      select: {
-        id: true,
-        _count: { select: { comments: true, reactions: true } },
-        content: true,
-        image: true,
-        createdByUser: {
-          select: {
-            id: true,
-            avatar: true,
-            name: true,
+    // Build the WHERE clause for Prisma
+    const where: Prisma.PostsWhereInput = {};
+
+    // 1. User-based filters
+    if (filter === FeedFilter.MY_POSTS) {
+      if (!userId) return [];
+      where.createdById = userId;
+    } else if (filter === FeedFilter.FOLLOWING) {
+      if (!userId) return [];
+      where.createdByUser = {
+        followers: {
+          some: {
+            followerId: userId,
           },
         },
-        title: true,
-        createdAt: true,
-        reactions: {
-          where: { userId },
-          select: { id: true },
+      };
+    }
+
+    // 2. Time-range filters
+    if (timeRange && timeRange !== FeedTimeRange.ALL_TIME) {
+      const now = new Date();
+      let startDate: Date;
+      switch (timeRange) {
+        case FeedTimeRange.TODAY:
+          startDate = new Date(now.setHours(0, 0, 0, 0));
+          break;
+        case FeedTimeRange.THIS_WEEK:
+          const oneWeekAgo = new Date(now);
+          oneWeekAgo.setDate(now.getDate() - 7);
+          startDate = oneWeekAgo;
+          break;
+        case FeedTimeRange.THIS_MONTH:
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          break;
+        case FeedTimeRange.THIS_YEAR:
+          startDate = new Date(now.getFullYear(), 0, 1);
+          break;
+        case FeedTimeRange.LAST_YEAR:
+          startDate = new Date(now.getFullYear() - 1, 0, 1);
+          break;
+      }
+      if (startDate) {
+        where.createdAt = { gte: startDate };
+      }
+    }
+
+    // 3. Sorting logic
+    // We use Prisma for common sorts (latest, most liked, etc.)
+
+    const select = {
+      id: true,
+      _count: { select: { comments: true, reactions: true } },
+      content: true,
+      image: true,
+      viewsCount: true,
+      createdByUser: {
+        select: {
+          id: true,
+          avatar: true,
+          name: true,
         },
       },
+      title: true,
+      createdAt: true,
+      reactions: {
+        where: { userId: userId || '' },
+        select: { id: true },
+      },
+    };
+
+    const orderByMapping: any = {
+      [FeedSortBy.LATEST]: { createdAt: 'desc' },
+      [FeedSortBy.MOST_COMMENTED]: { comments: { _count: 'desc' } },
+      [FeedSortBy.MOST_LIKED]: { reactions: { _count: 'desc' } },
+    };
+    const orderBy = orderByMapping[sortBy || FeedSortBy.LATEST] || {
+      createdAt: 'desc',
+    };
+
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 10;
+
+    const posts = await this.prisma.posts.findMany({
+      where,
+      select,
       orderBy,
+      skip: (page - 1) * limit,
+      take: limit,
     });
 
-    return posts.map((post) => ({
-      ...post,
-      isLikedByMe: post.reactions.length > 0,
-      reactions: undefined,
-    }));
+    const total = await this.prisma.posts.count({ where });
+
+    return {
+      posts: posts.map((post: any) => ({
+        ...post,
+        isLikedByMe: post.reactions.length > 0,
+        reactions: undefined,
+      })),
+      meta: {
+        total,
+        page,
+        limit,
+      },
+    };
   }
 
   async createPost(data: {
@@ -59,12 +138,19 @@ export class DiscussService {
   }
 
   async findOne(postId: string, currentUserId: string) {
+    await this.prisma.posts.update({
+      where: { id: postId },
+      data: { viewsCount: { increment: 1 } },
+    });
+
     const post = await this.prisma.posts.findUnique({
       where: { id: postId },
       select: {
         _count: { select: { comments: true, reactions: true } },
+        title: true,
         content: true,
         image: true,
+        viewsCount: true,
         createdByUser: { select: { id: true, avatar: true, name: true } },
         mentions: { select: { id: true, userId: true } },
         reactions: { select: { id: true, reaction: true, userId: true } },
@@ -80,22 +166,27 @@ export class DiscussService {
           orderBy: { createdAt: 'asc' },
         },
         createdAt: true,
+        createdById: true,
       },
     });
 
     if (!post) return null;
 
-    const isLikedByMe = post.reactions.some((r) => r.userId === currentUserId);
+    const isLikedByMe = (post as any).reactions.some(
+      (r: any) => r.userId === currentUserId,
+    );
 
     return {
       ...post,
       isLikedByMe,
-      comments: post.comments.map(({ postCommentReactions, ...comment }) => ({
-        ...comment,
-        isLikedByMe: postCommentReactions.some(
-          (r) => r.userId === currentUserId && r.reaction === 'like',
-        ),
-      })),
+      comments: (post as any).comments.map(
+        ({ postCommentReactions, ...comment }: any) => ({
+          ...comment,
+          isLikedByMe: postCommentReactions.some(
+            (r: any) => r.userId === currentUserId && r.reaction === 'like',
+          ),
+        }),
+      ),
     };
   }
 
@@ -163,9 +254,26 @@ export class DiscussService {
     return { action: 'added', reaction: newReaction };
   }
 
-  async deletePost(postId: string) {
+  async deletePost(postId: string, userId: string) {
     return this.prisma.posts.delete({
-      where: { id: postId },
+      where: {
+        id: postId,
+        createdById: userId,
+      },
+    });
+  }
+
+  async updatePost(
+    postId: string,
+    userId: string,
+    data: { title?: string; content?: string; image?: string },
+  ) {
+    return this.prisma.posts.update({
+      where: {
+        id: postId,
+        createdById: userId,
+      },
+      data,
     });
   }
 

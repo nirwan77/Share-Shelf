@@ -1,32 +1,58 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useGetPostData, useLikePost } from "./action";
+import { DiscussData, useDeletePost, useGetPostData, useLikePost } from "./action";
 import dayjs from "dayjs";
 import { useRouter } from "next/navigation";
+import { useGetProfile } from "@/app/(routes)/(with-header-and-footer)/profile/action";
+import { Trash2 } from "lucide-react";
 
 export default function SocialFeed() {
-  const [activeTab, setActiveTab] = useState("newest");
-  const [sortBy, setSortBy] = useState("Today");
+  const [activeTab, setActiveTab] = useState("latest");
+  const [timeRange, setTimeRange] = useState("all_time");
   const [liked, setLiked] = useState<Record<string, boolean>>({});
   const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
   const [postText, setPostText] = useState("");
+  const [page, setPage] = useState(1);
+  const [accumulatedPosts, setAccumulatedPosts] = useState<DiscussData["posts"]>([]);
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
 
-  const { data, isLoading, isError } = useGetPostData();
+  const { data, isLoading: queryLoading, isError } = useGetPostData({
+    sortBy: ["latest", "most_liked", "most_commented"].includes(activeTab) ? activeTab : undefined,
+    filter: ["my_posts", "following"].includes(activeTab) ? activeTab : undefined,
+    timeRange,
+    page,
+    limit: 10,
+  });
   const { mutateAsync } = useLikePost();
+  const { data: profile } = useGetProfile();
+  const { mutateAsync: deletePost } = useDeletePost();
 
   const { push } = useRouter();
 
   useEffect(() => {
-    if (!data) return;
-    const initialLiked: Record<string, boolean> = {};
-    const initialCounts: Record<string, number> = {};
-    data.forEach((post) => {
-      initialLiked[post.id] = post.isLikedByMe ?? false;
-      initialCounts[post.id] = post._count?.reactions ?? 0;
+    setPage(1);
+    setAccumulatedPosts([]);
+  }, [activeTab, timeRange]);
+
+  useEffect(() => {
+    if (!data?.posts) return;
+
+    setAccumulatedPosts((prev: DiscussData["posts"]) => {
+      // Avoid duplicates if React Query refetches the same page
+      const existingIds = new Set(prev.map((p) => p.id));
+      const newPosts = data.posts.filter((p) => !existingIds.has(p.id));
+      return [...prev, ...newPosts];
     });
-    setLiked(initialLiked);
-    setLikeCounts(initialCounts);
+
+    const newLiked: Record<string, boolean> = { ...liked };
+    const newCounts: Record<string, number> = { ...likeCounts };
+    data.posts.forEach((post) => {
+      newLiked[post.id] = post.isLikedByMe ?? false;
+      newCounts[post.id] = post._count?.reactions ?? 0;
+    });
+    setLiked(newLiked);
+    setLikeCounts(newCounts);
   }, [data]);
 
   const toggleLike = async (id: string) => {
@@ -49,20 +75,41 @@ export default function SocialFeed() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!deletingPostId) return;
+    try {
+      await deletePost(deletingPostId);
+      setAccumulatedPosts((prev) => prev.filter((p) => p.id !== deletingPostId));
+      setDeletingPostId(null);
+    } catch (err) {
+      console.error("Failed to delete post", err);
+      alert("Failed to delete post. Please try again.");
+    }
+  };
+
   const formatDate = (dateStr: string) => dayjs(dateStr).format("DD/MM/YYYY");
 
   const tabs = [
-    { id: "newest", label: "Newest and Recent", sub: "Find the latest posts" },
-    {
-      id: "popular",
-      label: "Popular of the day",
-      sub: "Check featured today by craters",
-    },
+    { id: "latest", label: "Newest and Recent", sub: "Find the latest posts" },
     {
       id: "following",
       label: "Following",
-      badge: 89,
-      sub: "Follow from your favorite persons",
+      sub: "Posts from people you follow",
+    },
+    {
+      id: "my_posts",
+      label: "My Posts",
+      sub: "Overview of your contributions",
+    },
+    {
+      id: "most_liked",
+      label: "Most Liked",
+      sub: "Posts with most reactions",
+    },
+    {
+      id: "most_commented",
+      label: "Most Commented",
+      sub: "Most active discussions",
     },
   ];
 
@@ -73,25 +120,19 @@ export default function SocialFeed() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border-none text-left transition-colors duration-200 cursor-pointer ${
-              activeTab === tab.id ? "bg-[#2e2e2e]" : "bg-transparent"
-            }`}
+            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border-none text-left transition-colors duration-200 cursor-pointer ${activeTab === tab.id ? "bg-[#2e2e2e]" : "bg-transparent"
+              }`}
           >
             <div
               className={`w-9 h-9 rounded-lg shrink-0 flex items-center justify-center ${activeTab === tab.id ? "bg-[#e8630a]" : "bg-[#3a3a3a]"}`}
             >
-              {tab.id === "newest" ? "🆕" : tab.id === "popular" ? "🔥" : "👥"}
+              {tab.id === "latest" ? "🆕" : tab.id === "following" ? "👥" : tab.id === "my_posts" ? "📝" : tab.id === "most_liked" ? "❤️" : "💬"}
             </div>
             <div className="flex-1">
               <div
                 className={`text-[11px] font-semibold flex items-center gap-1 ${activeTab === tab.id ? "text-white" : "text-[#aaa]"}`}
               >
                 {tab.label}
-                {tab.badge && (
-                  <span className="bg-[#e8630a] text-white rounded-full px-1 text-[9px] font-bold">
-                    {tab.badge}
-                  </span>
-                )}
               </div>
               <div className="text-[9px] text-[#666] mt-px">{tab.sub}</div>
             </div>
@@ -125,23 +166,25 @@ export default function SocialFeed() {
 
           <div className="flex justify-between items-center mb-3.5">
             <span className="text-[13px] text-[#888]">
-              {isLoading ? "Loading..." : `${data?.length} Results`}
+              {queryLoading && page === 1 ? "Loading..." : `${data?.meta?.total ?? 0} Results`}
             </span>
             <div className="flex items-center gap-2 text-[13px] text-[#aaa]">
-              Sort by:
+              Time Range:
               <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
+                value={timeRange}
+                onChange={(e) => setTimeRange(e.target.value)}
                 className="bg-[#2a2a2a] border border-[#444] text-[#e8630a] rounded-md px-2 py-1 text-[13px] cursor-pointer"
               >
-                <option>Today</option>
-                <option>This Week</option>
-                <option>This Month</option>
+                <option value="all_time">All Time</option>
+                <option value="today">Today</option>
+                <option value="this_week">This Week</option>
+                <option value="this_month">This Month</option>
+                <option value="this_year">This Year</option>
               </select>
             </div>
           </div>
 
-          {isLoading && (
+          {queryLoading && page === 1 && (
             <div className="text-[#666] text-[13px] text-center mt-10">
               Loading posts...
             </div>
@@ -152,9 +195,9 @@ export default function SocialFeed() {
             </div>
           )}
 
-          {!isLoading && !isError && (
+          {(!queryLoading || page > 1) && !isError && (
             <div className="flex flex-col gap-3.5">
-              {data?.map((post) => (
+              {accumulatedPosts.map((post) => (
                 <div
                   onClick={() => push(`/discuss/${post.id}`)}
                   key={post.id}
@@ -168,7 +211,7 @@ export default function SocialFeed() {
                     />
                   )}
 
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         {post.createdByUser?.avatar ? (
@@ -194,35 +237,91 @@ export default function SocialFeed() {
                       </div>
 
                       <div className="flex items-center gap-4 text-[12px] text-[#888]">
+                        {/* <span>{post.viewsCount.toLocaleString()} Views</span> */}
                         <span>
                           {(likeCounts[post.id] ?? 0).toLocaleString()} Likes
                         </span>
                         <span>{post._count?.comments ?? 0} comments</span>
+
+                        {profile?.id === post.createdByUser?.id && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              setDeletingPostId(post.id);
+                            }}
+                            className="bg-transparent border-none cursor-pointer text-[#666] hover:text-red-500 transition-colors"
+                            title="Delete post"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             e.preventDefault();
                             toggleLike(post.id);
                           }}
-                          className={`bg-transparent border-none cursor-pointer text-lg transition-all duration-200 ${
-                            liked[post.id]
-                              ? "text-[#e8630a] scale-125"
-                              : "text-[#555] scale-100"
-                          }`}
+                          className={`bg-transparent border-none cursor-pointer text-lg transition-all duration-200 ${liked[post.id]
+                            ? "text-[#e8630a] scale-125"
+                            : "text-[#555] scale-100"
+                            }`}
                         >
                           ♥
                         </button>
                       </div>
                     </div>
 
-                    <div className="mt-3 text-[13px] text-[#ccc] leading-relaxed">
-                      {post.content ?? ""}
+                    <div className="mt-3">
+                      <h3 className="text-[15px] font-bold text-white line-clamp-1 mb-1">
+                        {post.title}
+                      </h3>
+                      <p className="text-[13px] text-[#ccc] leading-relaxed line-clamp-2">
+                        {post.content ?? ""}
+                      </p>
                     </div>
                   </div>
                 </div>
               ))}
+
+              {(data?.meta?.total ?? 0) > accumulatedPosts.length && (
+                <button
+                  onClick={() => setPage((p: number) => p + 1)}
+                  disabled={queryLoading}
+                  className="mt-4 bg-[#2a2a2a] hover:bg-[#333] text-[#aaa] border border-[#333] rounded-xl py-2.5 text-sm transition-colors disabled:opacity-50"
+                >
+                  {queryLoading ? "Loading..." : "Load More"}
+                </button>
+              )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingPostId && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-[#242424] border border-[#333] rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in fade-in zoom-in duration-200">
+            <h3 className="text-lg font-bold text-white mb-2">Delete Post?</h3>
+            <p className="text-[#aaa] text-sm mb-6 leading-relaxed">
+              Are you sure you want to delete this post? This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeletingPostId(null)}
+                className="px-4 py-2 rounded-xl text-[13px] font-semibold text-[#888] hover:bg-[#2e2e2e] transition-colors bg-transparent border-none cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-6 py-2 rounded-xl text-[13px] font-semibold text-white bg-red-600 hover:bg-red-500 transition-colors border-none cursor-pointer"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -13,6 +13,8 @@ import {
   PaginationItem,
   PaginationLink,
 } from "@/components/ui/pagination";
+import { Button } from "@/components/ui/button";
+import RequestBookModal from "@/components/manual/RequestBookModal";
 
 export default function Explore() {
   const searchParams = useSearchParams();
@@ -23,6 +25,8 @@ export default function Explore() {
   const [publishedDate, setPublishedDate] = useState<string | undefined>();
   const [priceRange, setPriceRange] = useState<string | undefined>();
   const [categories, setCategories] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<string | undefined>();
+  const [requestModalOpen, setRequestModalOpen] = useState(false);
 
   useEffect(() => {
     const pageParam = searchParams.get("page");
@@ -36,6 +40,9 @@ export default function Explore() {
 
     const cats = searchParams.get("categories");
     setCategories(cats ? cats.split(",") : []);
+
+    const sort = searchParams.get("sortBy");
+    setSortBy(sort || undefined);
   }, [searchParams]);
 
   const limit = 12;
@@ -63,8 +70,12 @@ export default function Explore() {
       result.categories = categories;
     }
 
+    if (sortBy) {
+      result.sortBy = sortBy;
+    }
+
     return result;
-  }, [priceRange, publishedDate, categories]);
+  }, [priceRange, publishedDate, categories, sortBy]);
 
   const { data, isFetching } = useGetBooks(page, limit, filters);
   const totalPages = Math.ceil((data?.total ?? 0) / limit);
@@ -84,7 +95,7 @@ export default function Explore() {
 
     if (
       Object.keys(updates).some((key) =>
-        ["publishedDate", "priceRange", "categories"].includes(key),
+        ["publishedDate", "priceRange", "categories", "sortBy"].includes(key),
       )
     ) {
       params.delete("page");
@@ -104,7 +115,48 @@ export default function Explore() {
   return (
     <div className="pt-[138px] pb-20 container mx-auto grid grid-cols-12 gap-4">
       <div className="col-span-3">
-        <h2 className="heading-4 mb-6">Filters</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="heading-4">Filters</h2>
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-[#FF8D28] text-[#FF8D28] hover:bg-[#FF8D28] hover:text-white"
+            onClick={() => setRequestModalOpen(true)}
+          >
+            Request a Book
+          </Button>
+        </div>
+
+        <div className="border-t border-[#dbdcd2]">
+          <div className="flex items-center">
+            <h2 className="body-lg py-5 grow">Sort By</h2>
+            <button
+              className="text-sm"
+              onClick={() => {
+                setSortBy(undefined);
+                updateParams({ sortBy: null });
+              }}
+            >
+              Clear
+            </button>
+          </div>
+          <RadioGroup
+            key={sortBy ?? "none-sort"}
+            value={sortBy || ""}
+            onValueChange={(value) => {
+              setSortBy(value || undefined);
+              updateParams({ sortBy: value || null });
+            }}
+            className="space-y-2 mb-6"
+          >
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="price" id="sort-price" />
+              <Label className="cursor-pointer" htmlFor="sort-price">
+                Lowest offer price
+              </Label>
+            </div>
+          </RadioGroup>
+        </div>
 
         <div className="border-t border-[#dbdcd2]">
           <div className="flex items-center">
@@ -183,7 +235,7 @@ export default function Explore() {
           </RadioGroup>
         </div>
 
-        <div className="border-y pb-6 border-[#dbdcd2]">
+        {/* <div className="border-y pb-6 border-[#dbdcd2]">
           <div className="flex items-center">
             <h2 className="body-lg py-5 grow">Price</h2>
             <button
@@ -220,7 +272,7 @@ export default function Explore() {
               </div>
             ))}
           </RadioGroup>
-        </div>
+        </div> */}
       </div>
 
       <div className="col-start-4 col-span-9">
@@ -233,6 +285,9 @@ export default function Explore() {
               name={book.name}
               price={book.price}
               src={book.image}
+              lowestPrice={book.lowestPrice}
+              sellCount={book.sellCount}
+              tradeCount={book.tradeCount}
             />
           ))}
         </div>
@@ -300,6 +355,11 @@ export default function Explore() {
           </div>
         )}
       </div>
+
+      <RequestBookModal
+        open={requestModalOpen}
+        onClose={() => setRequestModalOpen(false)}
+      />
     </div>
   );
 }

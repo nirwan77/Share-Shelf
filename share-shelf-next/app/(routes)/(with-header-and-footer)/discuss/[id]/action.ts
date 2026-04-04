@@ -24,13 +24,16 @@ export interface Reaction {
 
 export interface Post {
   content: string;
+  title: string;
   image: string | null;
   createdAt: string;
+  createdById: string;
   createdByUser: PostUser;
   reactions: Reaction[];
   mentions: { id: string; userId: string }[];
   _count: { comments: number; reactions: number };
   isLikedByMe: boolean;
+  viewsCount: number;
 }
 
 export const fetchPost = async (id: string): Promise<Post> => {
@@ -68,6 +71,37 @@ export const useAddComment = (postId: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["comments", postId] });
+      queryClient.invalidateQueries({ queryKey: ["post", postId] });
+    },
+  });
+};
+
+export const useUpdatePost = (postId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: {
+      title?: string;
+      content?: string;
+      image?: File | string | null;
+    }) => {
+      let imageUrl = data.image;
+
+      if (data.image instanceof File) {
+        const formData = new FormData();
+        formData.append("file", data.image);
+        const { data: uploadData } = await axios.post("/upload/image", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        imageUrl = uploadData.url;
+      }
+
+      const { data: updatedPost } = await axios.post(`/discuss/${postId}/update`, {
+        ...data,
+        image: imageUrl,
+      });
+      return updatedPost;
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["post", postId] });
     },
   });

@@ -1,10 +1,10 @@
 "use client";
 
 import Marquee from "react-fast-marquee";
-import { useGetChoices } from "../../action";
+import { useGetFeatured } from "../../action";
 import { BookImage } from "@/components/manual/bookImage";
 export const Choices = () => {
-  const { data } = useGetChoices();
+  const { data } = useGetFeatured();
 
   return (
     <>

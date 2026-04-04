@@ -1,12 +1,14 @@
 "use client";
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useVerifyPayment } from "./action";
+import { useVerifyPayment, useCompletePurchase } from "./action";
 import { Button } from "@/components/ui/button";
 
 export default function PaymentSuccessPage() {
   const searchParams = useSearchParams();
   const verifyPayment = useVerifyPayment();
+  const purchaseId = searchParams.get("purchaseId");
+  const completePurchase = useCompletePurchase();
   const { push } = useRouter();
 
   useEffect(() => {
@@ -16,15 +18,26 @@ export default function PaymentSuccessPage() {
     const decoded = JSON.parse(atob(base64Response));
 
     const timer = setTimeout(() => {
-      verifyPayment.mutate(decoded);
-    }, 3000);
+      if (purchaseId) {
+        completePurchase.mutate({ purchaseId, payload: decoded });
+      } else {
+        verifyPayment.mutate(decoded);
+      }
+    }, 2000);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [purchaseId]);
 
   return (
     <div className="flex items-center flex-col gap-4 justify-center h-screen">
-      <h1 className="text-2xl font-semibold">Payment Successful</h1>
+      <h1 className="text-2xl font-semibold">
+        {purchaseId ? "Purchase Successful!" : "Payment Successful!"}
+      </h1>
+      {purchaseId && (
+        <p className="text-gray-500">
+          Your book has been purchased successfully.
+        </p>
+      )}
       <div>
         <Button
           onClick={() => push("/")}

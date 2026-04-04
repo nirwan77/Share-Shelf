@@ -1,4 +1,10 @@
-import { Choices, Connect, Hero, PopularBooks } from "./components";
+import {
+  Choices,
+  Connect,
+  Hero,
+  PopularBooks,
+  FeaturedBooks,
+} from "./components";
 
 export default function Home() {
   return (

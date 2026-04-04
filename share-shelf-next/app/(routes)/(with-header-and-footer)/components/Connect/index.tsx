@@ -5,16 +5,20 @@ const data = [
     tag: "Buy",
     title: "Buy books from community",
     img: "/buy.jpg",
+    link: "/explore"
   },
   {
     tag: "Exchange",
     title: "Exchange books with readers",
     img: "/exchange.jpg",
+    link: "/explore"
+
   },
   {
     tag: "Discuss",
     title: "Join community discussions",
     img: "/discuss.jpg",
+    link: "/discuss"
   },
 ];
 
@@ -32,6 +36,7 @@ export const Connect = () => {
       <div className="grid grid-cols-3 gap-8">
         {data.map((item, idx) => (
           <BookCard
+            link={item.link}
             tag={item.tag}
             img={item.img}
             title={item.title}

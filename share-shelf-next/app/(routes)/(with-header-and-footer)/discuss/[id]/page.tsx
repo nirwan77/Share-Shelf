@@ -11,6 +11,12 @@ import {
   usePost,
 } from "./action";
 import { useQueryClient } from "@tanstack/react-query";
+import { useDeletePost } from "../action";
+import { useGetProfile } from "../../profile/action";
+import { Trash2, Edit2, X, Check, Image as ImageIcon, Upload } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useUpdatePost } from "./action";
+import { useRef, ChangeEvent } from "react";
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -91,6 +97,30 @@ function CommentIcon() {
   );
 }
 
+function EyeIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={2}
+      stroke="currentColor"
+      className="w-4 h-4"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M2.036 12.322a1.012 1.012 0 010-.644C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+      />
+    </svg>
+  );
+}
+
 function CommentItem({
   comment,
   postId,
@@ -148,11 +178,10 @@ function CommentItem({
         <button
           onClick={handleLike}
           disabled={likeComment.isPending}
-          className={`mt-1.5 flex items-center gap-1 text-xs transition-colors disabled:opacity-50 ${
-            comment.isLikedByMe
-              ? "text-red-400"
-              : "text-zinc-500 hover:text-red-400"
-          }`}
+          className={`mt-1.5 flex items-center gap-1 text-xs transition-colors disabled:opacity-50 ${comment.isLikedByMe
+            ? "text-red-400"
+            : "text-zinc-500 hover:text-red-400"
+            }`}
         >
           <HeartIcon filled={comment.isLikedByMe} />
           {reactionCount > 0 && <span>{reactionCount}</span>}
@@ -188,7 +217,23 @@ export default function PostPage() {
     useComments(postId);
   const likePost = useLikePost();
   const addComment = useAddComment(postId);
+
   const [commentInput, setCommentInput] = useState("");
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
+  const [editImage, setEditImage] = useState<File | string | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const router = useRouter();
+  const { data: profile } = useGetProfile();
+  const { mutateAsync: deletePost, isPending: isDeleting } = useDeletePost();
+  const {
+    mutateAsync: updatePost,
+    isPending: isUpdating,
+  } = useUpdatePost(postId);
 
   const handleLike = () => {
     queryClient.setQueryData(["post", postId], (old: Post | undefined) => {
@@ -210,6 +255,54 @@ export default function PostPage() {
     });
   };
 
+  const handleUpdate = async () => {
+    if (!editTitle.trim()) return;
+    try {
+      await updatePost({
+        title: editTitle,
+        content: editContent,
+        image: editImage
+      });
+      setIsEditing(false);
+      setPreview(null);
+    } catch (err) {
+      console.error("Failed to update post", err);
+      alert("Failed to update post. Please try again.");
+    }
+  };
+
+  const startEditing = () => {
+    if (!post) return;
+    setEditTitle(post.title);
+    setEditContent(post.content || "");
+    setEditImage(post.image || null);
+    setPreview(null);
+    setIsEditing(true);
+  };
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      setEditImage(file);
+      setPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const removeImage = () => {
+    setEditImage(null);
+    setPreview(null);
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deletePost(postId);
+      router.push("/discuss");
+    } catch (err) {
+      console.error("Failed to delete post", err);
+      alert("Failed to delete post. Please try again.");
+    }
+  };
+
   const submitComment = () => {
     if (!commentInput.trim() || addComment.isPending) return;
     addComment.mutate(commentInput.trim(), {
@@ -226,6 +319,12 @@ export default function PostPage() {
 
   const isLiked = post?.isLikedByMe ?? false;
   const isLoading = postLoading || commentsLoading;
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const truncatedContent =
+    post?.content && post.content.length > 500 && !isExpanded
+      ? post.content.slice(0, 500) + "..."
+      : post?.content;
 
   return (
     <div className="pt-16 container mx-auto">
@@ -248,30 +347,131 @@ export default function PostPage() {
               </p>
               <p className="text-xs text-zinc-500">{timeAgo(post.createdAt)}</p>
             </div>
+
+            <div className="ml-auto flex gap-1">
+              {profile?.id === post.createdByUser.id && (
+                <>
+                  <button
+                    onClick={startEditing}
+                    className="p-2 text-zinc-500 hover:text-[#e8630a] transition-colors bg-transparent border-none cursor-pointer"
+                    title="Edit post"
+                  >
+                    <Edit2 size={18} />
+                  </button>
+                  <button
+                    onClick={() => setIsDeleteModalOpen(true)}
+                    className="p-2 text-zinc-500 hover:text-red-400 transition-colors bg-transparent border-none cursor-pointer"
+                    title="Delete post"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
           <div className="px-4 pb-3">
-            <p className="text-sm text-zinc-200 leading-relaxed">
-              {post.content}
-            </p>
+            {isEditing ? (
+              <div className="space-y-3">
+                <div className="relative group/image">
+                  {editImage ? (
+                    <div className="relative rounded-xl overflow-hidden bg-zinc-800 border border-zinc-700">
+                      <img
+                        src={preview || (typeof editImage === 'string' ? editImage : '')}
+                        alt="preview"
+                        className="w-full h-auto max-h-[300px] object-contain"
+                      />
+                      <button
+                        onClick={removeImage}
+                        className="absolute top-2 right-2 p-2 bg-red-600/80 hover:bg-red-600 text-white rounded-full transition-colors shadow-lg border-none cursor-pointer"
+                        title="Remove image"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full h-32 rounded-xl border-2 border-dashed border-zinc-700 hover:border-[#e8630a] bg-zinc-800 flex flex-col items-center justify-center gap-2 text-zinc-500 hover:text-[#e8630a] transition-all cursor-pointer group"
+                    >
+                      <Upload size={24} className="group-hover:scale-110 transition-transform" />
+                      <span className="text-xs font-semibold">Add Image</span>
+                    </button>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </div>
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-lg font-bold text-white outline-none focus:border-[#e8630a] transition-colors"
+                  placeholder="Post title"
+                />
+                <textarea
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-200 leading-relaxed outline-none focus:border-[#e8630a] transition-colors min-h-[150px] resize-y"
+                  placeholder="What's on your mind?"
+                />
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => setIsEditing(false)}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-500 hover:bg-zinc-800 transition-colors bg-transparent border-none cursor-pointer flex items-center gap-1.5"
+                  >
+                    <X size={14} /> Cancel
+                  </button>
+                  <button
+                    onClick={handleUpdate}
+                    disabled={isUpdating}
+                    className="px-6 py-2 rounded-xl text-xs font-semibold text-white bg-[#e8630a] hover:bg-[#ff7a21] transition-colors border-none cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <Check size={14} /> {isUpdating ? "Saving..." : "Save Changes"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <h1 className="text-xl font-bold text-white mb-3">{post.title}</h1>
+                <p className="text-sm text-zinc-200 leading-relaxed whitespace-pre-wrap">
+                  {truncatedContent}
+                </p>
+                {post.content && post.content.length > 500 && (
+                  <button
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="text-blue-400 hover:text-blue-300 text-xs font-semibold mt-2 bg-transparent border-none cursor-pointer"
+                  >
+                    {isExpanded ? "See Less" : "See More"}
+                  </button>
+                )}
+              </>
+            )}
           </div>
 
-          {post.image && (
+          {!isEditing && post.image && (
             <div className="px-4 pb-3">
               <img
                 src={post.image}
                 alt="post"
-                className="rounded-xl w-full object-cover max-h-96"
+                className="rounded-xl w-full h-auto max-h-[600px] object-contain bg-zinc-900/50"
               />
             </div>
           )}
 
           <div className="flex items-center gap-4 px-4 pb-4 pt-1 border-b border-zinc-800">
+            <div className="flex items-center gap-1.5 text-sm text-zinc-500">
+              {/* <EyeIcon />
+              <span>{post.viewsCount.toLocaleString()}</span> */}
+            </div>
             <button
               onClick={handleLike}
-              className={`flex items-center gap-1.5 text-sm transition-colors ${
-                isLiked ? "text-red-400" : "text-zinc-500 hover:text-red-400"
-              }`}
+              className={`flex items-center gap-1.5 text-sm transition-colors ${isLiked ? "text-red-400" : "text-zinc-500 hover:text-red-400"
+                }`}
             >
               <HeartIcon filled={isLiked} />
               <span>{post._count.reactions}</span>
@@ -312,6 +512,33 @@ export default function PostPage() {
             {comments.map((comment) => (
               <CommentItem key={comment.id} comment={comment} postId={postId} />
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in fade-in zoom-in duration-200">
+            <h3 className="text-lg font-bold text-white mb-2">Delete Post?</h3>
+            <p className="text-zinc-400 text-sm mb-6 leading-relaxed">
+              Are you sure you want to delete this post? This action cannot be undone and will remove all associated comments.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="px-4 py-2 rounded-xl text-[13px] font-semibold text-zinc-500 hover:bg-zinc-800 transition-colors bg-transparent border-none cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="px-6 py-2 rounded-xl text-[13px] font-semibold text-white bg-red-600 hover:bg-red-500 transition-colors border-none cursor-pointer disabled:opacity-50"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -11,12 +11,48 @@ export class ProfileService {
     return this.prisma.user.findUniqueOrThrow({
       where: { id },
       select: {
+        id: true,
         avatar: true,
         money: true,
         email: true,
         isVerified: true,
         name: true,
+        userBookStatuses: {
+          select: {
+            status: true,
+            book: {
+              select: {
+                id: true,
+                name: true,
+                author: true,
+                image: true,
+              },
+            },
+          },
+        },
+        userBookReviews: {
+          select: {
+            id: true,
+            rating: true,
+            comment: true,
+            createdAt: true,
+            book: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+              },
+            },
+          },
+        },
       },
+    });
+  }
+
+  async updateAvatar(userId: string, avatarUrl: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { avatar: avatarUrl },
     });
   }
 }
