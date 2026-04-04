@@ -6,6 +6,7 @@ import dayjs from "dayjs";
 import { useRouter } from "next/navigation";
 import { useGetProfile } from "@/app/(routes)/(with-header-and-footer)/profile/action";
 import { Trash2 } from "lucide-react";
+import Link from "next/link";
 
 export default function SocialFeed() {
   const [activeTab, setActiveTab] = useState("latest");
@@ -213,7 +214,11 @@ export default function SocialFeed() {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
+                      <Link
+                        href={`/user/${post.createdByUser.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-2 group/user"
+                      >
                         {post.createdByUser?.avatar ? (
                           <img
                             src={post.createdByUser.avatar}
@@ -227,14 +232,14 @@ export default function SocialFeed() {
                           </div>
                         )}
                         <div>
-                          <div className="text-[13px] font-semibold text-white">
+                          <div className="text-[13px] font-semibold text-white group-hover/user:text-[#e8630a] transition-colors">
                             {post.createdByUser?.name ?? "Unknown"}
                           </div>
                           <div className="text-[10px] text-[#666]">
                             {formatDate(post.createdAt)}
                           </div>
                         </div>
-                      </div>
+                      </Link>
 
                       <div className="flex items-center gap-4 text-[12px] text-[#888]">
                         {/* <span>{post.viewsCount.toLocaleString()} Views</span> */}

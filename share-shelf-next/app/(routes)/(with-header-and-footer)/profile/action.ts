@@ -8,6 +8,11 @@ export interface ProfileData {
   isVerified: string;
   name: string;
   money: true;
+  _count: {
+    followers: number;
+    following: number;
+  };
+  isFollowing?: boolean;
   userBookStatuses: Array<{
     status: "READING" | "PLAN_TO_READ" | "READ";
     book: {
@@ -128,5 +133,94 @@ export const useUpdateAvatar = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profile"] });
     },
+  });
+};
+
+export const useGetUserProfile = (id: string) => {
+  return useQuery({
+    queryKey: ["profile", id],
+    queryFn: async () => {
+      const { data } = await axios.get<ProfileData>(`/profile/${id}`);
+      return data;
+    },
+    enabled: !!id,
+  });
+};
+
+export const useFollowUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await axios.post(`/profile/follow/${id}`);
+      return data;
+    },
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ["profile", id] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+    },
+  });
+};
+
+export const useUnfollowUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await axios.delete(`/profile/follow/${id}`);
+      return data;
+    },
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ["profile", id] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+    },
+  });
+};
+
+export interface FollowData {
+  follower?: { id: string; name: string; avatar: string };
+  following?: { id: string; name: string; avatar: string };
+}
+
+export const useGetFollowers = (id: string) => {
+  return useQuery({
+    queryKey: ["followers", id],
+    queryFn: async () => {
+      const { data } = await axios.get<FollowData[]>(`/profile/${id}/followers`);
+      return data;
+    },
+    enabled: !!id,
+  });
+};
+
+export const useGetFollowing = (id: string) => {
+  return useQuery({
+    queryKey: ["following", id],
+    queryFn: async () => {
+      const { data } = await axios.get<FollowData[]>(`/profile/${id}/following`);
+      return data;
+    },
+    enabled: !!id,
+  });
+};
+
+export interface SearchUserData {
+  id: string;
+  name: string;
+  avatar: string;
+  _count: {
+    followers: number;
+    following: number;
+  };
+}
+
+export const useSearchUsers = (query: string) => {
+  return useQuery({
+    queryKey: ["search-users", query],
+    queryFn: async () => {
+      const { data } = await axios.get<SearchUserData[]>(`/profile/search/users`, {
+        params: { q: query },
+      });
+      return data;
+    },
+    enabled: !!query,
   });
 };

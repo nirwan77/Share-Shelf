@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
 import RequestBookModal from "@/components/manual/RequestBookModal";
+import { Search } from "lucide-react";
 
 export default function Explore() {
   const searchParams = useSearchParams();
@@ -26,6 +27,7 @@ export default function Explore() {
   const [priceRange, setPriceRange] = useState<string | undefined>();
   const [categories, setCategories] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<string | undefined>();
+  const [search, setSearch] = useState<string | undefined>();
   const [requestModalOpen, setRequestModalOpen] = useState(false);
 
   useEffect(() => {
@@ -43,6 +45,9 @@ export default function Explore() {
 
     const sort = searchParams.get("sortBy");
     setSortBy(sort || undefined);
+
+    const searchText = searchParams.get("search");
+    setSearch(searchText || undefined);
   }, [searchParams]);
 
   const limit = 12;
@@ -74,8 +79,12 @@ export default function Explore() {
       result.sortBy = sortBy;
     }
 
+    if (search) {
+      result.search = search;
+    }
+
     return result;
-  }, [priceRange, publishedDate, categories, sortBy]);
+  }, [priceRange, publishedDate, categories, sortBy, search]);
 
   const { data, isFetching } = useGetBooks(page, limit, filters);
   const totalPages = Math.ceil((data?.total ?? 0) / limit);
@@ -276,7 +285,38 @@ export default function Explore() {
       </div>
 
       <div className="col-start-4 col-span-9">
-        <div className="grid grid-cols-3 gap-4">
+        <div className="mb-8 relative group">
+          <input
+            type="text"
+            value={search || ""}
+            onChange={(e) => {
+              const val = e.target.value;
+              setSearch(val);
+              // We could debounce here, but for now let's just update the state
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                updateParams({ search: e.currentTarget.value });
+              }
+            }}
+            placeholder="Search books by title or author..."
+            className="w-full bg-gray-900 border border-gray-800 text-white rounded-2xl py-4 pl-14 pr-4 focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all shadow-sm text-lg placeholder:text-gray-500"
+          />
+          <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-orange-500 transition-colors w-6 h-6" />
+          {search && (
+            <button 
+              onClick={() => {
+                setSearch(undefined);
+                updateParams({ search: null });
+              }}
+              className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white font-medium text-sm transition-colors"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {(data?.data ?? []).map((book) => (
             <ExploreCard
               link={`book-detail/${book.id}`}

@@ -3,17 +3,18 @@
 import BookCard from "@/components/manual/card";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
-import { useGetProfile } from "../../action";
+import { useGetProfile, type ProfileData } from "../../action";
 import Link from "next/link";
 
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 
-export const Library = () => {
-  const { data, isLoading } = useGetProfile();
+export const Library = ({ userProfile }: { userProfile?: ProfileData }) => {
+  const { data: ownData, isLoading } = useGetProfile();
+  const data = userProfile || ownData;
 
-  if (isLoading) return <div className="py-4">Loading your library...</div>;
+  if (isLoading && !userProfile) return <div className="py-4">Loading your library...</div>;
 
   const statuses = data?.userBookStatuses || [];
   const reading = statuses.filter((s) => s.status === "READING");
@@ -54,18 +55,18 @@ export const Library = () => {
 
   return (
     <div className="mt-6">
-      <h2 className="heading-4 mb-4">
-        Reading <span className="text-gray-400">- {reading.length} books</span>
+      <h2 className="text-2xl font-bold text-white mb-4">
+        Reading <span className="text-gray-500 font-medium ml-2">- {reading.length} books</span>
       </h2>
       {renderSwiper(reading)}
 
-      <h2 className="heading-4 mb-4 mt-6">
-        Read <span className="text-gray-400">- {read.length} books</span>
+      <h2 className="text-2xl font-bold text-white mb-4 mt-10">
+        Read <span className="text-gray-500 font-medium ml-2">- {read.length} books</span>
       </h2>
       {renderSwiper(read)}
 
-      <h2 className="heading-4 mb-4 mt-6">
-        To Read <span className="text-gray-400">- {toRead.length} books</span>
+      <h2 className="text-2xl font-bold text-white mb-4 mt-10">
+        To Read <span className="text-gray-500 font-medium ml-2">- {toRead.length} books</span>
       </h2>
       {renderSwiper(toRead)}
     </div>
