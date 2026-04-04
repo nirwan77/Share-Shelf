@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LogOut, User, Bell } from "lucide-react";
 import { useGetNotifications, useMarkNotificationRead, useGetUnreadCount } from "./notifications-action";
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useGetProfile } from "@/app/(routes)/(with-header-and-footer)/profile/action";
 import Image from "next/image";
 
@@ -24,6 +24,12 @@ export const Navbar = () => {
   const { data: unreadCount } = useGetUnreadCount();
   const markRead = useMarkNotificationRead();
   const { data: profile } = useGetProfile();
+
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLogout = () => {
     setAuthData(null);
@@ -69,7 +75,7 @@ export const Navbar = () => {
           </div>
 
           <div className="flex gap-4 items-center justify-center">
-            {token ? (
+            {!mounted ? null : token ? (
               <>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

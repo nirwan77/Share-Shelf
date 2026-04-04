@@ -4,50 +4,63 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Autoplay, EffectFade, Pagination } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/effect-fade";
 import "swiper/css/pagination";
-import { useGetFeatured } from "../../action";
+import { useEffect, useState } from "react";
 
 export const Hero = () => {
   const router = useRouter();
   const { token } = useAuth();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
-    <div className="h-dvh relative bg-cover flex justify-center items-center">
-      <Image
-        src={"/heroImage.jpg"}
-        alt="a"
-        className="absolute top-0 left-0 h-dvh w-full z-0"
-        height={1800}
-        width={1800}
-      />
-      <div className="relative z-10">
-        <h1 className="heading-1 text-center text-white">SHARE SHELF</h1>
-        <p className="max-w-[649px] text-white text-center">
+    <div className="h-dvh relative flex justify-center items-center overflow-hidden">
+      <div className="absolute inset-0 z-0">
+        <Image
+          src="/heroImage.jpg"
+          alt="Hero background"
+          fill
+          priority
+          className="object-cover"
+          sizes="100vw"
+        />
+        <div className="absolute inset-0 bg-black/50 z-[1]" />
+      </div>
+
+      <div className="relative z-10 px-4">
+        <h1 className="heading-1 text-center text-white drop-shadow-lg mb-4">
+          SHARE SHELF
+        </h1>
+        <p className="max-w-[649px] text-white text-center text-lg md:text-xl drop-shadow-md mx-auto">
           Discover a world where books connect readers. Exchange, buy, and
           explore new literary landscapes with passionate book lovers.
         </p>
-        <div className="flex gap-6 mt-12 justify-center">
-          {token ? (
-            <Button onClick={() => router.push("/")} className="bg-gray-500">
+        <div className="flex flex-col sm:flex-row gap-6 mt-12 justify-center items-center">
+          {!mounted ? null : token ? (
+            <Button
+              onClick={() => router.push("/explore")}
+              className="bg-orange-400 hover:bg-orange-500 text-white min-w-[160px] h-12 text-lg font-semibold rounded-full transition-all"
+            >
               Explore
             </Button>
           ) : (
             <>
               <Button
                 onClick={() => router.push("/sign-up")}
-                className="bg-gray-500"
+                className="bg-orange-400 hover:bg-orange-500 text-white min-w-[160px] h-12 text-lg font-semibold rounded-full transition-all"
               >
                 Join for free
               </Button>
               <Button
                 onClick={() => router.push("/login")}
-                className="hover:bg-gray-800"
+                className="bg-transparent border-2 border-white hover:bg-white hover:text-black text-white min-w-[160px] h-12 text-lg font-semibold rounded-full transition-all"
               >
-                login
+                Log in
               </Button>
             </>
           )}

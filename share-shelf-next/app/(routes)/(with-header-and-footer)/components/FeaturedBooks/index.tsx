@@ -15,6 +15,7 @@ export const FeaturedBooks = () => {
       <div className="grid grid-cols-3 gap-8 text-start">
         {data?.map((item, idx) => (
           <BookCard
+            id={item.id}
             isPopularBook={false}
             img={item.image}
             key={idx}

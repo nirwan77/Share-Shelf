@@ -1,35 +1,44 @@
 import Image from "next/image";
+import Link from "next/link";
 import { twMerge } from "tailwind-merge";
 
 const BookCard = ({
+  id,
   img,
   tag,
   title,
   isPopularBook = false,
 }: {
+  id?: string;
   img: string;
   tag: string;
   title: string;
   isPopularBook?: boolean;
 }) => {
-  return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer">
+  const content = (
+    <div className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
       <div className="relative w-full h-[432px]">
-        <Image src={img} alt="Books" fill style={{ objectFit: "cover" }} />
+        <Image src={img} alt={title} fill style={{ objectFit: "cover" }} />
       </div>
       <div className="p-6 text-black">
         <p className="tag font-bold mb-2">{tag}</p>
-        <h2
+        <h3
           className={twMerge(
             isPopularBook ? "heading-4" : "heading-3",
             "font-medium tracking-tighter",
           )}
         >
           {title}
-        </h2>
+        </h3>
       </div>
     </div>
   );
+
+  if (id) {
+    return <Link href={`/book-detail/${id}`}>{content}</Link>;
+  }
+
+  return content;
 };
 
 export default BookCard;
