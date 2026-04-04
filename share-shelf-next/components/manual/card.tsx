@@ -8,12 +8,14 @@ const BookCard = ({
   tag,
   title,
   isPopularBook = false,
+  link,
 }: {
   id?: string;
   img: string;
   tag: string;
   title: string;
   isPopularBook?: boolean;
+  link?: string;
 }) => {
   const content = (
     <div className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
@@ -36,6 +38,10 @@ const BookCard = ({
 
   if (id) {
     return <Link href={`/book-detail/${id}`}>{content}</Link>;
+  }
+
+  if (link) {
+    return <Link href={link}>{content}</Link>;
   }
 
   return content;

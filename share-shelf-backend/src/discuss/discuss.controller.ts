@@ -15,7 +15,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { DiscussService } from './discuss.service';
-import { GetDashboardUserReqObject, JwtHeaderAuthGuard } from 'src/shared';
+import { GetDashboardUserReqObject, JwtHeaderAuthGuard, JwtOptionalAuthGuard } from 'src/shared';
+import { FeedQueryDto } from './dto/feed-query.dto';
 
 @ApiTags('discussions')
 @Controller('discuss')
@@ -23,33 +24,17 @@ export class DiscussController {
   constructor(private readonly discussService: DiscussService) {}
 
   @Get()
-  @ApiQuery({
-    name: 'sortBy',
-    required: false,
-    type: String,
-    enum: ['popular', 'recent'],
-    description: 'Sort by popularity or creation date',
-  })
-  @ApiQuery({
-    name: 'sortOrder',
-    required: false,
-    type: String,
-    enum: ['asc', 'desc'],
-    description: 'Sort order',
-  })
-  async findAll(
+  @UseGuards(JwtOptionalAuthGuard)
+  @ApiOperation({ summary: 'Get the discussion feed with filtering and sorting' })
+  async getFeed(
     @GetDashboardUserReqObject('id') userId: string,
-    @Query('sortBy') sortBy?: 'popular' | 'recent',
-    @Query('sortOrder') sortOrder?: 'asc' | 'desc',
+    @Query() query: FeedQueryDto,
   ) {
-    return this.discussService.findAll(
-      sortBy || 'recent',
-      sortOrder || 'desc',
-      userId,
-    );
+    return this.discussService.getFeed(query, userId);
   }
 
   @Get(':id')
+  @UseGuards(JwtOptionalAuthGuard)
   @ApiOperation({ summary: 'Get a single post by ID' })
   async findOne(
     @Param('id') id: string,
@@ -111,8 +96,23 @@ export class DiscussController {
   @UseGuards(JwtHeaderAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Delete a post by ID' })
-  async deletePost(@Param('id') id: string) {
-    return this.discussService.deletePost(id);
+  async deletePost(
+    @Param('id') id: string,
+    @GetDashboardUserReqObject('id') userId: string,
+  ) {
+    return this.discussService.deletePost(id, userId);
+  }
+
+  @Post(':id/update')
+  @UseGuards(JwtHeaderAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Update a post by ID' })
+  async updatePost(
+    @Param('id') id: string,
+    @GetDashboardUserReqObject('id') userId: string,
+    @Body() body: { title?: string; content?: string; image?: string },
+  ) {
+    return this.discussService.updatePost(id, userId, body);
   }
 
   @Post('comment/:id/react')

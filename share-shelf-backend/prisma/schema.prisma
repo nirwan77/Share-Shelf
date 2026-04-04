@@ -43,6 +43,8 @@ model User {
   purchases            BookPurchase[]     @relation("purchases")
   sales                BookPurchase[]     @relation("sales")
   notifications        Notification[]
+  followers            Follow[]           @relation("followers")
+  following            Follow[]           @relation("following")
 }
 
 model Otp {
@@ -199,7 +201,8 @@ model Posts {
   createdById   String
   createdByUser User   @relation(fields: [createdById], references: [id], onDelete: Cascade)
 
-  isPinned Boolean @default(false)
+  isPinned   Boolean @default(false)
+  viewsCount Int     @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -378,4 +381,16 @@ model Notification {
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+model Follow {
+  id          String   @id @default(nanoid())
+  followerId  String
+  follower    User     @relation("following", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   User     @relation("followers", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@map("follows")
 }

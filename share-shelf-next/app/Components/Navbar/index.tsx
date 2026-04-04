@@ -44,7 +44,14 @@ export const Navbar = () => {
             className="shrink-0 cursor-pointer"
             onClick={() => router.push("/")}
           >
-            <div className="text-2xl font-bold italic text-white">Logo</div>
+            <Image
+              src="/logo.png"
+              alt="Share Shelf"
+              width={160}
+              height={40}
+              unoptimized
+              className="h-9 w-auto object-contain bg-transparent"
+            />
           </div>
 
           <div className="flex items-center space-x-8">
@@ -107,9 +114,8 @@ export const Navbar = () => {
                       notifications?.map((n) => (
                         <DropdownMenuItem
                           key={n.id}
-                          className={`cursor-pointer p-3 border-b flex flex-col items-start gap-1 ${
-                            !n.isRead ? "bg-blue-50" : ""
-                          }`}
+                          className={`cursor-pointer p-3 border-b flex flex-col items-start gap-1 ${!n.isRead ? "bg-blue-50" : ""
+                            }`}
                           onClick={() => !n.isRead && markRead.mutate(n.id)}
                         >
                           <p className="text-xs">{n.message}</p>
