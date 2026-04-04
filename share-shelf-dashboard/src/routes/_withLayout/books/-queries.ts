@@ -9,12 +9,17 @@ export interface Book {
   image: string;
   price: number;
   releaseDate: string;
+  isPopular: boolean;
+  isFeatured: boolean;
   bookGenres: {
     genre: {
       id: string;
       name: string;
     };
   }[];
+  lowestPrice: number | null;
+  sellCount: number;
+  tradeCount: number;
 }
 
 export interface BooksResponse {

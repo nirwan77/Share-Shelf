@@ -10,7 +10,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // url      = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -28,6 +28,7 @@ model User {
   updatedAt            DateTime               @updatedAt
   userBookStatuses     UserBookStatus[]
   userBookReviews      UserBookReview[]
+  reviewVotes          ReviewVote[]
   userRatedBy          UserRating[]           @relation("userRatingBy")
   userRatingBy         UserRating[]           @relation("userRatedBy")
   payments             Payment[]
@@ -37,6 +38,13 @@ model User {
   postComments         PostComments[]
   postCommentMentions  PostCommentMentions[]
   postCommentReactions PostCommentReactions[]
+  bookOffers           BookOffer[]
+  bookRequests         BookRequest[]
+  purchases            BookPurchase[]     @relation("purchases")
+  sales                BookPurchase[]     @relation("sales")
+  notifications        Notification[]
+  followers            Follow[]           @relation("followers")
+  following            Follow[]           @relation("following")
 }
 
 model Otp {
@@ -65,9 +73,14 @@ model Books {
   price       Int
   releaseDate DateTime
 
+  isPopular   Boolean @default(false)
+  isFeatured  Boolean @default(false)
+
   userBookStatuses UserBookStatus[]
   userBookReviews  UserBookReview[]
   bookGenres       BookGenre[]
+  bookOffers       BookOffer[]
+  bookPurchases    BookPurchase[]
 }
 
 model BookGenre {
@@ -109,6 +122,9 @@ model UserBookReview {
   rating  Int
   comment String
 
+  upvotes   Int @default(0)
+  downvotes Int @default(0)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -116,6 +132,27 @@ model UserBookReview {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   bookId String
   book   Books  @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  reviewVotes ReviewVote[]
+}
+
+enum ReviewVoteType {
+  UPVOTE
+  DOWNVOTE
+}
+
+model ReviewVote {
+  id       String         @id @default(nanoid())
+  voteType ReviewVoteType
+
+  userId   String
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewId String
+  review   UserBookReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, reviewId])
 }
 
 model UserRating {
@@ -164,7 +201,8 @@ model Posts {
   createdById   String
   createdByUser User   @relation(fields: [createdById], references: [id], onDelete: Cascade)
 
-  isPinned Boolean @default(false)
+  isPinned   Boolean @default(false)
+  viewsCount Int     @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -253,4 +291,106 @@ model PostCommentReactions {
 
   @@unique([postCommentId, userId, reaction])
   @@map("post_comment_reactions")
+}
+
+enum OfferType {
+  SELL
+  TRADE
+}
+
+model BookOffer {
+  id        String    @id @default(nanoid())
+  price     Int
+  condition String?
+  type      OfferType
+  note      String?
+  isActive  Boolean   @default(true)
+
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId    String
+  book      Books     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  bookPurchases BookPurchase[]
+}
+
+enum BookRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model BookRequest {
+  id          String            @id @default(nanoid())
+  title       String
+  author      String
+  description String?
+  image       String?
+  status      BookRequestStatus @default(PENDING)
+
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+enum PurchaseStatus {
+  PENDING
+  PAID
+  COMPLETED
+  FAILED
+}
+
+model BookPurchase {
+  id              String         @id @default(nanoid())
+  price           Int
+  status          PurchaseStatus @default(PENDING)
+
+  buyerId         String
+  buyer           User           @relation("purchases", fields: [buyerId], references: [id])
+  sellerId        String
+  seller          User           @relation("sales", fields: [sellerId], references: [id])
+  offerId         String
+  offer           BookOffer      @relation(fields: [offerId], references: [id])
+  bookId          String
+  book            Books          @relation(fields: [bookId], references: [id])
+
+  transactionUuid String?        @unique
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([status])
+}
+
+model Notification {
+  id        String   @id @default(nanoid())
+  message   String
+  isRead    Boolean  @default(false)
+  type      String
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Follow {
+  id          String   @id @default(nanoid())
+  followerId  String
+  follower    User     @relation("following", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   User     @relation("followers", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@map("follows")
 }

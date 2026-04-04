@@ -2,15 +2,24 @@
 
 import CryptoJS from "crypto-js";
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 export default function Topup() {
+  const searchParams = useSearchParams();
+  const purchaseId = searchParams.get("purchaseId");
+  const initialAmount = searchParams.get("amount");
+
   const [form, setForm] = useState({
-    amount: "100",
+    amount: initialAmount || "100",
     tax_amount: "0",
     transaction_uuid: "21",
     product_code: "EPAYTEST",
-    success_url: "http://localhost:3001/topup/success",
-    failure_url: "http://localhost:3001/topup/failure",
+    success_url: purchaseId
+      ? `http://localhost:3001/topup/success?purchaseId=${purchaseId}`
+      : "http://localhost:3001/topup/success",
+    failure_url: purchaseId
+      ? `http://localhost:3001/topup/failure?purchaseId=${purchaseId}`
+      : "http://localhost:3001/topup/failure",
   });
 
   const total_amount = (Number(form.amount) + Number(form.tax_amount)).toFixed(
@@ -47,13 +56,22 @@ export default function Topup() {
   return (
     <div className="mt-20 flex items-center justify-center px-4">
       <div className="w-full max-w-lg rounded-2xl shadow-lg p-6">
-        <h1 className="text-2xl font-semibold mb-6">eSewa Top-Up</h1>
+        <h1 className="text-2xl font-semibold mb-6">
+          {purchaseId ? "Confirm Purchase Payment" : "eSewa Top-Up"}
+        </h1>
+        {purchaseId && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+            You are paying for a book purchase. The amount is fixed at Rs.{" "}
+            {initialAmount}.
+          </div>
+        )}
         <div className="space-y-4 mb-6">
           <Input
             label="Amount (Rs)"
             name="amount"
             value={form.amount}
             onChange={handleChange}
+            disabled={!!purchaseId}
           />
         </div>
 

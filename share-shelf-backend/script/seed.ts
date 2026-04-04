@@ -205,6 +205,209 @@ const PUBLIC_DOMAIN_BOOKS = [
   },
 ];
 
+const FYP_BOOKS = [
+  {
+    name: 'Pride and Prejudice',
+    author: 'Jane Austen',
+    description:
+      'Classic romance novel about love, marriage, and social class in 19th-century England.',
+    image: 'https://covers.openlibrary.org/b/id/6886423-M.jpg',
+    genres: ['Classics', 'Romance', 'Fiction'],
+    releaseDate: new Date('1813-01-28'),
+    price: 899,
+  },
+  {
+    name: 'To Kill a Mockingbird',
+    author: 'Harper Lee',
+    description:
+      'A young girl narrates her childhood in the American South, witnessing her father defend a Black man falsely accused of a crime.',
+    image: 'https://covers.openlibrary.org/b/id/8228691-M.jpg',
+    genres: ['Classics', 'Historical Fiction', 'Fiction'],
+    releaseDate: new Date('1960-07-11'),
+    price: 999,
+  },
+  {
+    name: '1984',
+    author: 'George Orwell',
+    description:
+      'A dystopian novel set in a totalitarian society under the surveillance of Big Brother.',
+    image: 'https://covers.openlibrary.org/b/id/8575708-M.jpg',
+    genres: ['Dystopian', 'Science Fiction', 'Classics'],
+    releaseDate: new Date('1949-06-08'),
+    price: 949,
+  },
+  {
+    name: 'The Great Gatsby',
+    author: 'F. Scott Fitzgerald',
+    description:
+      'A portrait of the Jazz Age through the eyes of narrator Nick Carraway and the mysterious millionaire Jay Gatsby.',
+    image: 'https://covers.openlibrary.org/b/id/7222246-M.jpg',
+    genres: ['Classics', 'Fiction', 'Historical Fiction'],
+    releaseDate: new Date('1925-04-10'),
+    price: 849,
+  },
+  {
+    name: 'Harry Potter and the Philosopher\'s Stone',
+    author: 'J.K. Rowling',
+    description:
+      'A young boy discovers he is a wizard and begins his education at the Hogwarts School of Witchcraft and Wizardry.',
+    image: 'https://covers.openlibrary.org/b/id/10110415-M.jpg',
+    genres: ['Fantasy', 'Young Adult', 'Fiction'],
+    releaseDate: new Date('1997-06-26'),
+    price: 1099,
+  },
+  {
+    name: 'The Lord of the Rings',
+    author: 'J.R.R. Tolkien',
+    description:
+      'An epic fantasy adventure following the Fellowship of the Ring on a quest to destroy the One Ring.',
+    image: 'https://covers.openlibrary.org/b/id/9255566-M.jpg',
+    genres: ['Fantasy', 'Adventure', 'Classics'],
+    releaseDate: new Date('1954-07-29'),
+    price: 1499,
+  },
+  {
+    name: 'The Catcher in the Rye',
+    author: 'J.D. Salinger',
+    description:
+      'Teenage Holden Caulfield recounts his experiences after being expelled from prep school in a story of alienation and identity.',
+    image: 'https://covers.openlibrary.org/b/id/8397971-M.jpg',
+    genres: ['Classics', 'Fiction', 'Coming-of-Age'],
+    releaseDate: new Date('1951-07-16'),
+    price: 899,
+  },
+  {
+    name: 'Brave New World',
+    author: 'Aldous Huxley',
+    description:
+      'A dystopian vision of a future world where society is shaped by technology, conditioning, and consumerism.',
+    image: 'https://covers.openlibrary.org/b/id/8406786-M.jpg',
+    genres: ['Dystopian', 'Science Fiction', 'Classics'],
+    releaseDate: new Date('1932-08-01'),
+    price: 899,
+  },
+  {
+    name: 'The Alchemist',
+    author: 'Paulo Coelho',
+    description:
+      'A young Andalusian shepherd journeys toward his personal legend and learns that the universe conspires in favor of those who follow their dreams.',
+    image: 'https://covers.openlibrary.org/b/id/8301588-M.jpg',
+    genres: ['Fiction', 'Philosophy', 'Adventure'],
+    releaseDate: new Date('1988-01-01'),
+    price: 999,
+  },
+  {
+    name: 'Moby-Dick',
+    author: 'Herman Melville',
+    description:
+      'The obsessive quest of Captain Ahab against the white sperm whale that destroyed his ship and took his leg.',
+    image: 'https://covers.openlibrary.org/b/id/9276148-M.jpg',
+    genres: ['Classics', 'Adventure', 'Fiction'],
+    releaseDate: new Date('1851-10-18'),
+    price: 849,
+  },
+  {
+    name: 'Crime and Punishment',
+    author: 'Fyodor Dostoevsky',
+    description:
+      'A destitute student commits a murder and grapples with guilt, morality, and redemption in 19th-century St. Petersburg.',
+    image: 'https://covers.openlibrary.org/b/id/8960941-M.jpg',
+    genres: ['Classics', 'Fiction', 'Psychological Fiction'],
+    releaseDate: new Date('1866-11-01'),
+    price: 949,
+  },
+  {
+    name: 'Jane Eyre',
+    author: 'Charlotte Brontë',
+    description:
+      'An orphaned governess navigates love, morality, and independence in Victorian England.',
+    image: 'https://covers.openlibrary.org/b/id/12645114-M.jpg',
+    genres: ['Classics', 'Romance', 'Gothic Fiction'],
+    releaseDate: new Date('1847-10-16'),
+    price: 899,
+  },
+  {
+    name: 'The Hobbit',
+    author: 'J.R.R. Tolkien',
+    description:
+      'Bilbo Baggins, a comfort-loving hobbit, is swept into an epic quest to reclaim a dwarf kingdom from the dragon Smaug.',
+    image: 'https://covers.openlibrary.org/b/id/6979861-M.jpg',
+    genres: ['Fantasy', 'Adventure', 'Classics'],
+    releaseDate: new Date('1937-09-21'),
+    price: 1099,
+  },
+  {
+    name: 'Don Quixote',
+    author: 'Miguel de Cervantes',
+    description:
+      'An aging man becomes obsessed with chivalric romance novels and sets out as a knight-errant with his faithful squire Sancho Panza.',
+    image: 'https://covers.openlibrary.org/b/id/2445293-M.jpg',
+    genres: ['Classics', 'Satire', 'Adventure'],
+    releaseDate: new Date('1605-01-16'),
+    price: 849,
+  },
+  {
+    name: 'War and Peace',
+    author: 'Leo Tolstoy',
+    description:
+      'An epic novel interweaving the lives of Russian aristocratic families during the Napoleonic Wars.',
+    image: 'https://covers.openlibrary.org/b/id/9971853-M.jpg',
+    genres: ['Classics', 'Historical Fiction', 'Fiction'],
+    releaseDate: new Date('1869-01-01'),
+    price: 1199,
+  },
+  {
+    name: 'Wuthering Heights',
+    author: 'Emily Brontë',
+    description:
+      'A tale of passionate and destructive love between Heathcliff and Catherine Earnshaw on the Yorkshire moors.',
+    image: 'https://covers.openlibrary.org/b/id/11939800-M.jpg',
+    genres: ['Classics', 'Romance', 'Gothic Fiction'],
+    releaseDate: new Date('1847-12-01'),
+    price: 849,
+  },
+  {
+    name: 'Anna Karenina',
+    author: 'Leo Tolstoy',
+    description:
+      'A married Russian aristocrat embarks on a doomed affair with the dashing Count Vronsky in 19th-century Imperial Russia.',
+    image: 'https://covers.openlibrary.org/b/id/12793264-M.jpg',
+    genres: ['Classics', 'Romance', 'Historical Fiction'],
+    releaseDate: new Date('1878-01-01'),
+    price: 1099,
+  },
+  {
+    name: 'The Odyssey',
+    author: 'Homer',
+    description:
+      'The epic journey of the hero Odysseus as he struggles to return home to Ithaca after the fall of Troy.',
+    image: 'https://covers.openlibrary.org/b/id/8459861-M.jpg',
+    genres: ['Classics', 'Poetry', 'Mythology'],
+    releaseDate: new Date('-0700-01-01'),
+    price: 799,
+  },
+  {
+    name: 'One Hundred Years of Solitude',
+    author: 'Gabriel García Márquez',
+    description:
+      'The multi-generational story of the Buendía family in the fictional town of Macondo, blending myth and reality.',
+    image: 'https://covers.openlibrary.org/b/id/8700161-M.jpg',
+    genres: ['Magical Realism', 'Classics', 'Literary Fiction'],
+    releaseDate: new Date('1967-05-30'),
+    price: 1049,
+  },
+  {
+    name: 'The Hitchhiker\'s Guide to the Galaxy',
+    author: 'Douglas Adams',
+    description:
+      'Seconds before Earth is demolished for a hyperspace bypass, Arthur Dent is whisked into a wild cosmic adventure.',
+    image: 'https://covers.openlibrary.org/b/id/10988316-M.jpg',
+    genres: ['Science Fiction', 'Comedy', 'Fiction'],
+    releaseDate: new Date('1979-10-12'),
+    price: 999,
+  },
+];
+
 async function main() {
   try {
     // Clear existing data
@@ -215,7 +418,7 @@ async function main() {
     // Seed genres first
     const genreMap: Record<string, string> = {};
     const allGenres = [
-      ...new Set(PUBLIC_DOMAIN_BOOKS.flatMap((b) => b.genres)),
+      ...new Set(FYP_BOOKS.flatMap((b) => b.genres)),
     ];
 
     for (const name of allGenres) {
@@ -226,8 +429,8 @@ async function main() {
     }
 
     // Seed books
-    for (let i = 0; i < PUBLIC_DOMAIN_BOOKS.length; i++) {
-      const bookData = PUBLIC_DOMAIN_BOOKS[i];
+    for (let i = 0; i < FYP_BOOKS.length; i++) {
+      const bookData = FYP_BOOKS[i];
 
       const book = await prisma.books.create({
         data: {

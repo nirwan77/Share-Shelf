@@ -1,5 +1,5 @@
 import { axios } from "@/app/lib";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export type Book = {
   id: string;
@@ -12,7 +12,10 @@ export type Book = {
   name: string;
   image: string;
   price: number;
-  releaseDate: string; // Added ✅
+  releaseDate: string;
+  lowestPrice: number | null;
+  sellCount: number;
+  tradeCount: number;
 };
 
 export type GetBooksResponse = {
@@ -25,6 +28,7 @@ export type BookFilters = {
   maxPrice?: number;
   categories?: string[];
   publishedDate?: string;
+  sortBy?: string;
 };
 
 export const useGetBooks = (
@@ -51,3 +55,40 @@ export const useGetBooks = (
     },
   });
 };
+
+export const useSubmitBookRequest = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (body: {
+      title: string;
+      author: string;
+      description?: string;
+      image?: string;
+    }) => {
+      const { data } = await axios.post("/book-requests", body);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-requests"] });
+    },
+  });
+};
+export const useGetMyBookRequests = () => {
+  return useQuery<BookRequest[]>({
+    queryKey: ["my-requests"],
+    queryFn: async () => {
+      const { data } = await axios.get("/book-requests/my");
+      return data;
+    },
+  });
+};
+
+export interface BookRequest {
+  id: string;
+  title: string;
+  author: string;
+  description: string | null;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  createdAt: string;
+}

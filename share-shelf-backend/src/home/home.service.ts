@@ -17,9 +17,41 @@ export class HomeService {
         id: true,
         image: true,
         name: true,
+        author: true,
+        price: true,
         bookGenres: { select: { genre: { select: { name: true } } } },
       },
       take: 20,
+    });
+  }
+
+  async findFeatured() {
+    return await this.prisma.books.findMany({
+      where: { isFeatured: true },
+      select: {
+        id: true,
+        image: true,
+        name: true,
+        author: true,
+        price: true,
+        bookGenres: { select: { genre: { select: { name: true } } } },
+      },
+      take: 10,
+    });
+  }
+
+  async findPopular() {
+    return await this.prisma.books.findMany({
+      where: { isPopular: true },
+      select: {
+        id: true,
+        image: true,
+        name: true,
+        author: true,
+        price: true,
+        bookGenres: { select: { genre: { select: { name: true } } } },
+      },
+      take: 3,
     });
   }
 

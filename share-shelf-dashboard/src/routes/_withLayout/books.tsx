@@ -17,13 +17,13 @@ import {
   Divider,
   ScrollArea,
   ActionIcon,
-  NumberInput,
   Textarea,
   MultiSelect,
   Image,
   FileButton,
   rem,
   Select,
+  Switch,
 } from "@mantine/core";
 import { useDisclosure, useDebouncedValue } from "@mantine/hooks";
 import {
@@ -102,6 +102,8 @@ function BooksManagement() {
       image: "",
       releaseDate: new Date(),
       genres: [] as string[],
+      isPopular: false,
+      isFeatured: false,
     },
     validate: {
       name: (value) => (value.length < 2 ? "Name is too short" : null),
@@ -122,6 +124,8 @@ function BooksManagement() {
         image: editingBook.image,
         releaseDate: new Date(editingBook.releaseDate),
         genres: editingBook.bookGenres.map((bg) => bg.genre.name),
+        isPopular: editingBook.isPopular,
+        isFeatured: editingBook.isFeatured,
       });
       setImagePreview(editingBook.image);
     } else {
@@ -239,14 +243,49 @@ function BooksManagement() {
         </Group>
       </Table.Td>
       <Table.Td>
-        <Text size="sm" fw={600}>
-          Rs. {book.price}
-        </Text>
+        <Stack gap={2}>
+          <Text size="sm" fw={600} c={book.lowestPrice !== null ? "green" : "dimmed"}>
+            {book.lowestPrice !== null ? `From Rs. ${book.lowestPrice}` : "No active offers"}
+          </Text>
+          <Text size="xs" c="dimmed">
+            {book.sellCount} selling · {book.tradeCount} trading
+          </Text>
+        </Stack>
       </Table.Td>
       <Table.Td>
         <Text size="sm">
           {new Date(book.releaseDate).toLocaleDateString()}
         </Text>
+      </Table.Td>
+      <Table.Td>
+        <Group gap="xs">
+          <Switch
+            checked={book.isPopular}
+            onChange={(e) =>
+              updateMutation.mutate({
+                id: book.id,
+                isPopular: e.currentTarget.checked,
+              })
+            }
+            size="xs"
+            color="orange"
+            label="Popular"
+            disabled={updateMutation.isPending}
+          />
+          <Switch
+            checked={book.isFeatured}
+            onChange={(e) =>
+              updateMutation.mutate({
+                id: book.id,
+                isFeatured: e.currentTarget.checked,
+              })
+            }
+            size="xs"
+            color="blue"
+            label="Featured"
+            disabled={updateMutation.isPending}
+          />
+        </Group>
       </Table.Td>
       <Table.Td>
         <Group gap="xs" justify="flex-end">
@@ -378,8 +417,9 @@ function BooksManagement() {
                       <Table.Tr>
                         <Table.Th>Book</Table.Th>
                         <Table.Th>Genres</Table.Th>
-                        <Table.Th>Price</Table.Th>
+                        <Table.Th>Market Info</Table.Th>
                         <Table.Th>Release Date</Table.Th>
+                        <Table.Th>Status Flags</Table.Th>
                         <Table.Th />
                       </Table.Tr>
                     </Table.Thead>
@@ -438,13 +478,6 @@ function BooksManagement() {
               {...form.getInputProps("description")}
             />
             <Group grow>
-              <NumberInput
-                label="Price (Rs.)"
-                placeholder="0"
-                required
-                min={0}
-                {...form.getInputProps("price")}
-              />
               <DateInput
                 label="Release Date"
                 placeholder="Pick date"
@@ -562,6 +595,16 @@ function BooksManagement() {
               searchable
               {...form.getInputProps("genres")}
             />
+            <Group>
+              <Switch
+                label="Mark as Popular"
+                {...form.getInputProps("isPopular", { type: "checkbox" })}
+              />
+              <Switch
+                label="Mark as Featured"
+                {...form.getInputProps("isFeatured", { type: "checkbox" })}
+              />
+            </Group>
 
             <Group justify="flex-end" mt="xl">
               <Button

@@ -9,3 +9,21 @@ export const useVerifyPayment = () => {
     },
   });
 };
+
+export const useCompletePurchase = () => {
+  return useMutation({
+    mutationFn: async ({
+      purchaseId,
+      payload,
+    }: {
+      purchaseId: string;
+      payload: any;
+    }) => {
+      const { data } = await axios.post(
+        `/book-purchases/${purchaseId}/complete`,
+        payload,
+      );
+      return data;
+    },
+  });
+};
