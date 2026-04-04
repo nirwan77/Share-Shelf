@@ -1,10 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import Image from "next/image";
 import { Star, ThumbsUp, ThumbsDown } from "lucide-react";
 import { toast } from "sonner";
-import type { BookReview } from "./action";
-import type { useVoteReview } from "./action";
+import type { BookReview, useVoteReview } from "./action";
 
 /* ── helpers ── */
 
@@ -49,9 +49,9 @@ export const ReviewCard = ({ review, bookId, canVote, voteReview }: Props) => {
     <div className="group relative bg-white rounded-2xl border border-[#f0f0e8] shadow-sm hover:shadow-md transition-all duration-300 p-6">
       {/* Top row: avatar + name + date + stars */}
       <div className="flex items-start justify-between gap-3 mb-4">
-        <div className="flex items-center gap-3">
+        <Link href={`/user/${review.user.id}`} className="flex items-center gap-3 group/user">
           {/* Avatar */}
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FF8D28] to-[#e67d1f] flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden text-white shadow-sm">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FF8D28] to-[#e67d1f] flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden text-white shadow-sm transition-transform group-hover/user:scale-105">
             {review.user.avatar ? (
               <Image
                 src={review.user.avatar}
@@ -65,14 +65,14 @@ export const ReviewCard = ({ review, bookId, canVote, voteReview }: Props) => {
             )}
           </div>
           <div>
-            <p className="text-sm font-semibold text-gray-900">
+            <p className="text-sm font-semibold text-gray-900 group-hover/user:text-[#FF8D28] transition-colors">
               {review.user.name}
             </p>
             <p className="text-xs text-gray-400 mt-0.5">
               {timeAgo(review.createdAt)}
             </p>
           </div>
-        </div>
+        </Link>
 
         {/* Star rating badge */}
         <div className="flex items-center gap-1.5 bg-[#fff9f4] border border-[#ffe0bc] rounded-full px-3 py-1.5">

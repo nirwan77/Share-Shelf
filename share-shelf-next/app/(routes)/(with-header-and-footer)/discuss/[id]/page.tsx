@@ -17,6 +17,7 @@ import { Trash2, Edit2, X, Check, Image as ImageIcon, Upload } from "lucide-reac
 import { useRouter } from "next/navigation";
 import { useUpdatePost } from "./action";
 import { useRef, ChangeEvent } from "react";
+import Link from "next/link";
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -158,16 +159,21 @@ function CommentItem({
 
   return (
     <div className="flex gap-3 py-3">
-      <Avatar
-        src={comment.user.avatar}
-        name={comment.user.name}
-        size="w-8 h-8"
-      />
+      <Link href={`/user/${comment.user.id}`}>
+        <Avatar
+          src={comment.user.avatar}
+          name={comment.user.name}
+          size="w-8 h-8"
+        />
+      </Link>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-sm font-semibold text-white">
+          <Link
+            href={`/user/${comment.user.id}`}
+            className="text-sm font-semibold text-white hover:text-orange-500 transition-colors"
+          >
             {comment.user.name}
-          </span>
+          </Link>
           <span className="text-xs text-zinc-500">
             {timeAgo(comment.createdAt)}
           </span>
@@ -337,14 +343,19 @@ export default function PostPage() {
       {post && (
         <div className="">
           <div className="flex items-center gap-3 p-4 pb-3">
-            <Avatar
-              src={post.createdByUser.avatar}
-              name={post.createdByUser.name}
-            />
+            <Link href={`/user/${post.createdByUser.id}`}>
+              <Avatar
+                src={post.createdByUser.avatar}
+                name={post.createdByUser.name}
+              />
+            </Link>
             <div>
-              <p className="text-sm font-semibold text-white">
+              <Link
+                href={`/user/${post.createdByUser.id}`}
+                className="text-sm font-semibold text-white hover:text-orange-500 transition-colors"
+              >
                 {post.createdByUser.name}
-              </p>
+              </Link>
               <p className="text-xs text-zinc-500">{timeAgo(post.createdAt)}</p>
             </div>
 
