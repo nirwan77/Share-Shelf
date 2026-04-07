@@ -350,6 +350,10 @@ model BookPurchase {
   price           Int
   status          PurchaseStatus @default(PENDING)
 
+  location        String?        // Meeting/Delivery location
+  commissionAmount Int           @default(0)
+  sellerAmount    Int           @default(0)
+
   buyerId         String
   buyer           User           @relation("purchases", fields: [buyerId], references: [id])
   sellerId        String

@@ -17,15 +17,15 @@ export default function PaymentSuccessPage() {
 
     const decoded = JSON.parse(atob(base64Response));
 
-    const timer = setTimeout(() => {
-      if (purchaseId) {
-        completePurchase.mutate({ purchaseId, payload: decoded });
-      } else {
-        verifyPayment.mutate(decoded);
-      }
-    }, 2000);
-
-    return () => clearTimeout(timer);
+    if (purchaseId) {
+      completePurchase.mutate({ purchaseId, payload: decoded }, {
+        onSuccess: () => {
+          // Optional: Add redirect here if needed
+        }
+      });
+    } else {
+      verifyPayment.mutate(decoded);
+    }
   }, [purchaseId]);
 
   return (

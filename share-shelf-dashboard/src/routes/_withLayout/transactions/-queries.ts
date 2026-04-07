@@ -5,6 +5,9 @@ export interface PurchaseTransaction {
   id: string;
   price: number;
   status: 'PENDING' | 'PAID' | 'COMPLETED' | 'FAILED';
+  location?: string;
+  commissionAmount: number;
+  sellerAmount: number;
   createdAt: string;
   updatedAt: string;
   book: {

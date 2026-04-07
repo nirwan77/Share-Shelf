@@ -146,12 +146,12 @@ export const useVoteReview = () => {
 
 export const useInitiatePurchase = () => {
   return useMutation({
-    mutationFn: async (offerId: string) => {
+    mutationFn: async (payload: { offerId: string; location?: string }) => {
       const { data } = await axios.post<{
         purchaseId: string;
         price: number;
         bookName: string;
-      }>("/book-purchases/initiate", { offerId });
+      }>("/book-purchases/initiate", payload);
       return data;
     },
   });

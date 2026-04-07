@@ -1,5 +1,6 @@
 import { axios } from "@/app/lib";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/contexts";
 
 export interface ProfileData {
   id: string;
@@ -36,12 +37,14 @@ export interface ProfileData {
 }
 
 export const useGetProfile = () => {
+  const { token } = useAuth();
   return useQuery({
     queryKey: ["profile"],
     queryFn: async () => {
       const { data } = await axios.get<ProfileData>("/profile");
       return data;
     },
+    enabled: !!token,
   });
 };
 
@@ -62,12 +65,14 @@ export type MyOffer = {
 };
 
 export const useGetMyOffers = () => {
+  const { token } = useAuth();
   return useQuery({
     queryKey: ["my-offers"],
     queryFn: async () => {
       const { data } = await axios.get<MyOffer[]>("/book-offers/my");
       return data;
     },
+    enabled: !!token,
   });
 };
 
@@ -81,12 +86,14 @@ export type MyBookRequest = {
 };
 
 export const useGetMyRequests = () => {
+  const { token } = useAuth();
   return useQuery({
     queryKey: ["my-requests"],
     queryFn: async () => {
       const { data } = await axios.get<MyBookRequest[]>("/book-requests/my");
       return data;
     },
+    enabled: !!token,
   });
 };
 
