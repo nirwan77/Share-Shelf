@@ -1,5 +1,6 @@
 import { axios } from "@/app/lib";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts";
 
 export interface Notification {
   id: string;
@@ -10,16 +11,19 @@ export interface Notification {
 }
 
 export const useGetNotifications = () => {
+  const { token } = useAuth();
   return useQuery<Notification[]>({
     queryKey: ["notifications"],
     queryFn: async () => {
       const { data } = await axios.get("/notifications");
       return data;
     },
+    enabled: !!token,
   });
 };
 
 export const useGetUnreadCount = () => {
+  const { token } = useAuth();
   return useQuery<{ count: number }>({
     queryKey: ["notifications-unread-count"],
     queryFn: async () => {
@@ -27,6 +31,7 @@ export const useGetUnreadCount = () => {
       return data;
     },
     refetchInterval: 30000, // Poll every 30 seconds
+    enabled: !!token,
   });
 };
 

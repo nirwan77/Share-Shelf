@@ -15,11 +15,11 @@ export default function Topup() {
     transaction_uuid: "21",
     product_code: "EPAYTEST",
     success_url: purchaseId
-      ? `http://localhost:3001/topup/success?purchaseId=${purchaseId}`
-      : "http://localhost:3001/topup/success",
+      ? `http://localhost:3002/topup/success?purchaseId=${purchaseId}`
+      : "http://localhost:3002/topup/success",
     failure_url: purchaseId
-      ? `http://localhost:3001/topup/failure?purchaseId=${purchaseId}`
-      : "http://localhost:3001/topup/failure",
+      ? `http://localhost:3002/topup/failure?purchaseId=${purchaseId}`
+      : "http://localhost:3002/topup/failure",
   });
 
   const total_amount = (Number(form.amount) + Number(form.tax_amount)).toFixed(

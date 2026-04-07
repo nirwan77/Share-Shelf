@@ -18,6 +18,8 @@ import { useRouter } from "next/navigation";
 import { useUpdatePost } from "./action";
 import { useRef, ChangeEvent } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
+import { useAuth } from "@/contexts";
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -131,8 +133,13 @@ function CommentItem({
 }) {
   const queryClient = useQueryClient();
   const likeComment = useLikeComment(postId);
+  const { token } = useAuth();
 
   const handleLike = () => {
+    if (!token) {
+      toast.error("Please login to like comments");
+      return;
+    }
     // Optimistic update against the comments cache
     queryClient.setQueryData(
       ["comments", postId],
@@ -217,6 +224,7 @@ export default function PostPage() {
   const params = useParams();
   const postId = params?.id as string;
   const queryClient = useQueryClient();
+  const { token } = useAuth();
 
   const { data: post, isLoading: postLoading, isError } = usePost(postId);
   const { data: comments = [], isLoading: commentsLoading } =
@@ -242,6 +250,10 @@ export default function PostPage() {
   } = useUpdatePost(postId);
 
   const handleLike = () => {
+    if (!token) {
+      toast.error("Please login to like posts");
+      return;
+    }
     queryClient.setQueryData(["post", postId], (old: Post | undefined) => {
       if (!old) return old;
       const liked = old.isLikedByMe;
@@ -262,6 +274,10 @@ export default function PostPage() {
   };
 
   const handleUpdate = async () => {
+    if (!token) {
+      toast.error("Authentication required");
+      return;
+    }
     if (!editTitle.trim()) return;
     try {
       await updatePost({
@@ -300,6 +316,10 @@ export default function PostPage() {
   };
 
   const handleDelete = async () => {
+    if (!token) {
+      toast.error("Authentication required");
+      return;
+    }
     try {
       await deletePost(postId);
       router.push("/discuss");
@@ -310,6 +330,10 @@ export default function PostPage() {
   };
 
   const submitComment = () => {
+    if (!token) {
+      toast.error("Please login to post a comment");
+      return;
+    }
     if (!commentInput.trim() || addComment.isPending) return;
     addComment.mutate(commentInput.trim(), {
       onSuccess: () => setCommentInput(""),

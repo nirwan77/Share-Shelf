@@ -44,7 +44,7 @@ export class DiscussController {
   }
 
   @Get(':id/comments')
-  @UseGuards(JwtHeaderAuthGuard)
+  @UseGuards(JwtOptionalAuthGuard)
   @ApiBearerAuth('JWT-auth')
   async getComments(
     @Param('id') postId: string,

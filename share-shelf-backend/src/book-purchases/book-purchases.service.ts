@@ -15,7 +15,7 @@ export class BookPurchasesService {
     private notifications: NotificationsService,
   ) {}
 
-  async initiatePurchase(buyerId: string, offerId: string) {
+  async initiatePurchase(buyerId: string, offerId: string, location?: string) {
     const offer = await this.prisma.bookOffer.findUnique({
       where: { id: offerId },
       include: { book: true },
@@ -38,6 +38,13 @@ export class BookPurchasesService {
     });
 
     if (existingPending) {
+      // Update location if provided
+      if (location && existingPending.location !== location) {
+        await this.prisma.bookPurchase.update({
+          where: { id: existingPending.id },
+          data: { location },
+        });
+      }
       return {
         purchaseId: existingPending.id,
         price: existingPending.price,
@@ -53,6 +60,7 @@ export class BookPurchasesService {
         bookId: offer.bookId,
         price: offer.price,
         status: 'PENDING',
+        location,
       },
     });
 
@@ -96,27 +104,46 @@ export class BookPurchasesService {
     const generatedSignature = CryptoJS.enc.Base64.stringify(hash);
 
     if (generatedSignature !== signature) {
-      throw new Error('Invalid signature');
+      console.error('[BookPurchasesService] Signature verification failed!', {
+        generatedSignature,
+        signature,
+        payload
+      });
+      throw new BadRequestException('Invalid payment signature');
     }
 
     if (status === 'COMPLETE') {
+      // Calculate commission (10%)
+      const commissionAmount = Math.round(purchase.price * 0.1);
+      const sellerAmount = purchase.price - commissionAmount;
+
       const result = await this.prisma.$transaction(async (tx) => {
-        // Mark purchase as PAID
+        // 1. Create a Payment record for the admin to see
+        await tx.payment.create({
+          data: {
+            transaction_uuid,
+            product_code,
+            amount: purchase.price,
+            tax_amount: 0,
+            total_amount: Number(total_amount),
+            status: 'SUCCESS',
+            userId: userId,
+            signature: signature,
+          },
+        });
+
+        // 2. Mark purchase as PAID (Escrow stage)
         const updatedPurchase = await tx.bookPurchase.update({
           where: { id: purchaseId },
           data: {
             status: 'PAID',
             transactionUuid: transaction_uuid,
+            commissionAmount,
+            sellerAmount,
           },
         });
 
-        // Deduct price from buyer's money
-        await tx.user.update({
-          where: { id: userId },
-          data: { money: { decrement: purchase.price } },
-        });
-
-        // Deactivate the offer
+        // 3. Deactivate the offer
         await tx.bookOffer.update({
           where: { id: purchase.offerId },
           data: { isActive: false },
@@ -134,7 +161,7 @@ export class BookPurchasesService {
 
       await this.notifications.create(
         purchase.sellerId,
-        `Someone has bought your book "${purchase.book.name}" for Rs. ${purchase.price}. Funds will be transferred to your wallet by admin after verification.`,
+        `Someone has bought your book "${purchase.book.name}". Admin will transfer Rs. ${sellerAmount} (after 10% commission) to your wallet after verification.`,
         'BOOK_SOLD',
       );
 

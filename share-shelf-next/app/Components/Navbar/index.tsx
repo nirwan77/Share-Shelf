@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, User, Bell } from "lucide-react";
+import { LogOut, User, Bell, MessageSquare } from "lucide-react";
 import { useGetNotifications, useMarkNotificationRead, useGetUnreadCount } from "./notifications-action";
 import { useContext, useEffect, useState } from "react";
 import { useGetProfile } from "@/app/(routes)/(with-header-and-footer)/profile/action";
@@ -115,6 +115,15 @@ export const Navbar = () => {
           <div className="flex gap-4 items-center justify-center">
             {!mounted ? null : token ? (
               <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-full hover:bg-gray-700"
+                  onClick={() => router.push("/chat")}
+                >
+                  <MessageSquare className="h-5 w-5 text-white" />
+                </Button>
+
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button

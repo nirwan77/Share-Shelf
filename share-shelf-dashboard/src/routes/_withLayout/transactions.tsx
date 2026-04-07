@@ -31,8 +31,8 @@ function TransactionsManagement() {
   const { data: transactions, isLoading } = useGetPendingTransactions();
   const transferMutation = useCompleteTransfer();
 
-  const handleTransfer = (id: string) => {
-    if (window.confirm("Are you sure you want to transfer Rs. to the seller?")) {
+  const handleTransfer = (id: string, amount: number) => {
+    if (window.confirm(`Are you sure you want to transfer Rs. ${amount} to the seller?`)) {
       transferMutation.mutate(id, {
         onSuccess: () => {
           notifications.show({
@@ -76,6 +76,11 @@ function TransactionsManagement() {
             <Text size="xs" c="dimmed">
               {tx.buyer.email}
             </Text>
+            {tx.location && (
+              <Badge size="xs" color="gray" variant="light" mt={4}>
+                📍 {tx.location}
+              </Badge>
+            )}
           </div>
         </Group>
       </Table.Td>
@@ -93,8 +98,18 @@ function TransactionsManagement() {
         </Group>
       </Table.Td>
       <Table.Td>
-        <Text fw={700} c="orange">
-          Rs. {tx.price}
+        <Stack gap={0}>
+          <Text size="sm" fw={700}>
+            Rs. {tx.price}
+          </Text>
+          <Text size="xs" c="red">
+            -{tx.commissionAmount} cut
+          </Text>
+        </Stack>
+      </Table.Td>
+      <Table.Td>
+        <Text fw={700} c="green">
+          Rs. {tx.sellerAmount}
         </Text>
       </Table.Td>
       <Table.Td>
@@ -111,7 +126,7 @@ function TransactionsManagement() {
         <Button
           size="xs"
           leftSection={<IconCash size={14} />}
-          onClick={() => handleTransfer(tx.id)}
+          onClick={() => handleTransfer(tx.id, tx.sellerAmount)}
           loading={transferMutation.isPending && transferMutation.variables === tx.id}
           color="green"
         >
@@ -158,9 +173,10 @@ function TransactionsManagement() {
                   <Table.Thead>
                     <Table.Tr>
                       <Table.Th>Book</Table.Th>
-                      <Table.Th>Buyer</Table.Th>
+                      <Table.Th>Buyer / Location</Table.Th>
                       <Table.Th>Seller</Table.Th>
-                      <Table.Th>Price</Table.Th>
+                      <Table.Th>Total Price</Table.Th>
+                      <Table.Th>Seller Earning</Table.Th>
                       <Table.Th>Status</Table.Th>
                       <Table.Th>Payment Date</Table.Th>
                       <Table.Th />
