@@ -17,6 +17,9 @@ import { Trash2, Edit2, X, Check, Image as ImageIcon, Upload } from "lucide-reac
 import { useRouter } from "next/navigation";
 import { useUpdatePost } from "./action";
 import { useRef, ChangeEvent } from "react";
+import Link from "next/link";
+import { toast } from "sonner";
+import { useAuth } from "@/contexts";
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -130,8 +133,13 @@ function CommentItem({
 }) {
   const queryClient = useQueryClient();
   const likeComment = useLikeComment(postId);
+  const { token } = useAuth();
 
   const handleLike = () => {
+    if (!token) {
+      toast.error("Please login to like comments");
+      return;
+    }
     // Optimistic update against the comments cache
     queryClient.setQueryData(
       ["comments", postId],
@@ -158,16 +166,21 @@ function CommentItem({
 
   return (
     <div className="flex gap-3 py-3">
-      <Avatar
-        src={comment.user.avatar}
-        name={comment.user.name}
-        size="w-8 h-8"
-      />
+      <Link href={`/user/${comment.user.id}`}>
+        <Avatar
+          src={comment.user.avatar}
+          name={comment.user.name}
+          size="w-8 h-8"
+        />
+      </Link>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-sm font-semibold text-white">
+          <Link
+            href={`/user/${comment.user.id}`}
+            className="text-sm font-semibold text-white hover:text-orange-500 transition-colors"
+          >
             {comment.user.name}
-          </span>
+          </Link>
           <span className="text-xs text-zinc-500">
             {timeAgo(comment.createdAt)}
           </span>
@@ -211,6 +224,7 @@ export default function PostPage() {
   const params = useParams();
   const postId = params?.id as string;
   const queryClient = useQueryClient();
+  const { token } = useAuth();
 
   const { data: post, isLoading: postLoading, isError } = usePost(postId);
   const { data: comments = [], isLoading: commentsLoading } =
@@ -236,6 +250,10 @@ export default function PostPage() {
   } = useUpdatePost(postId);
 
   const handleLike = () => {
+    if (!token) {
+      toast.error("Please login to like posts");
+      return;
+    }
     queryClient.setQueryData(["post", postId], (old: Post | undefined) => {
       if (!old) return old;
       const liked = old.isLikedByMe;
@@ -256,6 +274,10 @@ export default function PostPage() {
   };
 
   const handleUpdate = async () => {
+    if (!token) {
+      toast.error("Authentication required");
+      return;
+    }
     if (!editTitle.trim()) return;
     try {
       await updatePost({
@@ -294,6 +316,10 @@ export default function PostPage() {
   };
 
   const handleDelete = async () => {
+    if (!token) {
+      toast.error("Authentication required");
+      return;
+    }
     try {
       await deletePost(postId);
       router.push("/discuss");
@@ -304,6 +330,10 @@ export default function PostPage() {
   };
 
   const submitComment = () => {
+    if (!token) {
+      toast.error("Please login to post a comment");
+      return;
+    }
     if (!commentInput.trim() || addComment.isPending) return;
     addComment.mutate(commentInput.trim(), {
       onSuccess: () => setCommentInput(""),
@@ -337,14 +367,19 @@ export default function PostPage() {
       {post && (
         <div className="">
           <div className="flex items-center gap-3 p-4 pb-3">
-            <Avatar
-              src={post.createdByUser.avatar}
-              name={post.createdByUser.name}
-            />
+            <Link href={`/user/${post.createdByUser.id}`}>
+              <Avatar
+                src={post.createdByUser.avatar}
+                name={post.createdByUser.name}
+              />
+            </Link>
             <div>
-              <p className="text-sm font-semibold text-white">
+              <Link
+                href={`/user/${post.createdByUser.id}`}
+                className="text-sm font-semibold text-white hover:text-orange-500 transition-colors"
+              >
                 {post.createdByUser.name}
-              </p>
+              </Link>
               <p className="text-xs text-zinc-500">{timeAgo(post.createdAt)}</p>
             </div>
 

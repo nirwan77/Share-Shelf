@@ -29,6 +29,7 @@ export type BookFilters = {
   categories?: string[];
   publishedDate?: string;
   sortBy?: string;
+  search?: string;
 };
 
 export const useGetBooks = (

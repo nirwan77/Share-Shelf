@@ -3,6 +3,7 @@
 import Marquee from "react-fast-marquee";
 import { useGetFeatured } from "../../action";
 import { BookImage } from "@/components/manual/bookImage";
+import Link from "next/link";
 export const Choices = () => {
   const { data } = useGetFeatured();
 
@@ -14,9 +15,9 @@ export const Choices = () => {
       </div>
       <Marquee pauseOnClick={true} speed={90}>
         {data?.slice(0, 4)?.map((item, idx) => (
-          <div key={idx} className="mr-4 h-full">
+          <Link key={idx} href={`/book-detail/${item.id}`} className="mr-4 h-full block hover:scale-105 transition-transform">
             <BookImage src={item.image} name={item.name} />
-          </div>
+          </Link>
         ))}
       </Marquee>
       <Marquee
@@ -26,9 +27,9 @@ export const Choices = () => {
         direction="right"
       >
         {data?.slice(4, 10).map((item, idx) => (
-          <div key={idx} className="mr-4 h-full">
+          <Link key={idx} href={`/book-detail/${item.id}`} className="mr-4 h-full block hover:scale-105 transition-transform">
             <BookImage src={item.image} name={item.name} />
-          </div>
+          </Link>
         ))}
       </Marquee>
     </>
