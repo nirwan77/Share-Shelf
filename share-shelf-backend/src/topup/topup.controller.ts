@@ -33,6 +33,13 @@ export class TopupController {
     return this.topupService.findAll();
   }
 
+  @Get('dashboard/all')
+  @UseGuards(JwtHeaderAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  async getAllTransactions() {
+    return this.topupService.getAllTransactions();
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.topupService.findOne(+id);

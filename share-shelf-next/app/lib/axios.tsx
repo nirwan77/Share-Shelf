@@ -4,7 +4,7 @@ import { type ReactNode, useContext, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 export const instance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_SHARE_SHELF_URL ?? "https://localhost:3000",
+  baseURL: process.env.NEXT_PUBLIC_SHARE_SHELF_URL ?? "http://localhost:3000",
   headers: { "Content-Type": "application/json" },
 });
 
