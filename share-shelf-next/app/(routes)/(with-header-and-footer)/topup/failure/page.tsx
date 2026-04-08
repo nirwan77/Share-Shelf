@@ -14,10 +14,21 @@ export default function PaymentFailurePage() {
     const base64Response = searchParams.get("data");
     if (!base64Response) return;
 
-    const decoded = JSON.parse(atob(base64Response));
-
-    verifyPayment.mutate(decoded);
-  }, []);
+    try {
+      const decoded = JSON.parse(atob(base64Response));
+      
+      verifyPayment.mutate(decoded, {
+        onSuccess: () => {
+          console.log("Failed payment recorded successfully");
+        },
+        onError: (error) => {
+          console.error("Failed payment recording failed:", error);
+        }
+      });
+    } catch (error) {
+      console.error("Failed to decode payment data:", error);
+    }
+  }, [verifyPayment]);
 
   return (
     <div className="flex items-center flex-col gap-4 justify-center h-screen">

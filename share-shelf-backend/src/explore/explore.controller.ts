@@ -79,6 +79,12 @@ export class ExploreController {
     description: 'Sort results (price = sort by lowest offer price)',
     enum: ['price'],
   })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search by book name or author',
+    example: 'Harry Potter',
+  })
   findAll(
     @Query('limit', new ParseIntPipe({ optional: true })) limit: number,
     @Query('skip', new ParseIntPipe({ optional: true })) skip: number,
@@ -104,6 +110,7 @@ export class ExploreController {
     )
     publishedDate?: string,
     @Query('sortBy') sortBy?: string,
+    @Query('search') search?: string,
   ) {
     return this.exploreService.findAll({
       limit,
@@ -113,6 +120,7 @@ export class ExploreController {
       categories,
       publishedDate,
       sortBy,
+      search,
     });
   }
 

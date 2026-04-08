@@ -19,6 +19,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Bookmark,
   Eye,
   Check,
@@ -26,6 +34,7 @@ import {
   BookOpen,
   Lock,
   Pen,
+  MapPin,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -48,6 +57,10 @@ const BookDetail = () => {
 
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
+  const [purchaseLocation, setPurchaseLocation] = useState("");
+  const [selectedOfferId, setSelectedOfferId] = useState<string | null>(null);
+
   const handleRatingChange = (newRating: number) => setRating(newRating);
 
   const myStatusObj = (data?.userBookStatuses ?? []).find(
@@ -368,30 +381,19 @@ const BookDetail = () => {
                           {offer.user.id !== profile?.id && (
                             <Button
                               size="sm"
-                              className="bg-[#FF8D28] hover:bg-[#e67d1f] rounded-lg h-8"
+                              className="bg-[#FF8D28] hover:bg-[#e67d1f] rounded-lg h-8 px-4"
                               onClick={() => {
                                 if (!profile) {
                                   toast.error("Please log in to buy books.");
                                   return;
                                 }
-                                initiatePurchase.mutate(offer.id, {
-                                  onSuccess: (data) => {
-                                    router.push(
-                                      `/topup?purchaseId=${data.purchaseId}&amount=${data.price}`,
-                                    );
-                                  },
-                                  onError: (error: any) => {
-                                    toast.error(
-                                      error?.response?.data?.message ||
-                                        "Failed to initiate purchase",
-                                    );
-                                  },
-                                });
+                                setSelectedOfferId(offer.id);
+                                setLocationModalOpen(true);
                               }}
                               disabled={initiatePurchase.isPending}
                             >
                               {initiatePurchase.isPending &&
-                              initiatePurchase.variables === offer.id
+                                initiatePurchase.variables?.offerId === offer.id
                                 ? "Processing..."
                                 : "Buy"}
                             </Button>
@@ -579,11 +581,10 @@ const BookDetail = () => {
                                   className="focus:outline-none transition-transform hover:scale-110 duration-100"
                                 >
                                   <Star
-                                    className={`w-8 h-8 transition-all duration-150 ${
-                                      s <= (hoveredRating || rating)
-                                        ? "fill-[#FF8D28] text-[#FF8D28]"
-                                        : "text-gray-200 fill-gray-100"
-                                    }`}
+                                    className={`w-8 h-8 transition-all duration-150 ${s <= (hoveredRating || rating)
+                                      ? "fill-[#FF8D28] text-[#FF8D28]"
+                                      : "text-gray-200 fill-gray-100"
+                                      }`}
                                   />
                                 </button>
                               ))}
@@ -635,7 +636,7 @@ const BookDetail = () => {
                                 onError: (error: any) => {
                                   toast.error(
                                     error?.response?.data?.message ||
-                                      "Failed to submit review",
+                                    "Failed to submit review",
                                   );
                                 },
                               },
@@ -697,6 +698,81 @@ const BookDetail = () => {
           </div>
         </div>
       )}
+      {/* Location Modal */}
+      <Dialog open={locationModalOpen} onOpenChange={setLocationModalOpen}>
+        <DialogContent className="sm:max-w-[425px] rounded-3xl border-none shadow-2xl bg-[#fafaf7] p-8">
+          <DialogHeader>
+            <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center mb-4 self-center mx-auto">
+              <MapPin className="text-orange-600 w-6 h-6" />
+            </div>
+            <DialogTitle className="text-2xl font-bold text-center text-gray-900 leading-tight">
+              Where should we meet?
+            </DialogTitle>
+            <DialogDescription className="text-center text-gray-500 pt-2 pb-4">
+              Please suggest a common meeting point or delivery location for the
+              seller.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="location" className="text-sm font-semibold text-gray-700">
+                Meeting Point / Location
+              </Label>
+              <Input
+                id="location"
+                placeholder="e.g. Pulchowk Campus Gate, Kathmandu"
+                value={purchaseLocation}
+                onChange={(e) => setPurchaseLocation(e.target.value)}
+                className="rounded-xl border-gray-200 h-12 focus:ring-orange-500/20 focus:border-orange-500 transition-all text-black shadow-sm bg-white"
+              />
+            </div>
+          </div>
+          <DialogFooter className="sm:justify-center gap-3 pt-6">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setLocationModalOpen(false)}
+              className="rounded-xl h-11 px-6 font-semibold hover:bg-gray-200 text-gray-600"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={!purchaseLocation.trim() || initiatePurchase.isPending}
+              onClick={() => {
+                if (!selectedOfferId) return;
+                initiatePurchase.mutate(
+                  { offerId: selectedOfferId, location: purchaseLocation },
+                  {
+                    onSuccess: (data) => {
+                      setLocationModalOpen(false);
+                      router.push(
+                        `/topup?purchaseId=${data.purchaseId}&amount=${data.price}`,
+                      );
+                    },
+                    onError: (error: any) => {
+                      toast.error(
+                        error?.response?.data?.message ||
+                        "Failed to initiate purchase",
+                      );
+                    },
+                  },
+                );
+              }}
+              className="bg-orange-500 hover:bg-orange-600 rounded-xl h-11 px-8 font-bold text-white shadow-lg shadow-orange-500/20 transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-2"
+            >
+              {initiatePurchase.isPending ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                  Processing...
+                </>
+              ) : (
+                "Confirm Purchase"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

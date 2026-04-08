@@ -1,4 +1,4 @@
-import { Navbar } from "@/app/Components";
+import { Navbar, Footer } from "@/app/Components";
 import "../globals.css";
 
 export default function WithHeaderAndFooterLayout({
@@ -7,9 +7,12 @@ export default function WithHeaderAndFooterLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
       <Navbar />
-      {children}
-    </>
+      <main className="flex-grow">
+        {children}
+      </main>
+      <Footer />
+    </div>
   );
 }

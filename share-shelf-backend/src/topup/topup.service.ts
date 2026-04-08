@@ -40,24 +40,47 @@ export class TopupService {
       throw new Error('Invalid signature');
     }
 
+    // Store payment record with user association
+    const paymentStatus = status === 'COMPLETE' ? 'SUCCESS' : 'FAILED';
+    const paymentRecord = await this.prisma.payment.create({
+      data: {
+        amount: Number(total_amount),
+        product_code,
+        transaction_uuid,
+        tax_amount: 0,
+        total_amount: Number(total_amount),
+        status: paymentStatus,
+        userId: userId,
+        signature: signature,
+      },
+    });
+
+    // Only update user balance for successful payments
     if (status === 'COMPLETE') {
-      const paymentRecord = await this.prisma.payment.create({
-        data: {
-          amount: Number(total_amount),
-          product_code,
-          transaction_uuid,
-          tax_amount: 0,
-          total_amount: Number(total_amount),
-          status: 'SUCCESS',
-        },
-      });
       await this.prisma.user.update({
         where: { id: userId },
         data: { money: { increment: paymentRecord.total_amount } },
       });
     }
 
-    return { ok: true };
+    return { ok: true, status: paymentStatus, paymentId: paymentRecord.id };
+  }
+
+  async getAllTransactions() {
+    return this.prisma.payment.findMany({
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
   }
 
   findAll() {

@@ -35,7 +35,7 @@ export class DashboardPurchasesService {
       throw new BadRequestException('Transaction not found or already processed.');
     }
 
-    const { sellerId, price, buyerId } = purchase;
+    const { sellerId, sellerAmount, price, book } = purchase;
 
     await this.prisma.$transaction(async (tx) => {
       // Mark purchase as COMPLETED
@@ -44,17 +44,17 @@ export class DashboardPurchasesService {
         data: { status: 'COMPLETED' },
       });
 
-      // Transfer funds to seller wallet
+      // Transfer funds to seller wallet (using sellerAmount)
       await tx.user.update({
         where: { id: sellerId },
-        data: { money: { increment: price } },
+        data: { money: { increment: sellerAmount } },
       });
     });
 
     // Notify seller
     await this.notifications.create(
       sellerId,
-      `Admin has released Rs. ${price} for your sold book "${purchase.book.name}". Funds are now available in your wallet.`,
+      `Admin has released Rs. ${sellerAmount} for your sold book "${book.name}". Funds are now available in your wallet.`,
       'TRANSFER_COMPLETE',
     );
 

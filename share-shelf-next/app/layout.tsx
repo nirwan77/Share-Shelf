@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Share Shelf",
   description: "Share and discover books with ease.",
+  icons: {
+    icon: "/logo.png",
+  },
 };
 
 export default function RootLayout({

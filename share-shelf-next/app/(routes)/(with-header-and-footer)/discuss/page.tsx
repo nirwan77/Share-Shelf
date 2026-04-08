@@ -5,7 +5,10 @@ import { DiscussData, useDeletePost, useGetPostData, useLikePost } from "./actio
 import dayjs from "dayjs";
 import { useRouter } from "next/navigation";
 import { useGetProfile } from "@/app/(routes)/(with-header-and-footer)/profile/action";
-import { Trash2 } from "lucide-react";
+import { Trash2, User } from "lucide-react";
+import Link from "next/link";
+import { toast } from "sonner";
+import { useAuth } from "@/contexts";
 
 export default function SocialFeed() {
   const [activeTab, setActiveTab] = useState("latest");
@@ -26,6 +29,7 @@ export default function SocialFeed() {
   });
   const { mutateAsync } = useLikePost();
   const { data: profile } = useGetProfile();
+  const { token } = useAuth();
   const { mutateAsync: deletePost } = useDeletePost();
 
   const { push } = useRouter();
@@ -56,6 +60,10 @@ export default function SocialFeed() {
   }, [data]);
 
   const toggleLike = async (id: string) => {
+    if (!token) {
+      toast.error("Please login to like posts");
+      return;
+    }
     const isCurrentlyLiked = liked[id];
 
     setLiked((prev) => ({ ...prev, [id]: !isCurrentlyLiked }));
@@ -76,6 +84,10 @@ export default function SocialFeed() {
   };
 
   const handleDelete = async () => {
+    if (!token) {
+      toast.error("Authentication required");
+      return;
+    }
     if (!deletingPostId) return;
     try {
       await deletePost(deletingPostId);
@@ -143,11 +155,17 @@ export default function SocialFeed() {
       {data && (
         <div className="flex-1 px-6 py-5">
           <div className="flex items-center gap-3 bg-[#2a2a2a] rounded-xl px-4 py-2.5 mb-5 border border-[#333]">
-            <img
-              src="https://res.cloudinary.com/dwcbbaa20/image/upload/v1771497788/posts/bzx4ztaownrnqbiqhrwx.png"
-              alt="me"
-              className="w-9 h-9 rounded-full object-cover"
-            />
+            {profile?.avatar ? (
+              <img
+                src={profile.avatar}
+                alt={profile.name}
+                className="w-9 h-9 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-9 h-9 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-500">
+                <User size={18} />
+              </div>
+            )}
             <input
               value={postText}
               onChange={(e) => setPostText(e.target.value)}
@@ -155,9 +173,13 @@ export default function SocialFeed() {
               className="flex-1 bg-transparent border-none outline-none text-[#ccc] text-[13px]"
             />
             <button
-              onClick={() =>
-                push(`/discuss/post?content=${encodeURIComponent(postText)}`)
-              }
+              onClick={() => {
+                if (!token) {
+                  toast.error("Please login to create a post");
+                  return;
+                }
+                push(`/discuss/post?content=${encodeURIComponent(postText)}`);
+              }}
               className="bg-[#e8630a] text-white border-none rounded-lg px-[18px] py-2 font-semibold text-[13px] cursor-pointer whitespace-nowrap"
             >
               Create Post
@@ -213,7 +235,11 @@ export default function SocialFeed() {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
+                      <Link
+                        href={`/user/${post.createdByUser.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-2 group/user"
+                      >
                         {post.createdByUser?.avatar ? (
                           <img
                             src={post.createdByUser.avatar}
@@ -227,14 +253,14 @@ export default function SocialFeed() {
                           </div>
                         )}
                         <div>
-                          <div className="text-[13px] font-semibold text-white">
+                          <div className="text-[13px] font-semibold text-white group-hover/user:text-[#e8630a] transition-colors">
                             {post.createdByUser?.name ?? "Unknown"}
                           </div>
                           <div className="text-[10px] text-[#666]">
                             {formatDate(post.createdAt)}
                           </div>
                         </div>
-                      </div>
+                      </Link>
 
                       <div className="flex items-center gap-4 text-[12px] text-[#888]">
                         {/* <span>{post.viewsCount.toLocaleString()} Views</span> */}

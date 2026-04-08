@@ -21,6 +21,7 @@ export class ExploreService {
       categories?: string[];
       publishedDate?: string;
       sortBy?: string;
+      search?: string;
     } = {},
   ) {
     const {
@@ -31,9 +32,17 @@ export class ExploreService {
       categories,
       publishedDate,
       sortBy,
+      search,
     } = filters;
 
-    const where: Prisma.BooksWhereInput = {};
+    const where: Prisma.BooksWhereInput = {
+      OR: search
+        ? [
+            { name: { contains: search, mode: 'insensitive' } },
+            { author: { contains: search, mode: 'insensitive' } },
+          ]
+        : undefined,
+    };
 
     if (minPrice !== undefined || maxPrice !== undefined) {
       where.price = {};

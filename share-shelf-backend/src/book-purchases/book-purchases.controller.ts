@@ -21,9 +21,9 @@ export class BookPurchasesController {
   @ApiOperation({ summary: 'Initiate a new book purchase' })
   async initiatePurchase(
     @GetDashboardUserReqObject('id') userId: string,
-    @Body() body: { offerId: string },
+    @Body() body: { offerId: string; location?: string },
   ) {
-    return this.bookPurchasesService.initiatePurchase(userId, body.offerId);
+    return this.bookPurchasesService.initiatePurchase(userId, body.offerId, body.location);
   }
 
   @Post(':id/complete')
