@@ -1,5 +1,6 @@
 import { axios } from "@/app/lib";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { DiscussVote } from "../action";
 
 export interface PostUser {
   id: string;
@@ -12,8 +13,9 @@ export interface Comment {
   comment: string;
   user: PostUser;
   createdAt: string;
-  _count: { reactions: number };
-  isLikedByMe: boolean;
+  upvotes: number;
+  downvotes: number;
+  myVote: DiscussVote;
 }
 
 export interface Reaction {
@@ -31,8 +33,10 @@ export interface Post {
   createdByUser: PostUser;
   reactions: Reaction[];
   mentions: { id: string; userId: string }[];
-  _count: { comments: number; reactions: number };
-  isLikedByMe: boolean;
+  _count: { comments: number };
+  myVote: DiscussVote;
+  upvotes: number;
+  downvotes: number;
   viewsCount: number;
 }
 
@@ -107,26 +111,23 @@ export const useUpdatePost = (postId: string) => {
   });
 };
 
-export const useLikeComment = (postId: string) => {
+export const useVoteComment = (postId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (commentId: string) => {
+    mutationFn: async ({
+      commentId,
+      reaction,
+    }: {
+      commentId: string;
+      reaction: Exclude<DiscussVote, null>;
+    }) => {
       const { data } = await axios.post(`/discuss/comment/${commentId}/react`, {
-        reaction: "like",
+        reaction,
       });
-      return data as Comment;
+      return data;
     },
-    onSuccess: (updatedComment) => {
-      if (!updatedComment?.id) return;
-      queryClient.setQueryData(
-        ["comments", postId],
-        (old: Comment[] | undefined) => {
-          if (!old) return old;
-          return old.map((c) =>
-            c.id === updatedComment.id ? { ...c, ...updatedComment } : c,
-          );
-        },
-      );
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["comments", postId] });
     },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ["comments", postId] });
