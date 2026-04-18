@@ -1,22 +1,25 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Param,
+  Controller,
   Delete,
+  Get,
+  Param,
+  Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import {
-  ApiOperation,
-  ApiQuery,
   ApiBearerAuth,
+  ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { DiscussService } from './discuss.service';
-import { GetDashboardUserReqObject, JwtHeaderAuthGuard, JwtOptionalAuthGuard } from 'src/shared';
+import {
+  GetDashboardUserReqObject,
+  JwtHeaderAuthGuard,
+  JwtOptionalAuthGuard,
+} from 'src/shared';
 import { FeedQueryDto } from './dto/feed-query.dto';
+import { DiscussService } from './discuss.service';
 
 @ApiTags('discussions')
 @Controller('discuss')
@@ -81,15 +84,27 @@ export class DiscussController {
     );
   }
 
-  @Post(':id/like')
+  @Post(':id/react')
   @UseGuards(JwtHeaderAuthGuard)
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'React / like a post (toggle)' })
+  @ApiOperation({ summary: 'Upvote or downvote a post (toggle)' })
   async togglePostReaction(
     @Param('id') postId: string,
     @GetDashboardUserReqObject('id') userId: string,
+    @Body() body: { reaction: 'UPVOTE' | 'DOWNVOTE' },
   ) {
-    return this.discussService.togglePostReaction(postId, userId);
+    return this.discussService.togglePostReaction(postId, userId, body.reaction);
+  }
+
+  @Post(':id/like')
+  @UseGuards(JwtHeaderAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Backward-compatible alias for post upvote toggle' })
+  async togglePostLikeAlias(
+    @Param('id') postId: string,
+    @GetDashboardUserReqObject('id') userId: string,
+  ) {
+    return this.discussService.togglePostReaction(postId, userId, 'UPVOTE');
   }
 
   @Delete(':id')
@@ -118,11 +133,11 @@ export class DiscussController {
   @Post('comment/:id/react')
   @UseGuards(JwtHeaderAuthGuard)
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Like or dislike a comment (toggle reaction)' })
+  @ApiOperation({ summary: 'Upvote or downvote a comment (toggle)' })
   async toggleCommentReaction(
     @Param('id') commentId: string,
     @GetDashboardUserReqObject('id') userId: string,
-    @Body() body: { reaction: string },
+    @Body() body: { reaction: 'UPVOTE' | 'DOWNVOTE' },
   ) {
     return this.discussService.toggleCommentReaction(
       commentId,

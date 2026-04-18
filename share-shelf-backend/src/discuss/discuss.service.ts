@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma.service';
 import {
   FeedFilter,
@@ -6,24 +7,51 @@ import {
   FeedSortBy,
   FeedTimeRange,
 } from './dto/feed-query.dto';
-import { Prisma } from '@prisma/client';
+
+type DiscussVoteType = 'UPVOTE' | 'DOWNVOTE';
 
 @Injectable()
 export class DiscussService {
   constructor(private prisma: PrismaService) {}
 
+  private assertValidReaction(reaction: string): asserts reaction is DiscussVoteType {
+    if (reaction !== 'UPVOTE' && reaction !== 'DOWNVOTE') {
+      throw new BadRequestException('Reaction must be UPVOTE or DOWNVOTE');
+    }
+  }
+
+  private getVoteCounts(reactions: Array<{ reaction: string }>) {
+    return reactions.reduce(
+      (acc, current) => {
+        if (current.reaction === 'UPVOTE') acc.upvotes += 1;
+        if (current.reaction === 'DOWNVOTE') acc.downvotes += 1;
+        return acc;
+      },
+      { upvotes: 0, downvotes: 0 },
+    );
+  }
+
   async getFeed(query: FeedQueryDto, userId?: string) {
     const { filter, timeRange, sortBy } = query;
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 10;
 
-    // Build the WHERE clause for Prisma
+    const emptyFeed = {
+      posts: [],
+      meta: {
+        total: 0,
+        page,
+        limit,
+      },
+    };
+
     const where: Prisma.PostsWhereInput = {};
 
-    // 1. User-based filters
     if (filter === FeedFilter.MY_POSTS) {
-      if (!userId) return [];
+      if (!userId) return emptyFeed;
       where.createdById = userId;
     } else if (filter === FeedFilter.FOLLOWING) {
-      if (!userId) return [];
+      if (!userId) return emptyFeed;
       where.createdByUser = {
         followers: {
           some: {
@@ -33,7 +61,6 @@ export class DiscussService {
       };
     }
 
-    // 2. Time-range filters
     if (timeRange && timeRange !== FeedTimeRange.ALL_TIME) {
       const now = new Date();
       let startDate: Date;
@@ -42,9 +69,8 @@ export class DiscussService {
           startDate = new Date(now.setHours(0, 0, 0, 0));
           break;
         case FeedTimeRange.THIS_WEEK:
-          const oneWeekAgo = new Date(now);
-          oneWeekAgo.setDate(now.getDate() - 7);
-          startDate = oneWeekAgo;
+          startDate = new Date(now);
+          startDate.setDate(now.getDate() - 7);
           break;
         case FeedTimeRange.THIS_MONTH:
           startDate = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -61,12 +87,9 @@ export class DiscussService {
       }
     }
 
-    // 3. Sorting logic
-    // We use Prisma for common sorts (latest, most liked, etc.)
-
     const select = {
       id: true,
-      _count: { select: { comments: true, reactions: true } },
+      _count: { select: { comments: true } },
       content: true,
       image: true,
       viewsCount: true,
@@ -80,22 +103,19 @@ export class DiscussService {
       title: true,
       createdAt: true,
       reactions: {
-        where: { userId: userId || '' },
-        select: { id: true },
+        select: { reaction: true, userId: true },
       },
     };
 
-    const orderByMapping: any = {
-      [FeedSortBy.LATEST]: { createdAt: 'desc' },
-      [FeedSortBy.MOST_COMMENTED]: { comments: { _count: 'desc' } },
-      [FeedSortBy.MOST_LIKED]: { reactions: { _count: 'desc' } },
-    };
+    const orderByMapping: Record<string, Prisma.PostsOrderByWithRelationInput> =
+      {
+        [FeedSortBy.LATEST]: { createdAt: 'desc' },
+        [FeedSortBy.MOST_COMMENTED]: { comments: { _count: 'desc' } },
+        [FeedSortBy.MOST_LIKED]: { reactions: { _count: 'desc' } },
+      };
     const orderBy = orderByMapping[sortBy || FeedSortBy.LATEST] || {
       createdAt: 'desc',
     };
-
-    const page = Number(query.page) || 1;
-    const limit = Number(query.limit) || 10;
 
     const posts = await this.prisma.posts.findMany({
       where,
@@ -108,9 +128,12 @@ export class DiscussService {
     const total = await this.prisma.posts.count({ where });
 
     return {
-      posts: posts.map((post: any) => ({
+      posts: posts.map((post) => ({
         ...post,
-        isLikedByMe: post.reactions.length > 0,
+        ...this.getVoteCounts(post.reactions),
+        myVote:
+          post.reactions.find((reaction) => reaction.userId === userId)
+            ?.reaction ?? null,
         reactions: undefined,
       })),
       meta: {
@@ -146,7 +169,7 @@ export class DiscussService {
     const post = await this.prisma.posts.findUnique({
       where: { id: postId },
       select: {
-        _count: { select: { comments: true, reactions: true } },
+        _count: { select: { comments: true } },
         title: true,
         content: true,
         image: true,
@@ -160,8 +183,7 @@ export class DiscussService {
             comment: true,
             user: { select: { id: true, name: true, avatar: true } },
             createdAt: true,
-            _count: { select: { postCommentReactions: true } }, // ← add
-            postCommentReactions: { select: { userId: true, reaction: true } }, // ← add
+            postCommentReactions: { select: { userId: true, reaction: true } },
           },
           orderBy: { createdAt: 'asc' },
         },
@@ -172,21 +194,19 @@ export class DiscussService {
 
     if (!post) return null;
 
-    const isLikedByMe = (post as any).reactions.some(
-      (r: any) => r.userId === currentUserId,
-    );
-
     return {
       ...post,
-      isLikedByMe,
-      comments: (post as any).comments.map(
-        ({ postCommentReactions, ...comment }: any) => ({
-          ...comment,
-          isLikedByMe: postCommentReactions.some(
-            (r: any) => r.userId === currentUserId && r.reaction === 'like',
-          ),
-        }),
-      ),
+      ...this.getVoteCounts(post.reactions),
+      myVote:
+        post.reactions.find((reaction) => reaction.userId === currentUserId)
+          ?.reaction ?? null,
+      comments: post.comments.map(({ postCommentReactions, ...comment }) => ({
+        ...comment,
+        ...this.getVoteCounts(postCommentReactions),
+        myVote:
+          postCommentReactions.find((reaction) => reaction.userId === currentUserId)
+            ?.reaction ?? null,
+      })),
     };
   }
 
@@ -198,18 +218,17 @@ export class DiscussService {
         comment: true,
         createdAt: true,
         user: { select: { id: true, name: true, avatar: true } },
-        _count: { select: { postCommentReactions: true } },
         postCommentReactions: { select: { userId: true, reaction: true } },
       },
       orderBy: { createdAt: 'asc' },
     });
 
-    return comments.map(({ postCommentReactions, _count, ...comment }) => ({
+    return comments.map(({ postCommentReactions, ...comment }) => ({
       ...comment,
-      isLikedByMe: postCommentReactions.some(
-        (r) => r.userId === currentUserId && r.reaction === 'like',
-      ),
-      _count: { reactions: _count.postCommentReactions },
+      ...this.getVoteCounts(postCommentReactions),
+      myVote:
+        postCommentReactions.find((reaction) => reaction.userId === currentUserId)
+          ?.reaction ?? null,
     }));
   }
 
@@ -229,18 +248,30 @@ export class DiscussService {
     });
   }
 
-  async togglePostReaction(postId: string, userId: string) {
-    const reaction = 'like';
+  async togglePostReaction(
+    postId: string,
+    userId: string,
+    reaction: DiscussVoteType,
+  ) {
+    this.assertValidReaction(reaction);
 
     const existing = await this.prisma.postReactions.findUnique({
-      where: { postId_userId_reaction: { postId, userId, reaction } },
+      where: { postId_userId: { postId, userId } },
     });
 
     if (existing) {
-      await this.prisma.postReactions.delete({
+      if (existing.reaction === reaction) {
+        await this.prisma.postReactions.delete({
+          where: { id: existing.id },
+        });
+        return { action: 'removed' };
+      }
+
+      const updatedReaction = await this.prisma.postReactions.update({
         where: { id: existing.id },
+        data: { reaction },
       });
-      return { action: 'removed' };
+      return { action: 'changed', reaction: updatedReaction };
     }
 
     const newReaction = await this.prisma.postReactions.create({
@@ -280,27 +311,34 @@ export class DiscussService {
   async toggleCommentReaction(
     commentId: string,
     userId: string,
-    reaction: string,
+    reaction: DiscussVoteType,
   ) {
+    this.assertValidReaction(reaction);
+
     const existing = await this.prisma.postCommentReactions.findUnique({
       where: {
-        postCommentId_userId_reaction: {
+        postCommentId_userId: {
           postCommentId: commentId,
           userId,
-          reaction,
         },
       },
     });
 
     if (existing) {
-      // already liked/reacted → remove it (dislike/unreact)
-      await this.prisma.postCommentReactions.delete({
+      if (existing.reaction === reaction) {
+        await this.prisma.postCommentReactions.delete({
+          where: { id: existing.id },
+        });
+        return { action: 'removed' };
+      }
+
+      const updatedReaction = await this.prisma.postCommentReactions.update({
         where: { id: existing.id },
+        data: { reaction },
       });
-      return { action: 'removed' };
+      return { action: 'changed', reaction: updatedReaction };
     }
 
-    // otherwise create reaction
     const newReaction = await this.prisma.postCommentReactions.create({
       data: {
         postCommentId: commentId,

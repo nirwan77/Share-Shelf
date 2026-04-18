@@ -227,7 +227,7 @@ model PostReactions {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([postId, userId, reaction])
+  @@unique([postId, userId])
   @@map("post_reactions")
 }
 
@@ -289,7 +289,7 @@ model PostCommentReactions {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([postCommentId, userId, reaction])
+  @@unique([postCommentId, userId])
   @@map("post_comment_reactions")
 }
 
