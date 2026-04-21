@@ -19,6 +19,7 @@ import {
   JwtOptionalAuthGuard,
 } from 'src/shared';
 import { FeedQueryDto } from './dto/feed-query.dto';
+import { ReportContentDto } from './dto/report-content.dto';
 import { DiscussService } from './discuss.service';
 
 @ApiTags('discussions')
@@ -107,6 +108,18 @@ export class DiscussController {
     return this.discussService.togglePostReaction(postId, userId, 'UPVOTE');
   }
 
+  @Post(':id/report')
+  @UseGuards(JwtHeaderAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Report a discussion post and its author' })
+  async reportPost(
+    @Param('id') postId: string,
+    @GetDashboardUserReqObject('id') userId: string,
+    @Body() body: ReportContentDto,
+  ) {
+    return this.discussService.reportPost(postId, userId, body);
+  }
+
   @Delete(':id')
   @UseGuards(JwtHeaderAuthGuard)
   @ApiBearerAuth('JWT-auth')
@@ -144,6 +157,18 @@ export class DiscussController {
       userId,
       body.reaction,
     );
+  }
+
+  @Post('comment/:id/report')
+  @UseGuards(JwtHeaderAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Report a discussion comment and its author' })
+  async reportComment(
+    @Param('id') commentId: string,
+    @GetDashboardUserReqObject('id') userId: string,
+    @Body() body: ReportContentDto,
+  ) {
+    return this.discussService.reportComment(commentId, userId, body);
   }
 
   @Delete('comment/:id')

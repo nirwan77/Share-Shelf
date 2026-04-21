@@ -7,6 +7,7 @@ import {
   FeedSortBy,
   FeedTimeRange,
 } from './dto/feed-query.dto';
+import { ReportContentDto } from './dto/report-content.dto';
 
 type DiscussVoteType = 'UPVOTE' | 'DOWNVOTE';
 
@@ -107,25 +108,44 @@ export class DiscussService {
       },
     };
 
+    const total = await this.prisma.posts.count({ where });
+    const skip = (page - 1) * limit;
+
     const orderByMapping: Record<string, Prisma.PostsOrderByWithRelationInput> =
       {
         [FeedSortBy.LATEST]: { createdAt: 'desc' },
         [FeedSortBy.MOST_COMMENTED]: { comments: { _count: 'desc' } },
-        [FeedSortBy.MOST_LIKED]: { reactions: { _count: 'desc' } },
       };
-    const orderBy = orderByMapping[sortBy || FeedSortBy.LATEST] || {
-      createdAt: 'desc',
-    };
 
-    const posts = await this.prisma.posts.findMany({
-      where,
-      select,
-      orderBy,
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+    const posts =
+      sortBy === FeedSortBy.MOST_LIKED
+        ? (
+            await this.prisma.posts.findMany({
+              where,
+              select,
+              orderBy: { createdAt: 'desc' },
+            })
+          )
+            .sort((first, second) => {
+              const firstUpvotes = this.getVoteCounts(first.reactions).upvotes;
+              const secondUpvotes = this.getVoteCounts(second.reactions).upvotes;
 
-    const total = await this.prisma.posts.count({ where });
+              if (secondUpvotes !== firstUpvotes) {
+                return secondUpvotes - firstUpvotes;
+              }
+
+              return second.createdAt.getTime() - first.createdAt.getTime();
+            })
+            .slice(skip, skip + limit)
+        : await this.prisma.posts.findMany({
+            where,
+            select,
+            orderBy: orderByMapping[sortBy || FeedSortBy.LATEST] || {
+              createdAt: 'desc',
+            },
+            skip,
+            take: limit,
+          });
 
     return {
       posts: posts.map((post) => ({
@@ -283,6 +303,84 @@ export class DiscussService {
     });
 
     return { action: 'added', reaction: newReaction };
+  }
+
+  async reportPost(postId: string, reporterId: string, body: ReportContentDto) {
+    const post = await this.prisma.posts.findUnique({
+      where: { id: postId },
+      select: { id: true, createdById: true },
+    });
+
+    if (!post) {
+      throw new BadRequestException('Post not found');
+    }
+
+    if (post.createdById === reporterId) {
+      throw new BadRequestException('You cannot report your own post');
+    }
+
+    return this.prisma.report.upsert({
+      where: {
+        reporterId_postId: {
+          reporterId,
+          postId,
+        },
+      },
+      update: {
+        reason: body.reason,
+        details: body.details,
+        status: 'PENDING',
+      },
+      create: {
+        targetType: 'POST',
+        reason: body.reason,
+        details: body.details,
+        reporterId,
+        reportedUserId: post.createdById,
+        postId,
+      },
+    });
+  }
+
+  async reportComment(
+    commentId: string,
+    reporterId: string,
+    body: ReportContentDto,
+  ) {
+    const comment = await this.prisma.postComments.findUnique({
+      where: { id: commentId },
+      select: { id: true, userId: true },
+    });
+
+    if (!comment?.userId) {
+      throw new BadRequestException('Comment not found');
+    }
+
+    if (comment.userId === reporterId) {
+      throw new BadRequestException('You cannot report your own comment');
+    }
+
+    return this.prisma.report.upsert({
+      where: {
+        reporterId_commentId: {
+          reporterId,
+          commentId,
+        },
+      },
+      update: {
+        reason: body.reason,
+        details: body.details,
+        status: 'PENDING',
+      },
+      create: {
+        targetType: 'COMMENT',
+        reason: body.reason,
+        details: body.details,
+        reporterId,
+        reportedUserId: comment.userId,
+        commentId,
+      },
+    });
   }
 
   async deletePost(postId: string, userId: string) {
