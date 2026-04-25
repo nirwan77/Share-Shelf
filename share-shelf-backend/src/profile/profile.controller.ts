@@ -1,6 +1,6 @@
 import { Controller, Get, Patch, Body, UseGuards, Param, Post, Delete, Query } from '@nestjs/common';
 import { ProfileService } from './profile.service';
-import { GetDashboardUserReqObject, JwtHeaderAuthGuard } from '../shared';
+import { GetDashboardUserReqObject, JwtHeaderAuthGuard, JwtOptionalAuthGuard } from '../shared';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Profile')
@@ -16,11 +16,10 @@ export class ProfileController {
   }
 
   @Get(':id')
-  @UseGuards(JwtHeaderAuthGuard)
-  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtOptionalAuthGuard)
   findOnePublic(
     @Param('id') id: string,
-    @GetDashboardUserReqObject('id') userId: string,
+    @GetDashboardUserReqObject('id') userId?: string,
   ) {
     return this.profileService.findOnePublic(id, userId);
   }
