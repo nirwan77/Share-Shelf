@@ -14,7 +14,7 @@ import { DashboardUserReqObject } from './authDecorator';
 export class JwtHeaderAuthGuard implements CanActivate {
   constructor(private readonly authService: AuthService) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context
       .switchToHttp()
       .getRequest<Request & { user?: DashboardUserReqObject }>();
@@ -39,6 +39,7 @@ export class JwtHeaderAuthGuard implements CanActivate {
     }
 
     const payload = this.authService.verifyToken(token);
+    await this.authService.assertUserActive(payload.sub);
 
     request.user = {
       id: payload.sub,
