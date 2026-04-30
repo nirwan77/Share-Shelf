@@ -16,6 +16,7 @@ import { Route as WithLayoutUsersRouteImport } from './routes/_withLayout/users'
 import { Route as WithLayoutTransactionsRouteImport } from './routes/_withLayout/transactions'
 import { Route as WithLayoutBooksRouteImport } from './routes/_withLayout/books'
 import { Route as AuthSignInRouteImport } from './routes/_auth/sign-in'
+import { Route as WithLayoutReportsIndexRouteImport } from './routes/_withLayout/reports/index'
 import { Route as WithLayoutBookRequestsIndexRouteImport } from './routes/_withLayout/book-requests/index'
 
 const WithLayoutRoute = WithLayoutRouteImport.update({
@@ -51,6 +52,11 @@ const AuthSignInRoute = AuthSignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => AuthRoute,
 } as any)
+const WithLayoutReportsIndexRoute = WithLayoutReportsIndexRouteImport.update({
+  id: '/reports/',
+  path: '/reports/',
+  getParentRoute: () => WithLayoutRoute,
+} as any)
 const WithLayoutBookRequestsIndexRoute =
   WithLayoutBookRequestsIndexRouteImport.update({
     id: '/book-requests/',
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/transactions': typeof WithLayoutTransactionsRoute
   '/users': typeof WithLayoutUsersRoute
   '/book-requests/': typeof WithLayoutBookRequestsIndexRoute
+  '/reports/': typeof WithLayoutReportsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof WithLayoutIndexRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/transactions': typeof WithLayoutTransactionsRoute
   '/users': typeof WithLayoutUsersRoute
   '/book-requests': typeof WithLayoutBookRequestsIndexRoute
+  '/reports': typeof WithLayoutReportsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/_withLayout/users': typeof WithLayoutUsersRoute
   '/_withLayout/': typeof WithLayoutIndexRoute
   '/_withLayout/book-requests/': typeof WithLayoutBookRequestsIndexRoute
+  '/_withLayout/reports/': typeof WithLayoutReportsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -94,6 +103,7 @@ export interface FileRouteTypes {
     | '/transactions'
     | '/users'
     | '/book-requests/'
+    | '/reports/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -102,6 +112,7 @@ export interface FileRouteTypes {
     | '/transactions'
     | '/users'
     | '/book-requests'
+    | '/reports'
   id:
     | '__root__'
     | '/_auth'
@@ -112,6 +123,7 @@ export interface FileRouteTypes {
     | '/_withLayout/users'
     | '/_withLayout/'
     | '/_withLayout/book-requests/'
+    | '/_withLayout/reports/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -170,6 +182,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSignInRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_withLayout/reports/': {
+      id: '/_withLayout/reports/'
+      path: '/reports'
+      fullPath: '/reports/'
+      preLoaderRoute: typeof WithLayoutReportsIndexRouteImport
+      parentRoute: typeof WithLayoutRoute
+    }
     '/_withLayout/book-requests/': {
       id: '/_withLayout/book-requests/'
       path: '/book-requests'
@@ -196,6 +215,7 @@ interface WithLayoutRouteChildren {
   WithLayoutUsersRoute: typeof WithLayoutUsersRoute
   WithLayoutIndexRoute: typeof WithLayoutIndexRoute
   WithLayoutBookRequestsIndexRoute: typeof WithLayoutBookRequestsIndexRoute
+  WithLayoutReportsIndexRoute: typeof WithLayoutReportsIndexRoute
 }
 
 const WithLayoutRouteChildren: WithLayoutRouteChildren = {
@@ -204,6 +224,7 @@ const WithLayoutRouteChildren: WithLayoutRouteChildren = {
   WithLayoutUsersRoute: WithLayoutUsersRoute,
   WithLayoutIndexRoute: WithLayoutIndexRoute,
   WithLayoutBookRequestsIndexRoute: WithLayoutBookRequestsIndexRoute,
+  WithLayoutReportsIndexRoute: WithLayoutReportsIndexRoute,
 }
 
 const WithLayoutRouteWithChildren = WithLayoutRoute._addFileChildren(

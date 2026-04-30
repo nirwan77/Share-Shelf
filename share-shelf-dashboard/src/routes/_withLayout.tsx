@@ -22,6 +22,7 @@ import {
   IconBook,
   IconClipboardList,
   IconCash,
+  IconMessageReport,
 } from "@tabler/icons-react";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -102,6 +103,13 @@ function RouteComponent() {
             label="Users"
             leftSection={<IconUsers size={18} stroke={1.5} />}
             active={location.pathname.startsWith("/users")}
+          />
+          <NavLink
+            component={Link}
+            to="/reports"
+            label="Reports"
+            leftSection={<IconMessageReport size={18} stroke={1.5} />}
+            active={location.pathname.startsWith("/reports")}
           />
           <NavLink
             component={Link}

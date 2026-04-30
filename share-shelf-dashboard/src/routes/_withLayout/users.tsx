@@ -28,9 +28,10 @@ import {
   IconExternalLink,
   IconChevronRight,
   IconActivity,
+  IconLockOpen,
 } from "@tabler/icons-react";
 import { useState } from "react";
-import { useGetUsers, useGetUserDetails } from "./users/-queries";
+import { useGetUsers, useGetUserDetails, useUnbanUser } from "./users/-queries";
 
 export const Route = createFileRoute("/_withLayout/users")({
   component: UsersManagement,
@@ -46,6 +47,7 @@ function UsersManagement() {
   const { data, isLoading } = useGetUsers(page, 10, debouncedSearch);
   const { data: userDetails, isLoading: isLoadingDetails } =
     useGetUserDetails(selectedUserId);
+  const unbanUser = useUnbanUser();
 
   const handleRowClick = (userId: string) => {
     setSelectedUserId(userId);
@@ -72,9 +74,19 @@ function UsersManagement() {
         </Group>
       </Table.Td>
       <Table.Td>
-        <Badge color={user.isVerified ? "blue" : "gray"} variant="light">
-          {user.isVerified ? "Verified" : "Unverified"}
-        </Badge>
+        <Group gap="xs">
+          <Badge color={user.isVerified ? "blue" : "gray"} variant="light">
+            {user.isVerified ? "Verified" : "Unverified"}
+          </Badge>
+          {user.isBanned && (
+            <Badge color="red" variant="light">
+              Banned
+            </Badge>
+          )}
+        </Group>
+      </Table.Td>
+      <Table.Td>
+        <Text size="sm">{user._count.banAppeals} Appeals</Text>
       </Table.Td>
       <Table.Td>
         <Text size="sm">{user._count.userBookStatuses} Books</Text>
@@ -133,6 +145,7 @@ function UsersManagement() {
                       <Table.Tr>
                         <Table.Th>User</Table.Th>
                         <Table.Th>Status</Table.Th>
+                        <Table.Th>Appeals</Table.Th>
                         <Table.Th>Library</Table.Th>
                         <Table.Th>Activity</Table.Th>
                         <Table.Th>Joined</Table.Th>
@@ -189,12 +202,34 @@ function UsersManagement() {
                 <Text c="dimmed">{userDetails.user.email}</Text>
                 <Badge
                   mt={5}
-                  color={userDetails.user.isVerified ? "green" : "gray"}
+                  color={
+                    userDetails.user.isBanned
+                      ? "red"
+                      : userDetails.user.isVerified
+                        ? "green"
+                        : "gray"
+                  }
                 >
-                  {userDetails.user.isVerified ? "Verified Member" : "Guest"}
+                  {userDetails.user.isBanned
+                    ? "Banned"
+                    : userDetails.user.isVerified
+                      ? "Verified Member"
+                      : "Guest"}
                 </Badge>
               </div>
             </Group>
+
+            {userDetails.user.isBanned && (
+              <Button
+                color="green"
+                variant="light"
+                leftSection={<IconLockOpen size={16} />}
+                loading={unbanUser.isPending}
+                onClick={() => unbanUser.mutate(userDetails.user.id)}
+              >
+                Unban user
+              </Button>
+            )}
 
             <SimpleGrid cols={2} spacing="md">
               <StatCard
@@ -221,7 +256,50 @@ function UsersManagement() {
                 icon={IconActivity}
                 color="grape"
               />
+              <StatCard
+                title="Appeals"
+                value={userDetails.user._count.banAppeals}
+                icon={IconLockOpen}
+                color="red"
+              />
             </SimpleGrid>
+
+            <Box>
+              <Text fw={700} mb="sm">
+                Ban Appeals
+              </Text>
+              <Stack gap="xs">
+                {userDetails.stats.recentBanAppeals.map((appeal) => (
+                  <Paper key={appeal.id} withBorder p="sm" radius="sm">
+                    <Group justify="space-between" mb={6}>
+                      <Badge
+                        size="xs"
+                        color={
+                          appeal.status === "PENDING"
+                            ? "yellow"
+                            : appeal.status === "APPROVED"
+                              ? "green"
+                              : "gray"
+                        }
+                      >
+                        {appeal.status}
+                      </Badge>
+                      <Text size="xs" c="dimmed">
+                        {new Date(appeal.createdAt).toLocaleDateString()}
+                      </Text>
+                    </Group>
+                    <Text size="sm" lineClamp={3}>
+                      {appeal.message}
+                    </Text>
+                  </Paper>
+                ))}
+                {userDetails.stats.recentBanAppeals.length === 0 && (
+                  <Text size="sm" c="dimmed" fs="italic">
+                    No ban appeals submitted.
+                  </Text>
+                )}
+              </Stack>
+            </Box>
 
             <Box>
               <Text fw={700} mb="md">
