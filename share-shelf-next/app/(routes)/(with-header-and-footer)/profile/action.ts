@@ -124,6 +124,7 @@ export type MyPurchase = {
     phone: string | null;
   };
   sellerThanked: boolean;
+  sellerRating: number | null;
 };
 
 export const useGetMyPurchases = () => {
@@ -213,9 +214,16 @@ export const useConfirmPurchaseReceived = () => {
 export const useThankSeller = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (purchaseId: string) => {
+    mutationFn: async ({
+      purchaseId,
+      rating,
+    }: {
+      purchaseId: string;
+      rating: number;
+    }) => {
       const { data } = await axios.patch(
         `/book-purchases/${purchaseId}/thank-seller`,
+        { rating },
       );
       return data;
     },

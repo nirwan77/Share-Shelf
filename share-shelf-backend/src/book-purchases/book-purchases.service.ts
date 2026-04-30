@@ -209,13 +209,16 @@ export class BookPurchasesService {
         ratingUserId: userId,
         ratedUserId: { in: sellerIds },
       },
-      select: { ratedUserId: true },
+      select: { ratedUserId: true, rating: true },
     });
-    const thankedSellerIds = new Set(ratings.map((rating) => rating.ratedUserId));
+    const sellerRatings = new Map(
+      ratings.map((rating) => [rating.ratedUserId, rating.rating]),
+    );
 
     return purchases.map((purchase) => ({
       ...purchase,
-      sellerThanked: thankedSellerIds.has(purchase.sellerId),
+      sellerThanked: sellerRatings.has(purchase.sellerId),
+      sellerRating: sellerRatings.get(purchase.sellerId) ?? null,
     }));
   }
 
@@ -262,7 +265,17 @@ export class BookPurchasesService {
     };
   }
 
-  async thankSeller(userId: string, purchaseId: string) {
+  async thankSeller(userId: string, purchaseId: string, rating = 5) {
+    const normalizedRating = Number(rating);
+
+    if (
+      !Number.isInteger(normalizedRating) ||
+      normalizedRating < 1 ||
+      normalizedRating > 5
+    ) {
+      throw new BadRequestException('Seller rating must be a whole number from 1 to 5');
+    }
+
     const purchase = await this.prisma.bookPurchase.findUnique({
       where: { id: purchaseId },
       include: {
@@ -276,11 +289,11 @@ export class BookPurchasesService {
     }
 
     if (purchase.buyerId !== userId) {
-      throw new ForbiddenException('You can only thank sellers from your own purchases');
+      throw new ForbiddenException('You can only rate sellers from your own purchases');
     }
 
     if (!['BUYER_CONFIRMED', 'COMPLETED'].includes(purchase.status)) {
-      throw new BadRequestException('Confirm receipt before thanking the seller');
+      throw new BadRequestException('Confirm receipt before rating the seller');
     }
 
     const existingRating = await this.prisma.userRating.findFirst({
@@ -291,12 +304,17 @@ export class BookPurchasesService {
     });
 
     if (existingRating) {
-      return { ok: true, message: 'Seller already thanked' };
+      await this.prisma.userRating.update({
+        where: { id: existingRating.id },
+        data: { rating: normalizedRating },
+      });
+
+      return { ok: true, message: 'Seller rating updated successfully' };
     }
 
     await this.prisma.userRating.create({
       data: {
-        rating: 5,
+        rating: normalizedRating,
         ratingUserId: userId,
         ratedUserId: purchase.sellerId,
       },
@@ -304,11 +322,11 @@ export class BookPurchasesService {
 
     await this.notifications.create(
       purchase.sellerId,
-      `${purchase.buyer.name} thanked you for the transaction on "${purchase.book.name}".`,
+      `${purchase.buyer.name} rated you ${normalizedRating} out of 5 for the transaction on "${purchase.book.name}".`,
       'SELLER_THANKED',
     );
 
-    return { ok: true, message: 'Seller thanked successfully' };
+    return { ok: true, message: 'Seller rated successfully' };
   }
 
   private getEsewaConfig() {

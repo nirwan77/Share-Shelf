@@ -53,11 +53,12 @@ export class BookPurchasesController {
   }
 
   @Patch(':id/thank-seller')
-  @ApiOperation({ summary: 'Thank the seller after a successful transaction' })
+  @ApiOperation({ summary: 'Rate the seller after a successful transaction' })
   async thankSeller(
     @Param('id') id: string,
     @GetDashboardUserReqObject('id') userId: string,
+    @Body() body: { rating?: number },
   ) {
-    return this.bookPurchasesService.thankSeller(userId, id);
+    return this.bookPurchasesService.thankSeller(userId, id, body?.rating);
   }
 }

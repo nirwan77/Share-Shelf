@@ -18,10 +18,26 @@ import type { MyOffer, MyBookRequest, MyPurchase } from "./action";
 import Image from "next/image";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Library, FollowerListModal } from "./components";
 import { toast } from "sonner";
 import { Camera as CameraIcon, HeartHandshake, Star } from "lucide-react";
 import { useState } from "react";
+
+const getApiErrorMessage = (error: unknown, fallback: string) => {
+  const responseMessage = (
+    error as { response?: { data?: { message?: unknown } } }
+  )?.response?.data?.message;
+
+  return typeof responseMessage === "string" ? responseMessage : fallback;
+};
 
 export default function Profile() {
   const { token } = useAuth();
@@ -31,6 +47,8 @@ export default function Profile() {
   const [modalType, setModalType] = useState<"followers" | "following" | null>(
     null,
   );
+  const [ratingPurchase, setRatingPurchase] = useState<MyPurchase | null>(null);
+  const [selectedSellerRating, setSelectedSellerRating] = useState(5);
 
   useEffect(() => {
     if (!token?.accessToken) {
@@ -38,11 +56,10 @@ export default function Profile() {
     }
   }, [token, router]);
 
-  const { data, isLoading } = useGetProfile();
-  const { data: offersData, isLoading: offersLoading } = useGetMyOffers();
-  const { data: requestsData, isLoading: requestsLoading } = useGetMyRequests();
-  const { data: purchasesData, isLoading: purchasesLoading } =
-    useGetMyPurchases();
+  const { data } = useGetProfile();
+  const { data: offersData } = useGetMyOffers();
+  const { data: requestsData } = useGetMyRequests();
+  const { data: purchasesData } = useGetMyPurchases();
   const deleteOffer = useDeleteOffer();
   const confirmPurchaseReceived = useConfirmPurchaseReceived();
   const thankSeller = useThankSeller();
@@ -62,94 +79,119 @@ export default function Profile() {
     }
   };
 
+  const openRatingModal = (purchase: MyPurchase) => {
+    setRatingPurchase(purchase);
+    setSelectedSellerRating(purchase.sellerRating ?? 5);
+  };
+
+  const closeRatingModal = () => {
+    if (!thankSeller.isPending) {
+      setRatingPurchase(null);
+    }
+  };
+
+  const saveSellerRating = () => {
+    if (!ratingPurchase) return;
+
+    thankSeller.mutate(
+      {
+        purchaseId: ratingPurchase.id,
+        rating: selectedSellerRating,
+      },
+      {
+        onSuccess: () => {
+          toast.success(
+            "Seller rating saved. This helps other readers decide who to trust.",
+          );
+          setRatingPurchase(null);
+        },
+        onError: (error: unknown) => {
+          toast.error(getApiErrorMessage(error, "Could not rate seller"));
+        },
+      },
+    );
+  };
+
   return (
     <div className="container mx-auto pt-36 pb-20">
-      {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
-        </div>
-      ) : (
-        <>
-          <div className="app-card relative flex flex-col-reverse items-center justify-between gap-8 overflow-hidden p-6 text-center sm:p-8 md:flex-row md:text-left">
-            <div className="relative z-10">
-              <h2 className="text-3xl font-bold text-white mb-2">
-                {data?.name}
-              </h2>
-              <div className="flex justify-center gap-6 text-sm text-gray-400 md:justify-start">
-                <span
-                  className="cursor-pointer hover:text-white transition-colors items-center flex flex-col sm:flex-row sm:gap-1.5"
-                  onClick={() => setModalType("following")}
-                >
-                  <strong className="text-white">
-                    {data?._count.following || 0}
-                  </strong>
-                  <span className="uppercase text-[10px] tracking-wider font-bold">
-                    following
-                  </span>
-                </span>
-                <span
-                  className="cursor-pointer hover:text-white items-center transition-colors flex flex-col sm:flex-row sm:gap-1.5"
-                  onClick={() => setModalType("followers")}
-                >
-                  <strong className="text-white">
-                    {data?._count.followers || 0}
-                  </strong>
-                  <span className="uppercase text-[10px] tracking-wider font-bold">
-                    followers
-                  </span>
-                </span>
-              </div>
-              <div className="mt-6 flex flex-wrap items-center justify-center gap-4 md:justify-start">
-                <div className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-zinc-500">
-                  0 books exchanged
-                </div>
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-orange-500/20 bg-orange-500/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-orange-400">
-                  <Star className="h-3.5 w-3.5 fill-orange-400" />
-                  {data?.credibility?.averageRating?.toFixed(1) || "0.0"} rating
-                  <span className="text-zinc-500">
-                    ({data?.credibility?.ratingCount || 0})
-                  </span>
-                </div>
-              </div>
+      <div className="app-card relative flex flex-col-reverse items-center justify-between gap-8 overflow-hidden p-6 text-center sm:p-8 md:flex-row md:text-left">
+        <div className="relative z-10">
+          <h2 className="text-3xl font-bold text-white mb-2">
+            {data?.name || "Profile"}
+          </h2>
+          <div className="flex justify-center gap-6 text-sm text-gray-400 md:justify-start">
+            <span
+              className="cursor-pointer hover:text-white transition-colors items-center flex flex-col sm:flex-row sm:gap-1.5"
+              onClick={() => setModalType("following")}
+            >
+              <strong className="text-white">
+                {data?._count.following || 0}
+              </strong>
+              <span className="uppercase text-[10px] tracking-wider font-bold">
+                following
+              </span>
+            </span>
+            <span
+              className="cursor-pointer hover:text-white items-center transition-colors flex flex-col sm:flex-row sm:gap-1.5"
+              onClick={() => setModalType("followers")}
+            >
+              <strong className="text-white">
+                {data?._count.followers || 0}
+              </strong>
+              <span className="uppercase text-[10px] tracking-wider font-bold">
+                followers
+              </span>
+            </span>
+          </div>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-4 md:justify-start">
+            <div className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-zinc-500">
+              0 books exchanged
             </div>
-            <div className="relative group z-10">
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                className="hidden"
-                accept="image/*"
-              />
-              <figure
-                className="relative flex h-28 w-28 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/[0.06] shadow-[0_18px_45px_rgba(0,0,0,0.35)] transition-all duration-300 group-hover:scale-105"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                {data?.avatar ? (
-                  <Image
-                    alt={data.name}
-                    src={data.avatar}
-                    height={112}
-                    width={112}
-                    className="object-cover w-full h-full"
-                  />
-                ) : (
-                  <span className="text-4xl font-bold text-gray-600 group-hover:text-orange-500 transition-colors">
-                    {data?.name?.charAt(0).toUpperCase()}
-                  </span>
-                )}
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-[2px]">
-                  <CameraIcon className="text-white w-7 h-7" />
-                </div>
-              </figure>
-              {(uploadImage.isPending || updateAvatar.isPending) && (
-                <div className="absolute inset-0 bg-gray-900/80 flex items-center justify-center rounded-full z-20">
-                  <div className="animate-spin rounded-full h-6 w-6 border-2 border-orange-500 border-t-transparent"></div>
-                </div>
-              )}
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-orange-500/20 bg-orange-500/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-orange-400">
+              <Star className="h-3.5 w-3.5 fill-orange-400" />
+              {data?.credibility?.averageRating?.toFixed(1) || "0.0"} rating
+              <span className="text-zinc-500">
+                ({data?.credibility?.ratingCount || 0})
+              </span>
             </div>
           </div>
-        </>
-      )}
+        </div>
+        <div className="relative group z-10">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            className="hidden"
+            accept="image/*"
+          />
+          <figure
+            className="relative flex h-28 w-28 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/[0.06] shadow-[0_18px_45px_rgba(0,0,0,0.35)] transition-all duration-300 group-hover:scale-105"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {data?.avatar ? (
+              <Image
+                alt={data.name}
+                src={data.avatar}
+                height={112}
+                width={112}
+                className="object-cover w-full h-full"
+              />
+            ) : (
+              <span className="text-4xl font-bold text-gray-600 group-hover:text-orange-500 transition-colors">
+                {data?.name?.charAt(0).toUpperCase() || "?"}
+              </span>
+            )}
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-[2px]">
+              <CameraIcon className="text-white w-7 h-7" />
+            </div>
+          </figure>
+          {(uploadImage.isPending || updateAvatar.isPending) && (
+            <div className="absolute inset-0 bg-gray-900/80 flex items-center justify-center rounded-full z-20">
+              <div className="animate-spin rounded-full h-6 w-6 border-2 border-orange-500 border-t-transparent"></div>
+            </div>
+          )}
+        </div>
+      </div>
 
       <Tabs defaultValue="Library" className="my-10">
         <TabsList className="h-auto w-full justify-start gap-6 rounded-none border-b border-white/10 bg-transparent p-0">
@@ -188,7 +230,7 @@ export default function Profile() {
           <Library />
         </TabsContent>
         <TabsContent value="MyOffers" className="mt-6">
-          {offersLoading ? (
+          {!offersData ? (
             <div className="py-20 flex justify-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
             </div>
@@ -280,7 +322,7 @@ export default function Profile() {
           )}
         </TabsContent>
         <TabsContent value="MyRequests" className="mt-6">
-          {requestsLoading ? (
+          {!requestsData ? (
             <div className="py-20 flex justify-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
             </div>
@@ -333,7 +375,7 @@ export default function Profile() {
           )}
         </TabsContent>
         <TabsContent value="MyPurchases" className="mt-6">
-          {purchasesLoading ? (
+          {!purchasesData ? (
             <div className="py-20 flex justify-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
             </div>
@@ -402,10 +444,12 @@ export default function Profile() {
                                   "Admin has been notified that you received the book",
                                 );
                               },
-                              onError: (error: any) => {
+                              onError: (error: unknown) => {
                                 toast.error(
-                                  error?.response?.data?.message ||
+                                  getApiErrorMessage(
+                                    error,
                                     "Could not confirm receipt",
+                                  ),
                                 );
                               },
                             });
@@ -429,42 +473,19 @@ export default function Profile() {
                       )}
                       {["BUYER_CONFIRMED", "COMPLETED"].includes(
                         purchase.status,
-                      ) &&
-                        (purchase.sellerThanked ? (
-                          <span className="inline-flex items-center gap-1.5 text-sm font-bold text-orange-400">
-                            <HeartHandshake className="h-4 w-4" />
-                            Seller thanked
-                          </span>
-                        ) : (
-                          <button
-                            onClick={() => {
-                              thankSeller.mutate(purchase.id, {
-                                onSuccess: () => {
-                                  toast.success(
-                                    "Thanks sent. This helps other readers trust the seller.",
-                                  );
-                                },
-                                onError: (error: any) => {
-                                  toast.error(
-                                    error?.response?.data?.message ||
-                                      "Could not thank seller",
-                                  );
-                                },
-                              });
-                            }}
-                            disabled={
-                              thankSeller.isPending &&
-                              thankSeller.variables === purchase.id
-                            }
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-orange-500/25 bg-orange-500/10 px-4 py-2 text-sm font-bold text-orange-400 transition hover:border-orange-500/50 hover:bg-orange-500/15 disabled:opacity-50"
-                          >
-                            <HeartHandshake className="h-4 w-4" />
-                            {thankSeller.isPending &&
-                            thankSeller.variables === purchase.id
-                              ? "Sending..."
-                              : "Thank seller"}
-                          </button>
-                        ))}
+                      ) && (
+                          <div className="flex flex-wrap items-center justify-end gap-3">
+                            <button
+                              onClick={() => openRatingModal(purchase)}
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-orange-500/25 bg-orange-500/10 px-4 py-2 text-sm font-bold text-orange-400 transition hover:border-orange-500/50 hover:bg-orange-500/15 disabled:opacity-50"
+                            >
+                              <HeartHandshake className="h-4 w-4" />
+                              {purchase.sellerThanked
+                                ? `Rated ${purchase.sellerRating || 5}/5`
+                                : "Rate seller"}
+                            </button>
+                          </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -473,7 +494,11 @@ export default function Profile() {
           )}
         </TabsContent>
         <TabsContent value="Review" className="mt-6">
-          {data?.userBookReviews?.length === 0 ? (
+          {!data?.userBookReviews ? (
+            <div className="py-20 flex justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+            </div>
+          ) : data.userBookReviews.length === 0 ? (
             <div className="premium-empty">
               <p className="text-gray-500 font-medium">
                 You haven&apos;t reviewed any books yet.
@@ -532,6 +557,64 @@ export default function Profile() {
           onClose={() => setModalType(null)}
         />
       )}
+
+      <Dialog open={!!ratingPurchase} onOpenChange={closeRatingModal}>
+        <DialogContent className="rounded-3xl border border-white/10 bg-[#111114] p-8 text-white shadow-2xl sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-center text-2xl font-bold leading-tight text-white">
+              Rate seller
+            </DialogTitle>
+            <DialogDescription className="pt-2 text-center text-zinc-400">
+              {ratingPurchase
+                ? `How was your transaction with ${ratingPurchase.seller.name}?`
+                : "Choose a rating for this seller."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex items-center justify-center gap-2 py-6">
+            {Array.from({ length: 5 }).map((_, index) => {
+              const ratingValue = index + 1;
+
+              return (
+                <button
+                  key={ratingValue}
+                  type="button"
+                  onClick={() => setSelectedSellerRating(ratingValue)}
+                  className="rounded-xl p-2 text-orange-400 transition hover:bg-orange-500/10"
+                  aria-label={`Rate seller ${ratingValue} out of 5`}
+                >
+                  <Star
+                    className={`h-8 w-8 ${
+                      ratingValue <= selectedSellerRating
+                        ? "fill-orange-400"
+                        : "fill-transparent text-zinc-600"
+                    }`}
+                  />
+                </button>
+              );
+            })}
+          </div>
+
+          <DialogFooter className="gap-3 sm:justify-center">
+            <button
+              type="button"
+              onClick={closeRatingModal}
+              disabled={thankSeller.isPending}
+              className="rounded-xl border border-white/10 px-4 py-2 text-sm font-bold text-zinc-300 transition hover:bg-white/5 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={saveSellerRating}
+              disabled={thankSeller.isPending}
+              className="rounded-xl bg-[#ff7a00] px-4 py-2 text-sm font-bold text-black transition hover:bg-[#ff922f] disabled:opacity-50"
+            >
+              {thankSeller.isPending ? "Saving..." : "Save rating"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
