@@ -22,12 +22,20 @@ export class DashboardUserStatsService {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
-        include: {
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          avatar: true,
+          createdAt: true,
+          isVerified: true,
+          isBanned: true,
           _count: {
             select: {
               userBookStatuses: true,
               posts: true,
               payments: true,
+              banAppeals: true,
             },
           },
         },
@@ -48,7 +56,14 @@ export class DashboardUserStatsService {
   async findOne(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        avatar: true,
+        createdAt: true,
+        isVerified: true,
+        isBanned: true,
         _count: {
           select: {
             userBookStatuses: true,
@@ -56,6 +71,7 @@ export class DashboardUserStatsService {
             posts: true,
             postComments: true,
             payments: true,
+            banAppeals: true,
           },
         },
       },
@@ -63,7 +79,7 @@ export class DashboardUserStatsService {
 
     if (!user) return null;
 
-    const [bookStatusCounts, paymentStats, recentPayments] = await Promise.all([
+    const [bookStatusCounts, paymentStats, recentPayments, recentBanAppeals] = await Promise.all([
       this.prisma.userBookStatus.groupBy({
         by: ['status'],
         where: { userId: id },
@@ -79,6 +95,11 @@ export class DashboardUserStatsService {
         take: 5,
         orderBy: { createdAt: 'desc' },
       }),
+      this.prisma.banAppeal.findMany({
+        where: { userId: id },
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+      }),
     ]);
 
     return {
@@ -90,7 +111,29 @@ export class DashboardUserStatsService {
           successCount: paymentStats._count.id,
         },
         recentPayments,
+        recentBanAppeals,
       },
     };
+  }
+
+  async unbanUser(id: string) {
+    const [user] = await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id },
+        data: { isBanned: false },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          isBanned: true,
+        },
+      }),
+      this.prisma.banAppeal.updateMany({
+        where: { userId: id, status: 'PENDING' },
+        data: { status: 'APPROVED' },
+      }),
+    ]);
+
+    return user;
   }
 }

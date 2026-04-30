@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { axios } from "@/lib";
 
 export interface UserListItem {
@@ -8,10 +8,12 @@ export interface UserListItem {
   avatar: string | null;
   createdAt: string;
   isVerified: boolean;
+  isBanned: boolean;
   _count: {
     userBookStatuses: number;
     posts: number;
     payments: number;
+    banAppeals: number;
   };
 }
 
@@ -33,6 +35,7 @@ export interface UserDetails {
       posts: number;
       postComments: number;
       payments: number;
+      banAppeals: number;
     };
   };
   stats: {
@@ -45,6 +48,13 @@ export interface UserDetails {
       successCount: number;
     };
     recentPayments: any[];
+    recentBanAppeals: Array<{
+      id: string;
+      message: string;
+      status: "PENDING" | "APPROVED" | "REJECTED";
+      createdAt: string;
+      updatedAt: string;
+    }>;
   };
 }
 
@@ -69,5 +79,21 @@ export const useGetUserDetails = (id: string | null) => {
       return response.data;
     },
     enabled: !!id,
+  });
+};
+
+export const useUnbanUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await axios.patch(`/dashboard-user-stats/${id}/unban`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["user-details"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-reports"] });
+    },
   });
 };

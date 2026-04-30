@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Param, Patch, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { DashboardUserStatsService } from './dashboard-user-stats.service';
 import { DashboardAuthGuard } from '../shared/dashboardGuard';
@@ -31,5 +31,11 @@ export class DashboardUserStatsController {
   @ApiOperation({ summary: 'Get detailed statistics for a specific user' })
   async findOne(@Param('id') id: string) {
     return this.dashboardUserStatsService.findOne(id);
+  }
+
+  @Patch(':id/unban')
+  @ApiOperation({ summary: 'Unban a user' })
+  async unbanUser(@Param('id') id: string) {
+    return this.dashboardUserStatsService.unbanUser(id);
   }
 }
