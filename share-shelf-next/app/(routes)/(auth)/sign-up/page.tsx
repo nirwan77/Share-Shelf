@@ -42,21 +42,23 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <header className="flex justify-between items-center px-8 py-4">
-        <div className="text-2xl font-semibold italic">Logo</div>
-        <div className="text-sm">
+    <div className="flex min-h-screen flex-col bg-black text-white">
+      <header className="flex flex-col items-center justify-between gap-3 px-4 py-5 sm:flex-row sm:px-8">
+        <Link href="/" className="text-2xl font-bold tracking-tight text-white">
+          Share Shelf
+        </Link>
+        <div className="text-sm text-zinc-500">
           Already have an account?{" "}
-          <Link href="/login" className="text-orange-300 hover:underline">
+          <Link href="/login" className="font-semibold text-[#ff7a00] hover:text-[#ffb36d]">
             Log In
           </Link>
         </div>
       </header>
 
-      <main className="grow flex flex-col items-center justify-center text-center px-4">
-        <div className="w-full max-w-sm">
-          <h1 className="heading-2 font-bold mb-6">Sign Up</h1>
-          <p className="text-gray-400 mb-12">
+      <main className="flex grow flex-col items-center justify-center px-4 py-10 text-center">
+        <div className="app-card w-full max-w-sm p-7 sm:p-10">
+          <h1 className="heading-3 mb-4 font-bold">Sign Up</h1>
+          <p className="mb-8 text-sm leading-6 text-zinc-400">
             Create an account to discover, share, and connect with the
             community.
           </p>
@@ -84,7 +86,7 @@ export default function SignUpPage() {
             <button
               type="submit"
               disabled={isPending}
-              className="bg-orange-300 text-white py-2 rounded-sm hover:opacity-90 transition disabled:opacity-50"
+              className="rounded-xl bg-[#ff7a00] py-3 font-bold text-black transition-all hover:-translate-y-0.5 hover:bg-[#ff922f] hover:shadow-[0_14px_36px_rgba(255,122,0,0.25)] disabled:opacity-50"
             >
               {isPending ? "Signing up..." : "Sign up"}
             </button>
@@ -92,7 +94,7 @@ export default function SignUpPage() {
         </div>
       </main>
 
-      <footer className="py-4 text-center text-gray-500 text-sm border-t border-gray-200">
+      <footer className="border-t border-white/10 py-4 text-center text-sm text-zinc-500">
         © 2025 Share Shelf
       </footer>
     </div>
