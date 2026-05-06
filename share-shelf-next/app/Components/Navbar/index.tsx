@@ -9,7 +9,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, User, Bell, MessageSquare, Menu, X, Search } from "lucide-react";
+import {
+  Bell,
+  KeyRound,
+  LogOut,
+  Menu,
+  MessageSquare,
+  Search,
+  User,
+  X,
+} from "lucide-react";
 import {
   useGetNotifications,
   useMarkAllNotificationsRead,
@@ -214,6 +223,13 @@ export const Navbar = () => {
                     >
                       <User className="mr-2 h-4 w-4" />
                       <span>Profile</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => router.push("/change-password")}
+                      className="cursor-pointer"
+                    >
+                      <KeyRound className="mr-2 h-4 w-4" />
+                      <span>Change password</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="cursor-pointer"

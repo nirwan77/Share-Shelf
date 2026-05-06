@@ -7,6 +7,7 @@ export type BookOffer = {
   condition: string | null;
   type: "SELL" | "TRADE";
   note: string | null;
+  sellerLocation: string | null;
   createdAt: string;
   user: {
     id: string;
@@ -43,7 +44,7 @@ export type BookDetailResponse = {
   price: number;
   userBookReviews: BookReview[];
   userBookStatuses: Array<{
-    status: "READING" | "PLAN_TO_READ" | "READ";
+    status: BookStatus;
     userId: string;
   }>;
   bookOffers: BookOffer[];
@@ -51,6 +52,8 @@ export type BookDetailResponse = {
     userBookReviews: number;
   };
 };
+
+export type BookStatus = "READING" | "PLAN_TO_READ" | "READ" | "DROPPED";
 
 export const useGetBookDetail = (id: string) => {
   return useQuery({
@@ -72,6 +75,7 @@ export const useCreateOffer = () => {
       condition?: string;
       type: "SELL" | "TRADE";
       note?: string;
+      sellerLocation?: string;
       sellerEsewaNumber?: string;
     }) => {
       const { data } = await axios.post("/book-offers", body);
@@ -90,7 +94,7 @@ export const useToggleBookStatus = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (body: { bookId: string; status: "READING" | "PLAN_TO_READ" | "READ" }) => {
+    mutationFn: async (body: { bookId: string; status: BookStatus }) => {
       const { data } = await axios.post("/book-status", body);
       return data;
     },
@@ -98,6 +102,10 @@ export const useToggleBookStatus = () => {
       queryClient.invalidateQueries({
         queryKey: ["book-detail", variables.bookId],
       });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: ["reading-goal"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications-unread-count"] });
     },
   });
 };

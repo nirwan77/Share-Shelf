@@ -1,4 +1,9 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CreateBookReviewDto } from './dto/create-book-review.dto';
 
@@ -7,6 +12,18 @@ export class BookReviewsService {
   constructor(private prisma: PrismaService) {}
 
   async create(userId: string, dto: CreateBookReviewDto) {
+    const readStatus = await this.prisma.userBookStatus.findFirst({
+      where: {
+        userId,
+        bookId: dto.bookId,
+        status: 'READ',
+      },
+    });
+
+    if (!readStatus) {
+      throw new BadRequestException('Mark this book as read before reviewing it');
+    }
+
     const existing = await this.prisma.userBookReview.findFirst({
       where: {
         userId,

@@ -51,4 +51,13 @@ export class BookPurchasesController {
   ) {
     return this.bookPurchasesService.confirmReceived(userId, id);
   }
+
+  @Patch(':id/thank-seller')
+  @ApiOperation({ summary: 'Thank the seller after a successful transaction' })
+  async thankSeller(
+    @Param('id') id: string,
+    @GetDashboardUserReqObject('id') userId: string,
+  ) {
+    return this.bookPurchasesService.thankSeller(userId, id);
+  }
 }

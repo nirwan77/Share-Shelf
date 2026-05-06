@@ -205,6 +205,7 @@ export class ExploreService {
             condition: true,
             type: true,
             note: true,
+            sellerLocation: true,
             createdAt: true,
             user: { select: { id: true, name: true, avatar: true } },
           },

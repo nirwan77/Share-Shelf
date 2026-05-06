@@ -31,6 +31,7 @@ import {
   Bookmark,
   Eye,
   Check,
+  CircleX,
   Star,
   BookOpen,
   Lock,
@@ -39,6 +40,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+import type { BookStatus } from "./action";
 
 const ratingLabels = ["", "Poor", "Fair", "Good", "Great", "Excellent"];
 
@@ -86,8 +88,9 @@ const BookDetail = () => {
   const isBookmarkActive = myStatus === "PLAN_TO_READ";
   const isEyeActive = myStatus === "READING";
   const isCheckActive = myStatus === "READ";
+  const isDroppedActive = myStatus === "DROPPED";
 
-  const handleToggleStatus = (status: "READING" | "PLAN_TO_READ" | "READ") => {
+  const handleToggleStatus = (status: BookStatus) => {
     if (!profile) {
       toast.error("Please log in to track books.");
       return;
@@ -98,8 +101,9 @@ const BookDetail = () => {
         onSuccess: (data) => {
           const statusLabels: Record<string, string> = {
             READING: "Currently Reading",
-            PLAN_TO_READ: "Plan to Read",
+            PLAN_TO_READ: "Plan to Read / Wishlist",
             READ: "Read",
+            DROPPED: "Dropped",
           };
           if (data?.message === "Status removed") {
             toast.success(`Removed from ${statusLabels[status]}`);
@@ -118,6 +122,7 @@ const BookDetail = () => {
   const [sellerEsewaNumber, setSellerEsewaNumber] = useState("");
   const [offerCondition, setOfferCondition] = useState("Good");
   const [offerType, setOfferType] = useState<"SELL" | "TRADE">("SELL");
+  const [sellerLocation, setSellerLocation] = useState("");
   const [offerNote, setOfferNote] = useState("");
   const [reviewComment, setReviewComment] = useState("");
 
@@ -140,6 +145,7 @@ const BookDetail = () => {
         price: offerType === "TRADE" ? 0 : Number(offerPrice),
         condition: offerCondition,
         type: offerType,
+        sellerLocation: sellerLocation.trim(),
         note: offerNote || undefined,
         sellerEsewaNumber:
           offerType === "SELL" ? sellerEsewaNumber.trim() : undefined,
@@ -149,6 +155,7 @@ const BookDetail = () => {
           setShowSellForm(false);
           setOfferPrice("");
           setSellerEsewaNumber("");
+          setSellerLocation("");
           setOfferNote("");
         },
       },
@@ -270,6 +277,18 @@ const BookDetail = () => {
                   </div>
                 )}
                 <div>
+                  <Label htmlFor="seller-location">
+                    Pickup / Selling Location *
+                  </Label>
+                  <Input
+                    id="seller-location"
+                    value={sellerLocation}
+                    onChange={(e) => setSellerLocation(e.target.value)}
+                    placeholder="e.g. Pulchowk Campus Gate, Kathmandu"
+                    required
+                  />
+                </div>
+                <div>
                   <Label htmlFor="offer-condition">Condition</Label>
                   <select
                     id="offer-condition"
@@ -307,6 +326,7 @@ const BookDetail = () => {
                     className="bg-[#FF8D28] hover:bg-[#e67d1f]"
                     disabled={
                       createOffer.isPending ||
+                      !sellerLocation.trim() ||
                       (offerType === "SELL" &&
                         (!offerPrice || !sellerEsewaNumber.trim()))
                     }
@@ -339,6 +359,12 @@ const BookDetail = () => {
                   icon: Check,
                   active: isCheckActive,
                   title: "Read",
+                },
+                {
+                  status: "DROPPED" as const,
+                  icon: CircleX,
+                  active: isDroppedActive,
+                  title: "Dropped",
                 },
               ].map(({ status, icon: Icon, active, title }) => (
                 <button
@@ -420,6 +446,12 @@ const BookDetail = () => {
                               {offer.condition && `${offer.condition} · `}
                               Selling{offer.note && ` · ${offer.note}`}
                             </p>
+                            {offer.sellerLocation && (
+                              <p className="mt-1 flex items-center gap-1 text-xs text-gray-500">
+                                <MapPin className="h-3.5 w-3.5 text-[#FF8D28]" />
+                                {offer.sellerLocation}
+                              </p>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
@@ -484,6 +516,12 @@ const BookDetail = () => {
                               {offer.condition && `${offer.condition} · `}
                               Trading{offer.note && ` · ${offer.note}`}
                             </p>
+                            {offer.sellerLocation && (
+                              <p className="mt-1 flex items-center gap-1 text-xs text-gray-500">
+                                <MapPin className="h-3.5 w-3.5 text-[#FF8D28]" />
+                                {offer.sellerLocation}
+                              </p>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center gap-3">

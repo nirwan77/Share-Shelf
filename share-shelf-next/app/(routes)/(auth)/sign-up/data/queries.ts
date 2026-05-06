@@ -11,6 +11,8 @@ interface SignUpBody {
   password: string;
   name: string;
   phone: string;
+  acceptTerms: boolean;
+  acceptPrivacy: boolean;
 }
 
 export const useSignUp = () => {

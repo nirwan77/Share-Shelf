@@ -1,0 +1,23 @@
+
+> share-sheld-next@0.1.0 dev C:\herald\fyp\share-shelf\share-shelf-next
+> next dev --port 3002 --webpack
+
+   ▲ Next.js 16.0.1 (webpack)
+   - Local:        http://localhost:3002
+   - Network:      http://192.168.101.53:3002
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 10.6s
+ ○ Compiling /reset-password ...
+ GET /forgot-password 200 in 2.9s (compile: 1650ms, render: 1269ms)
+ GET /reset-password 200 in 120ms (compile: 15ms, render: 105ms)
+ ○ Compiling /change-password ...
+ GET /change-password 200 in 7.7s (compile: 6.7s, render: 914ms)
+ GET / 200 in 2.7s (compile: 2.4s, render: 339ms)
+ GET / 200 in 39ms (compile: 8ms, render: 31ms)
+ GET / 200 in 93ms (compile: 10ms, render: 84ms)
+ GET /login 200 in 2.6s (compile: 2.5s, render: 74ms)
+ GET /login 200 in 565ms (compile: 13ms, render: 552ms)
+ ○ Compiling /sign-up ...
+ GET /sign-up 200 in 3.3s (compile: 3.2s, render: 91ms)

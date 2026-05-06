@@ -230,4 +230,88 @@ button {
       padding-inline: 0;
     }
   }
+
+  .home-reveal {
+    animation: home-reveal 760ms ease both;
+  }
+
+  .home-reveal-1 {
+    animation-delay: 80ms;
+  }
+
+  .home-reveal-2 {
+    animation-delay: 170ms;
+  }
+
+  .home-reveal-3 {
+    animation-delay: 260ms;
+  }
+
+  .home-reveal-4 {
+    animation-delay: 350ms;
+  }
+
+  .home-panel {
+    animation: home-panel-in 900ms ease 420ms both;
+  }
+
+  .home-float-slow {
+    animation: home-float 9s ease-in-out infinite;
+  }
+
+  .home-float-medium {
+    animation: home-float 7s ease-in-out 800ms infinite reverse;
+  }
+
+  .home-pulse-dot {
+    animation: home-pulse 2.8s ease-in-out infinite;
+  }
+}
+
+@keyframes home-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes home-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes home-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(0, -18px, 0);
+  }
+}
+
+@keyframes home-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.6);
+  }
 }

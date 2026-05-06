@@ -116,6 +116,14 @@ export default function LoginPage() {
               placeholder="Password"
               error={errors.password?.message}
             />
+            <div className="-mt-1 text-right text-sm">
+              <Link
+                href="/forgot-password"
+                className="font-semibold text-[#ff7a00] hover:text-[#ffb36d]"
+              >
+                Forgot password?
+              </Link>
+            </div>
             <button
               type="submit"
               disabled={isPending}

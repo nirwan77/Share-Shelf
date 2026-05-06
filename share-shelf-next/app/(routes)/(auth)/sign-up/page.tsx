@@ -1,19 +1,23 @@
 "use client";
 
 import Input from "@/app/Components/Input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useSignUp } from "./data";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useSignUp } from "./data";
 
 const signUpSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email address"),
   phone: z.string().trim().min(7, "Phone number is required"),
   password: z.string().min(8, "Password must be at least 8 characters"),
+  acceptPolicies: z.boolean().refine((value) => value, {
+    message: "You must accept the Terms and Privacy Policy",
+  }),
 });
 
 type SignUpForm = z.infer<typeof signUpSchema>;
@@ -25,21 +29,35 @@ export default function SignUpPage() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<SignUpForm>({
     resolver: zodResolver(signUpSchema),
+    defaultValues: {
+      acceptPolicies: false,
+    },
   });
 
   const onSubmit = async (data: SignUpForm) => {
-    await mutateAsync(data, {
-      onSuccess: () => {
-        toast("Account created successfully");
-        router.push(`/verify?email=${data.email}`);
+    await mutateAsync(
+      {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        password: data.password,
+        acceptTerms: data.acceptPolicies,
+        acceptPrivacy: data.acceptPolicies,
       },
-      onError: (err: any) => {
-        toast(err.response?.data?.message || "Something went wrong");
+      {
+        onSuccess: () => {
+          toast("Account created successfully");
+          router.push(`/verify?email=${data.email}`);
+        },
+        onError: (err: any) => {
+          toast(err.response?.data?.message || "Something went wrong");
+        },
       },
-    });
+    );
   };
 
   return (
@@ -50,7 +68,10 @@ export default function SignUpPage() {
         </Link>
         <div className="text-sm text-zinc-500">
           Already have an account?{" "}
-          <Link href="/login" className="font-semibold text-[#ff7a00] hover:text-[#ffb36d]">
+          <Link
+            href="/login"
+            className="font-semibold text-[#ff7a00] hover:text-[#ffb36d]"
+          >
             Log In
           </Link>
         </div>
@@ -90,6 +111,47 @@ export default function SignUpPage() {
               placeholder="Password"
               error={errors.password?.message}
             />
+
+            <div className="rounded-xl border border-white/10 bg-white/[0.035] p-4 text-left">
+              <Controller
+                name="acceptPolicies"
+                control={control}
+                render={({ field }) => (
+                  <label className="flex items-start gap-3 text-sm leading-6 text-zinc-300">
+                    <Checkbox
+                      checked={field.value}
+                      className="mt-1"
+                      onCheckedChange={(checked) =>
+                        field.onChange(checked === true)
+                      }
+                    />
+                    <span>
+                      I agree to Share Shelf&apos;s{" "}
+                      <Link
+                        href="/terms-and-conditions"
+                        className="font-semibold text-[#ff7a00] hover:text-[#ffb36d]"
+                      >
+                        Terms and Conditions
+                      </Link>{" "}
+                      and{" "}
+                      <Link
+                        href="/privacy-policy"
+                        className="font-semibold text-[#ff7a00] hover:text-[#ffb36d]"
+                      >
+                        Privacy Policy
+                      </Link>
+                      .
+                    </span>
+                  </label>
+                )}
+              />
+              {errors.acceptPolicies && (
+                <p className="mt-2 text-sm text-red-400">
+                  {errors.acceptPolicies.message}
+                </p>
+              )}
+            </div>
+
             <button
               type="submit"
               disabled={isPending}
@@ -102,7 +164,7 @@ export default function SignUpPage() {
       </main>
 
       <footer className="border-t border-white/10 py-4 text-center text-sm text-zinc-500">
-        © 2025 Share Shelf
+        &copy; 2025 Share Shelf
       </footer>
     </div>
   );

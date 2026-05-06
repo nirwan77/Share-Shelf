@@ -29,6 +29,18 @@ export class TopupController {
     return this.topupService.verifyPayment(userId, payload);
   }
 
+  @Post('signature')
+  @UseGuards(JwtHeaderAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  createEsewaSignature(
+    @Body() body: { total_amount: string; transaction_uuid: string },
+  ) {
+    return this.topupService.createEsewaSignature(
+      body.total_amount,
+      body.transaction_uuid,
+    );
+  }
+
   @Get()
   findAll() {
     return this.topupService.findAll();

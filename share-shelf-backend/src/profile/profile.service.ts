@@ -8,7 +8,7 @@ export class ProfileService {
   constructor(private prisma: PrismaService) {}
 
   async findOne(id: string) {
-    return this.prisma.user.findUniqueOrThrow({
+    const user = await this.prisma.user.findUniqueOrThrow({
       where: { id },
       select: {
         id: true,
@@ -54,6 +54,11 @@ export class ProfileService {
         },
       },
     });
+
+    return {
+      ...user,
+      credibility: await this.getCredibility(id),
+    };
   }
 
   async findOnePublic(id: string, currentUserId?: string) {
@@ -109,6 +114,7 @@ export class ProfileService {
 
     return {
       ...user,
+      credibility: await this.getCredibility(id),
       isFollowing: currentUserId ? (user.followers as any[]).length > 0 : false,
       followers: undefined,
     };
@@ -194,5 +200,18 @@ export class ProfileService {
         },
       },
     });
+  }
+
+  private async getCredibility(userId: string) {
+    const result = await this.prisma.userRating.aggregate({
+      where: { ratedUserId: userId },
+      _avg: { rating: true },
+      _count: { rating: true },
+    });
+
+    return {
+      averageRating: result._avg.rating ? Number(result._avg.rating.toFixed(1)) : 0,
+      ratingCount: result._count.rating,
+    };
   }
 }

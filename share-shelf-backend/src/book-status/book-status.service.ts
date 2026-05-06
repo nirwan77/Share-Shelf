@@ -1,7 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { BookStatus } from '@prisma/client';
 import { ReadingGoalsService } from '../reading-goals/reading-goals.service';
+
+const VALID_BOOK_STATUSES: BookStatus[] = [
+  'READING',
+  'PLAN_TO_READ',
+  'READ',
+  'DROPPED',
+];
 
 @Injectable()
 export class BookStatusService {
@@ -11,6 +18,10 @@ export class BookStatusService {
   ) {}
 
   async toggleStatus(userId: string, data: { bookId: string; status: BookStatus }) {
+    if (!VALID_BOOK_STATUSES.includes(data.status)) {
+      throw new BadRequestException('Invalid book status');
+    }
+
     const existing = await this.prisma.userBookStatus.findFirst({
       where: {
         userId,

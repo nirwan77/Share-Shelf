@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   ArrowUpRight,
   BookOpen,
@@ -66,8 +67,14 @@ const pathways = [
 export function HomeExperience() {
   const router = useRouter();
   const { token } = useAuth();
+  const [hasMounted, setHasMounted] = useState(false);
   const { data: featured } = useGetFeatured();
   const { data: popular } = useGetPopular();
+  const hasSession = hasMounted && !!token?.accessToken;
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   const heroBooks = (
     featured?.length ? featured : popular?.length ? popular : fallbackBooks
@@ -89,28 +96,31 @@ export function HomeExperience() {
         />
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.92)_0%,rgba(0,0,0,0.72)_42%,rgba(0,0,0,0.2)_100%)]" />
         <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black to-transparent" />
+        <div className="pointer-events-none absolute left-[8%] top-28 hidden h-24 w-24 rounded-full border border-[#ff7a00]/30 sm:block home-float-slow" />
+        <div className="pointer-events-none absolute right-[12%] top-36 hidden h-16 w-16 rounded-full border border-white/20 lg:block home-float-medium" />
+        <div className="pointer-events-none absolute bottom-36 right-[28%] hidden h-3 w-3 rounded-full bg-[#ff7a00] shadow-[0_0_24px_rgba(255,122,0,0.7)] lg:block home-pulse-dot" />
 
         <div className="container relative z-10 mx-auto flex min-h-[720px] items-end pb-12 pt-28 lg:min-h-dvh lg:pb-20">
           <div className="grid w-full gap-10 lg:grid-cols-[minmax(0,1fr)_410px] lg:items-end">
-            <div className="max-w-4xl">
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-sm font-semibold text-white backdrop-blur-md">
+            <div className="max-w-4xl home-hero-copy">
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-sm font-semibold text-white backdrop-blur-md home-reveal home-reveal-1">
                 <Sparkles className="h-4 w-4 text-[#ff7a00]" />A living
                 marketplace for readers
               </div>
-              <h1 className="max-w-4xl text-[4rem] font-bold leading-[0.9] tracking-normal text-white sm:text-[5.4rem] lg:text-[7.4rem]">
+              <h1 className="home-reveal home-reveal-2 max-w-4xl text-[4rem] font-bold leading-[0.9] tracking-normal text-white sm:text-[5.4rem] lg:text-[7.4rem]">
                 Share Shelf
               </h1>
-              <p className="mt-7 max-w-2xl text-base leading-8 text-zinc-200 sm:text-xl">
+              <p className="home-reveal home-reveal-3 mt-7 max-w-2xl text-base leading-8 text-zinc-200 sm:text-xl">
                 Discover books through people, not algorithms. Buy, exchange,
                 review, and discuss with a community built around what is
                 actually being read.
               </p>
-              <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+              <div className="home-reveal home-reveal-4 mt-9 flex flex-col gap-3 sm:flex-row">
                 <Button
                   className="h-12 rounded-full px-7 text-base font-bold"
-                  onClick={() => router.push(token ? "/explore" : "/sign-up")}
+                  onClick={() => router.push(hasSession ? "/explore" : "/sign-up")}
                 >
-                  {token ? "Explore books" : "Start your shelf"}
+                  {hasSession ? "Explore books" : "Start your shelf"}
                   <ArrowUpRight className="h-4 w-4" />
                 </Button>
                 <Button
@@ -123,7 +133,7 @@ export function HomeExperience() {
               </div>
             </div>
 
-            <div className="hidden rounded-2xl border border-white/15 bg-black/35 p-4 backdrop-blur-xl lg:block">
+            <div className="hidden rounded-2xl border border-white/15 bg-black/35 p-4 backdrop-blur-xl lg:block home-panel">
               <div className="mb-4 flex items-center justify-between">
                 <p className="text-sm font-semibold text-white">
                   Featured shelves

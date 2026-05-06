@@ -1,6 +1,7 @@
 import { axios } from "@/app/lib";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts";
+import type { BookStatus } from "../book-detail/[id]/action";
 
 export interface ProfileData {
   id: string;
@@ -14,9 +15,13 @@ export interface ProfileData {
     followers: number;
     following: number;
   };
+  credibility: {
+    averageRating: number;
+    ratingCount: number;
+  };
   isFollowing?: boolean;
   userBookStatuses: Array<{
-    status: "READING" | "PLAN_TO_READ" | "READ";
+    status: BookStatus;
     book: {
       id: string;
       name: string;
@@ -113,10 +118,12 @@ export type MyPurchase = {
     image: string;
   };
   seller: {
+    id: string;
     name: string;
     email: string;
     phone: string | null;
   };
+  sellerThanked: boolean;
 };
 
 export const useGetMyPurchases = () => {
@@ -203,6 +210,24 @@ export const useConfirmPurchaseReceived = () => {
   });
 };
 
+export const useThankSeller = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (purchaseId: string) => {
+      const { data } = await axios.patch(
+        `/book-purchases/${purchaseId}/thank-seller`,
+      );
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-purchases"] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications-unread-count"] });
+    },
+  });
+};
+
 export const useDeleteOffer = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -243,6 +268,20 @@ export const useUpdateAvatar = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profile"] });
+    },
+  });
+};
+
+export interface ChangePasswordBody {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export const useChangePassword = () => {
+  return useMutation({
+    mutationFn: async (val: ChangePasswordBody) => {
+      const { data } = await axios.post("/auth/change-password", val);
+      return data;
     },
   });
 };

@@ -8,6 +8,38 @@ generator client {
   provider = "prisma-client-js"
 }
 
+generator erd {
+  provider                  = "prisma-erd-generator"
+  output                    = "./share-shelf-erd.svg"
+  theme                     = "neutral"
+  includeRelationFromFields = true
+  disableEmoji              = true
+}
+
+generator erdSource {
+  provider                  = "prisma-erd-generator"
+  output                    = "./share-shelf-erd.md"
+  theme                     = "neutral"
+  includeRelationFromFields = true
+  disableEmoji              = true
+}
+
+generator erdReport {
+  provider     = "prisma-erd-generator"
+  output       = "./share-shelf-erd-report.svg"
+  theme        = "neutral"
+  tableOnly    = true
+  disableEmoji = true
+}
+
+generator erdReportSource {
+  provider     = "prisma-erd-generator"
+  output       = "./share-shelf-erd-report.md"
+  theme        = "neutral"
+  tableOnly    = true
+  disableEmoji = true
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -114,6 +146,7 @@ enum BookStatus {
   READING
   PLAN_TO_READ
   READ
+  DROPPED
 }
 
 model UserBookStatus {

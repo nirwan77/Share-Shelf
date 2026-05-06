@@ -1,26 +1,35 @@
 "use client";
 
-import CryptoJS from "crypto-js";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { axios } from "@/app/lib";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 function TopupContent() {
   const searchParams = useSearchParams();
   const purchaseId = searchParams.get("purchaseId");
   const initialAmount = searchParams.get("amount");
+  const appUrl =
+    process.env.NEXT_PUBLIC_SHARE_SHELF_APP_URL ||
+    (typeof window !== "undefined" ? window.location.origin : "");
 
   const [form, setForm] = useState({
     amount: initialAmount || "100",
     tax_amount: "0",
-    transaction_uuid: "21",
-    product_code: "EPAYTEST",
+    transaction_uuid: "",
     success_url: purchaseId
-      ? `http://localhost:3002/topup/success?purchaseId=${purchaseId}`
-      : "http://localhost:3002/topup/success",
+      ? `${appUrl}/topup/success?purchaseId=${purchaseId}`
+      : `${appUrl}/topup/success`,
     failure_url: purchaseId
-      ? `http://localhost:3002/topup/failure?purchaseId=${purchaseId}`
-      : "http://localhost:3002/topup/failure",
+      ? `${appUrl}/topup/failure?purchaseId=${purchaseId}`
+      : `${appUrl}/topup/failure`,
   });
+  const [paymentConfig, setPaymentConfig] = useState({
+    product_code: "",
+    gateway_url: "",
+    signed_field_names: "",
+    signature: "",
+  });
+  const [signatureError, setSignatureError] = useState("");
 
   const total_amount = (Number(form.amount) + Number(form.tax_amount)).toFixed(
     2,
@@ -33,21 +42,58 @@ function TopupContent() {
     }));
   }, []);
 
-  const signed_field_names = "total_amount,transaction_uuid,product_code";
+  useEffect(() => {
+    const baseUrl =
+      process.env.NEXT_PUBLIC_SHARE_SHELF_APP_URL || window.location.origin;
 
-  const signature = useMemo(() => {
-    if (!form.transaction_uuid) return "";
+    setForm((prev) => ({
+      ...prev,
+      success_url: purchaseId
+        ? `${baseUrl}/topup/success?purchaseId=${purchaseId}`
+        : `${baseUrl}/topup/success`,
+      failure_url: purchaseId
+        ? `${baseUrl}/topup/failure?purchaseId=${purchaseId}`
+        : `${baseUrl}/topup/failure`,
+    }));
+  }, [purchaseId]);
 
-    const message =
-      `total_amount=${total_amount},` +
-      `transaction_uuid=${form.transaction_uuid},` +
-      `product_code=${form.product_code}`;
+  useEffect(() => {
+    if (!form.transaction_uuid) return;
 
-    const secret = "8gBm/:&EnhH.1/q";
-    const hash = CryptoJS.HmacSHA256(message, secret);
+    let cancelled = false;
 
-    return CryptoJS.enc.Base64.stringify(hash);
-  }, [form.transaction_uuid, form.product_code, total_amount]);
+    const loadSignature = async () => {
+      try {
+        setSignatureError("");
+        const { data } = await axios.post("/topup/signature", {
+          total_amount,
+          transaction_uuid: form.transaction_uuid,
+        });
+
+        if (!cancelled) {
+          setPaymentConfig(data);
+        }
+      } catch (error: any) {
+        if (!cancelled) {
+          setPaymentConfig({
+            product_code: "",
+            gateway_url: "",
+            signed_field_names: "",
+            signature: "",
+          });
+          setSignatureError(
+            error?.response?.data?.message || "Unable to prepare eSewa payment",
+          );
+        }
+      }
+    };
+
+    void loadSignature();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [form.transaction_uuid, total_amount]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -83,11 +129,16 @@ function TopupContent() {
             </span>
           </div>
         </div>
+        {signatureError && (
+          <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {signatureError}
+          </p>
+        )}
 
         {/* eSewa Form */}
         <form
           method="POST"
-          action="https://rc-epay.esewa.com.np/api/epay/main/v2/form"
+          action={paymentConfig.gateway_url}
         >
           <input type="hidden" name="amount" value={form.amount} />
           <input type="hidden" name="tax_amount" value={form.tax_amount} />
@@ -97,7 +148,7 @@ function TopupContent() {
             name="transaction_uuid"
             value={form.transaction_uuid}
           />
-          <input type="hidden" name="product_code" value={form.product_code} />
+          <input type="hidden" name="product_code" value={paymentConfig.product_code} />
           <input type="hidden" name="product_service_charge" value="0" />
           <input type="hidden" name="product_delivery_charge" value="0" />
           <input type="hidden" name="success_url" value={form.success_url} />
@@ -105,13 +156,13 @@ function TopupContent() {
           <input
             type="hidden"
             name="signed_field_names"
-            value={signed_field_names}
+            value={paymentConfig.signed_field_names}
           />
-          <input type="hidden" name="signature" value={signature} />
+          <input type="hidden" name="signature" value={paymentConfig.signature} />
 
           <button
             type="submit"
-            disabled={!signature}
+            disabled={!paymentConfig.signature || !paymentConfig.gateway_url}
             className="w-full bg-[#FF8D28] disabled:bg-gray-300 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition"
           >
             Pay with eSewa

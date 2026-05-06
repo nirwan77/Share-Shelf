@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Library, FollowerListModal } from "../../profile/components";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Ban, MessageCircle, UserPlus, UserMinus } from "lucide-react";
+import { Ban, MessageCircle, Star, UserPlus, UserMinus } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts";
 
@@ -115,6 +115,13 @@ export default function UserProfile() {
               >
                 <strong className="text-white text-lg">{data._count.followers}</strong>
                 <span className="uppercase text-[10px] tracking-widest font-bold">followers</span>
+              </span>
+            </div>
+            <div className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-orange-500/20 bg-orange-500/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-orange-400">
+              <Star className="h-3.5 w-3.5 fill-orange-400" />
+              {data.credibility?.averageRating?.toFixed(1) || "0.0"} rating
+              <span className="text-zinc-500">
+                ({data.credibility?.ratingCount || 0})
               </span>
             </div>
             <div className="mt-6 flex flex-wrap gap-3">

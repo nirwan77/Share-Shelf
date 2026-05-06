@@ -51,6 +51,7 @@ export const Library = ({ userProfile }: { userProfile?: ProfileData }) => {
   const reading = statuses.filter((s) => s.status === "READING");
   const read = statuses.filter((s) => s.status === "READ");
   const toRead = statuses.filter((s) => s.status === "PLAN_TO_READ");
+  const dropped = statuses.filter((s) => s.status === "DROPPED");
 
   const renderSwiper = (books: typeof statuses) => {
     if (books.length === 0) {
@@ -209,9 +210,14 @@ export const Library = ({ userProfile }: { userProfile?: ProfileData }) => {
       {renderSwiper(read)}
 
       <h2 className="text-2xl font-bold text-white mb-4 mt-10">
-        To Read <span className="text-gray-500 font-medium ml-2">- {toRead.length} books</span>
+        Plan to Read / Wishlist <span className="text-gray-500 font-medium ml-2">- {toRead.length} books</span>
       </h2>
       {renderSwiper(toRead)}
+
+      <h2 className="text-2xl font-bold text-white mb-4 mt-10">
+        Dropped <span className="text-gray-500 font-medium ml-2">- {dropped.length} books</span>
+      </h2>
+      {renderSwiper(dropped)}
     </div>
   );
 };

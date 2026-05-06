@@ -32,6 +32,7 @@ export class BookOffersController {
       condition?: string;
       type: OfferType;
       note?: string;
+      sellerLocation?: string;
       sellerEsewaNumber?: string;
     },
   ) {

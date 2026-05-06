@@ -26,11 +26,25 @@ export class AuthService {
     });
   }
 
-  async register(email: string, password: string, name: string, phone: string) {
+  async register(
+    email: string,
+    password: string,
+    name: string,
+    phone: string,
+    acceptTerms: boolean,
+    acceptPrivacy: boolean,
+  ) {
+    if (!acceptTerms || !acceptPrivacy) {
+      throw new BadRequestException(
+        'You must accept the Terms and Privacy Policy to create an account',
+      );
+    }
+
     const exists = await this.prisma.user.findUnique({ where: { email } });
     if (exists) throw new BadRequestException('User already exists');
 
     const hashed = await bcrypt.hash(password, 10);
+    const acceptedAt = new Date();
 
     const user = await this.prisma.user.create({
       data: {
@@ -39,6 +53,8 @@ export class AuthService {
         name,
         phone: phone.trim(),
         isVerified: false,
+        termsAcceptedAt: acceptedAt,
+        privacyAcceptedAt: acceptedAt,
       },
     });
 
@@ -85,6 +101,91 @@ export class AuthService {
     };
   }
 
+  async forgotPassword(email: string) {
+    const response = {
+      message: 'If that account exists, a password reset code has been sent',
+    };
+
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: { id: true, isVerified: true, isBanned: true },
+    });
+
+    if (!user || !user.isVerified || user.isBanned) {
+      return response;
+    }
+
+    await this.sendPasswordResetOtp(email);
+    return response;
+  }
+
+  async resetPassword(email: string, code: string, newPassword: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: { id: true, isVerified: true, isBanned: true },
+    });
+
+    if (!user || !user.isVerified || user.isBanned) {
+      throw new BadRequestException('Invalid or expired reset code');
+    }
+
+    const record = await this.prisma.otp.findFirst({
+      where: { email, code },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!record || record.expiresAt < new Date()) {
+      throw new BadRequestException('Invalid or expired reset code');
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashed },
+    });
+
+    await this.prisma.otp.deleteMany({ where: { email } });
+
+    return { message: 'Password reset successfully' };
+  }
+
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, password: true },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const valid = await bcrypt.compare(currentPassword, user.password);
+    if (!valid) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    const isSamePassword = await bcrypt.compare(newPassword, user.password);
+    if (isSamePassword) {
+      throw new BadRequestException(
+        'New password must be different from current password',
+      );
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashed },
+    });
+
+    return { message: 'Password changed successfully' };
+  }
+
   async sendOtp(email: string) {
     const otp = this.generateOtp();
 
@@ -104,6 +205,29 @@ export class AuthService {
     });
 
     return { message: 'OTP sent' };
+  }
+
+  async sendPasswordResetOtp(email: string) {
+    const otp = this.generateOtp();
+
+    await this.prisma.otp.deleteMany({ where: { email } });
+
+    await this.prisma.otp.create({
+      data: {
+        email,
+        code: otp,
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      },
+    });
+
+    await this.transporter.sendMail({
+      from: process.env.MAIL_USER,
+      to: email,
+      subject: 'Share Shelf password reset code',
+      html: `<h2>${otp}</h2><p>This code expires in 10 minutes.</p>`,
+    });
+
+    return { message: 'Password reset OTP sent' };
   }
 
   async verifyOtp(email: string, code: string) {

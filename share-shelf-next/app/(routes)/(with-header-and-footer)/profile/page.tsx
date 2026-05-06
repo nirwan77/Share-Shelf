@@ -10,6 +10,7 @@ import {
   useGetMyPurchases,
   useDeleteOffer,
   useConfirmPurchaseReceived,
+  useThankSeller,
   useUploadImage,
   useUpdateAvatar,
 } from "./action";
@@ -19,7 +20,7 @@ import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Library, FollowerListModal } from "./components";
 import { toast } from "sonner";
-import { Camera as CameraIcon } from "lucide-react";
+import { Camera as CameraIcon, HeartHandshake, Star } from "lucide-react";
 import { useState } from "react";
 
 export default function Profile() {
@@ -44,6 +45,7 @@ export default function Profile() {
     useGetMyPurchases();
   const deleteOffer = useDeleteOffer();
   const confirmPurchaseReceived = useConfirmPurchaseReceived();
+  const thankSeller = useThankSeller();
   const uploadImage = useUploadImage();
   const updateAvatar = useUpdateAvatar();
 
@@ -100,6 +102,13 @@ export default function Profile() {
               <div className="mt-6 flex flex-wrap items-center justify-center gap-4 md:justify-start">
                 <div className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-zinc-500">
                   0 books exchanged
+                </div>
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-orange-500/20 bg-orange-500/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-orange-400">
+                  <Star className="h-3.5 w-3.5 fill-orange-400" />
+                  {data?.credibility?.averageRating?.toFixed(1) || "0.0"} rating
+                  <span className="text-zinc-500">
+                    ({data?.credibility?.ratingCount || 0})
+                  </span>
                 </div>
               </div>
             </div>
@@ -235,6 +244,11 @@ export default function Profile() {
                           </>
                         )}
                       </div>
+                      {offer.sellerLocation && (
+                        <p className="mt-3 text-xs font-medium text-gray-500">
+                          Location: {offer.sellerLocation}
+                        </p>
+                      )}
                     </div>
                     <div className="mt-4 flex justify-end gap-4">
                       <Link
@@ -413,6 +427,44 @@ export default function Profile() {
                           Receipt confirmed
                         </span>
                       )}
+                      {["BUYER_CONFIRMED", "COMPLETED"].includes(
+                        purchase.status,
+                      ) &&
+                        (purchase.sellerThanked ? (
+                          <span className="inline-flex items-center gap-1.5 text-sm font-bold text-orange-400">
+                            <HeartHandshake className="h-4 w-4" />
+                            Seller thanked
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              thankSeller.mutate(purchase.id, {
+                                onSuccess: () => {
+                                  toast.success(
+                                    "Thanks sent. This helps other readers trust the seller.",
+                                  );
+                                },
+                                onError: (error: any) => {
+                                  toast.error(
+                                    error?.response?.data?.message ||
+                                      "Could not thank seller",
+                                  );
+                                },
+                              });
+                            }}
+                            disabled={
+                              thankSeller.isPending &&
+                              thankSeller.variables === purchase.id
+                            }
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-orange-500/25 bg-orange-500/10 px-4 py-2 text-sm font-bold text-orange-400 transition hover:border-orange-500/50 hover:bg-orange-500/15 disabled:opacity-50"
+                          >
+                            <HeartHandshake className="h-4 w-4" />
+                            {thankSeller.isPending &&
+                            thankSeller.variables === purchase.id
+                              ? "Sending..."
+                              : "Thank seller"}
+                          </button>
+                        ))}
                     </div>
                   </div>
                 </div>

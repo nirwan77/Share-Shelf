@@ -100,13 +100,26 @@ export class BookPurchasesService {
       return { message: 'Purchase already processed', status: purchase.status };
     }
 
-    // Verify eSewa Signature
-    const fields = payload;
-    const keys = signed_field_names.split(',');
-    const message = keys.map((k) => `${k}=${fields[k]}`).join(',');
-    const secret = '8gBm/:&EnhH.1/q'; // Same secret as in TopupService
-    const hash = CryptoJS.HmacSHA256(message, secret);
-    const generatedSignature = CryptoJS.enc.Base64.stringify(hash);
+    if (!signed_field_names || !signature) {
+      throw new BadRequestException('Missing eSewa signature fields');
+    }
+
+    const expectedAmount = Number(purchase.price).toFixed(2);
+
+    if (Number(total_amount).toFixed(2) !== expectedAmount) {
+      throw new BadRequestException('Payment amount does not match purchase price');
+    }
+
+    const { productCode } = this.getEsewaConfig();
+
+    if (product_code !== productCode) {
+      throw new BadRequestException('Invalid eSewa product code');
+    }
+
+    const generatedSignature = this.generateEsewaSignature(
+      payload,
+      signed_field_names,
+    );
 
     if (generatedSignature !== signature) {
       console.error('[BookPurchasesService] Signature verification failed!', {
@@ -181,14 +194,29 @@ export class BookPurchasesService {
   }
 
   async getMyPurchases(userId: string) {
-    return this.prisma.bookPurchase.findMany({
+    const purchases = await this.prisma.bookPurchase.findMany({
       where: { buyerId: userId },
       include: {
         book: { select: { id: true, name: true, image: true, author: true } },
-        seller: { select: { name: true, email: true, phone: true } },
+        seller: { select: { id: true, name: true, email: true, phone: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    const sellerIds = [...new Set(purchases.map((purchase) => purchase.sellerId))];
+    const ratings = await this.prisma.userRating.findMany({
+      where: {
+        ratingUserId: userId,
+        ratedUserId: { in: sellerIds },
+      },
+      select: { ratedUserId: true },
+    });
+    const thankedSellerIds = new Set(ratings.map((rating) => rating.ratedUserId));
+
+    return purchases.map((purchase) => ({
+      ...purchase,
+      sellerThanked: thankedSellerIds.has(purchase.sellerId),
+    }));
   }
 
   async confirmReceived(userId: string, purchaseId: string) {
@@ -232,5 +260,77 @@ export class BookPurchasesService {
       message: 'Receipt confirmed. Admin can now process seller payout.',
       purchaseId: updatedPurchase.id,
     };
+  }
+
+  async thankSeller(userId: string, purchaseId: string) {
+    const purchase = await this.prisma.bookPurchase.findUnique({
+      where: { id: purchaseId },
+      include: {
+        book: { select: { name: true } },
+        buyer: { select: { name: true } },
+      },
+    });
+
+    if (!purchase) {
+      throw new NotFoundException('Purchase record not found');
+    }
+
+    if (purchase.buyerId !== userId) {
+      throw new ForbiddenException('You can only thank sellers from your own purchases');
+    }
+
+    if (!['BUYER_CONFIRMED', 'COMPLETED'].includes(purchase.status)) {
+      throw new BadRequestException('Confirm receipt before thanking the seller');
+    }
+
+    const existingRating = await this.prisma.userRating.findFirst({
+      where: {
+        ratingUserId: userId,
+        ratedUserId: purchase.sellerId,
+      },
+    });
+
+    if (existingRating) {
+      return { ok: true, message: 'Seller already thanked' };
+    }
+
+    await this.prisma.userRating.create({
+      data: {
+        rating: 5,
+        ratingUserId: userId,
+        ratedUserId: purchase.sellerId,
+      },
+    });
+
+    await this.notifications.create(
+      purchase.sellerId,
+      `${purchase.buyer.name} thanked you for the transaction on "${purchase.book.name}".`,
+      'SELLER_THANKED',
+    );
+
+    return { ok: true, message: 'Seller thanked successfully' };
+  }
+
+  private getEsewaConfig() {
+    const secret = process.env.ESEWA_SECRET_KEY;
+    const productCode = process.env.ESEWA_PRODUCT_CODE;
+
+    if (!secret || !productCode) {
+      throw new BadRequestException('eSewa environment variables are not configured');
+    }
+
+    return { secret, productCode };
+  }
+
+  private generateEsewaSignature(
+    fields: Record<string, any>,
+    signedFieldNames: string,
+  ) {
+    const { secret } = this.getEsewaConfig();
+    const keys = signedFieldNames.split(',');
+    const message = keys.map((k) => `${k}=${fields[k]}`).join(',');
+    const hash = CryptoJS.HmacSHA256(message, secret);
+
+    return CryptoJS.enc.Base64.stringify(hash);
   }
 }
