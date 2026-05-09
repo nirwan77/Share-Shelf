@@ -25,7 +25,7 @@ function TabsList({
   return (
     <TabsPrimitive.List
       data-slot="tabs-list"
-      className={cn("flex border-b border-border", className)}
+      className={cn("flex overflow-x-auto border-b border-white/10", className)}
       {...props}
     />
   );
@@ -40,16 +40,16 @@ function TabsTrigger({
       data-slot="tabs-trigger"
       className={cn(
         `
-        relative px-4 py-2 body-lg font-medium text-muted-foreground
+        relative shrink-0 px-4 py-3 text-sm sm:text-base font-semibold text-zinc-500
         transition-colors
-        hover:text-foreground
-        data-[state=active]:text-foreground
+        hover:text-zinc-200
+        data-[state=active]:text-[#ff7a00]
         data-[state=active]:after:absolute
         data-[state=active]:after:bottom-0
         data-[state=active]:after:left-0
         data-[state=active]:after:h-[2px]
         data-[state=active]:after:w-full
-        data-[state=active]:after:bg-red-500
+        data-[state=active]:after:bg-[#ff7a00]
 
         `,
         className
