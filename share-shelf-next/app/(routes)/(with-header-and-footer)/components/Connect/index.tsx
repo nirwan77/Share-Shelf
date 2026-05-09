@@ -24,16 +24,16 @@ const data = [
 
 export const Connect = () => {
   return (
-    <div className="py-30 container mx-auto">
-      <div className="text-center mb-20">
+    <div className="app-section container mx-auto">
+      <div className="mb-12 text-center sm:mb-16">
         <span className="tag mb-3 font-bold">Connect</span>
         <h2 className="heading-2 mb-4">How book exchange works</h2>
-        <p className="max-w-md mx-auto">
+        <p className="mx-auto max-w-xl text-zinc-400">
           Simple platform for book lovers to trade, discover, and connect
           through shared reading experiences.
         </p>
       </div>
-      <div className="grid grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:gap-8">
         {data.map((item, idx) => (
           <BookCard
             link={item.link}

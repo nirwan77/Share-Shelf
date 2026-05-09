@@ -26,11 +26,11 @@ const Input = forwardRef<HTMLInputElement, FormInputProps>(
             type={isPassword && showPassword ? "text" : type}
             placeholder={placeholder}
             ref={ref}
-            className={`w-full border rounded-sm px-3 py-2 focus:outline-none focus:ring-1 pr-10
+            className={`w-full rounded-xl border bg-white/[0.04] px-4 py-3 pr-11 text-white placeholder:text-zinc-500 outline-none transition-all duration-200 focus:ring-4
             ${
               error
-                ? "border-red-500 focus:ring-red-500"
-                : "border-gray-400 focus:ring-black"
+                ? "border-red-500/70 focus:border-red-500 focus:ring-red-500/15"
+                : "border-white/10 focus:border-[#ff7a00]/70 focus:bg-white/[0.06] focus:ring-[#ff7a00]/20"
             }
           `}
             {...rest}
@@ -40,7 +40,7 @@ const Input = forwardRef<HTMLInputElement, FormInputProps>(
             <button
               type="button"
               onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-black"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-[#ffb36d]"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? (
@@ -51,7 +51,7 @@ const Input = forwardRef<HTMLInputElement, FormInputProps>(
             </button>
           )}
         </div>
-        {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+        {error && <p className="mt-1.5 text-sm text-red-400">{error}</p>}
       </div>
     );
   }

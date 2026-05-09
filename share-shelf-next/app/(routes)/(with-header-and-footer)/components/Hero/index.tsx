@@ -19,7 +19,7 @@ export const Hero = () => {
   }, []);
 
   return (
-    <div className="h-dvh relative flex justify-center items-center overflow-hidden">
+    <div className="relative flex min-h-[720px] items-center justify-center overflow-hidden pt-28 sm:min-h-dvh">
       <div className="absolute inset-0 z-0">
         <Image
           src="/heroImage.jpg"
@@ -29,22 +29,23 @@ export const Hero = () => {
           className="object-cover"
           sizes="100vw"
         />
-        <div className="absolute inset-0 bg-black/50 z-[1]" />
+        <div className="absolute inset-0 z-[1] bg-gradient-to-b from-black/80 via-black/55 to-black" />
       </div>
 
-      <div className="relative z-10 px-4">
-        <h1 className="heading-1 text-center text-white drop-shadow-lg mb-4">
+      <div className="relative z-10 px-4 pb-20 text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <span className="tag mb-4 inline-block">Trade, buy, discuss</span>
+        <h1 className="heading-1 mb-5 text-center text-white drop-shadow-lg">
           SHARE SHELF
         </h1>
-        <p className="max-w-[649px] text-white text-center text-lg md:text-xl drop-shadow-md mx-auto">
+        <p className="mx-auto max-w-[680px] text-center text-base leading-8 text-zinc-200 drop-shadow-md md:text-xl">
           Discover a world where books connect readers. Exchange, buy, and
           explore new literary landscapes with passionate book lovers.
         </p>
-        <div className="flex flex-col sm:flex-row gap-6 mt-12 justify-center items-center">
+        <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
           {!mounted ? null : token ? (
             <Button
               onClick={() => router.push("/explore")}
-              className="bg-orange-400 hover:bg-orange-500 text-white min-w-[160px] h-12 text-lg font-semibold rounded-full transition-all"
+              className="h-12 min-w-[170px] rounded-full text-base font-bold"
             >
               Explore
             </Button>
@@ -52,13 +53,14 @@ export const Hero = () => {
             <>
               <Button
                 onClick={() => router.push("/sign-up")}
-                className="bg-orange-400 hover:bg-orange-500 text-white min-w-[160px] h-12 text-lg font-semibold rounded-full transition-all"
+                className="h-12 min-w-[170px] rounded-full text-base font-bold"
               >
                 Join for free
               </Button>
               <Button
                 onClick={() => router.push("/login")}
-                className="bg-transparent border-2 border-white hover:bg-white hover:text-black text-white min-w-[160px] h-12 text-lg font-semibold rounded-full transition-all"
+                variant="outline"
+                className="h-12 min-w-[170px] rounded-full border-white/40 text-base font-bold"
               >
                 Log in
               </Button>

@@ -1,21 +1,5 @@
-import {
-  Choices,
-  Connect,
-  Hero,
-  PopularBooks,
-  FeaturedBooks,
-} from "./components";
+import { HomeExperience } from "./components/HomeExperience";
 
 export default function Home() {
-  return (
-    <main>
-      <Hero />
-
-      <Connect />
-
-      <Choices />
-
-      <PopularBooks />
-    </main>
-  );
+  return <HomeExperience />;
 }
