@@ -495,7 +495,12 @@ export default function LeaderboardPage() {
           <>
             <section className="mb-8 grid items-end gap-4 md:grid-cols-3">
               {podiumUsers.map((user, index) => (
-                <PodiumUser key={user.id} user={user} position={index} />
+                <PodiumUser
+                  key={user.id}
+                  user={user}
+                  position={index}
+                  isCurrentUser={user.id === currentUserId}
+                />
               ))}
             </section>
 
@@ -573,9 +578,11 @@ export default function LeaderboardPage() {
 function PodiumUser({
   user,
   position,
+  isCurrentUser,
 }: {
   user: LeaderboardUser & { rank: number; score: number };
   position: number;
+  isCurrentUser: boolean;
 }) {
   const podiumStyles = [
     "md:order-2 border-[#ff7a00]/45 bg-[#ff7a00]/12 pt-8 md:min-h-[250px]",
@@ -604,13 +611,15 @@ function PodiumUser({
       <h3 className="mt-4 truncate text-lg font-semibold">{user.username}</h3>
       <p className="mt-1 text-sm text-zinc-500">{user.badge}</p>
       <p className="mt-4 text-3xl font-semibold">{user.score.toLocaleString()}</p>
-      <Link
-        href={`/user/${user.id}`}
-        className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-zinc-300 transition-colors hover:border-[#ff7a00]/50 hover:text-[#ffb36d]"
-      >
-        Visit profile
-        <ArrowUpRight className="h-3.5 w-3.5" />
-      </Link>
+      {!isCurrentUser && (
+        <Link
+          href={`/user/${user.id}`}
+          className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-zinc-300 transition-colors hover:border-[#ff7a00]/50 hover:text-[#ffb36d]"
+        >
+          Visit profile
+          <ArrowUpRight className="h-3.5 w-3.5" />
+        </Link>
+      )}
     </article>
   );
 }
@@ -627,7 +636,7 @@ function LeaderboardRow({
   return (
     <div
       className={cn(
-        "grid gap-4 p-4 transition-colors duration-300 hover:bg-white/[0.04] md:grid-cols-[72px_1fr_150px_150px_150px]",
+        "grid gap-4 p-4 transition-colors duration-300 hover:bg-white/[0.04] md:grid-cols-[72px_1fr_150px_150px]",
         isCurrentUser && "bg-[#ff7a00]/10 hover:bg-[#ff7a00]/10",
       )}
     >
@@ -657,11 +666,6 @@ function LeaderboardRow({
         </div>
       </div>
 
-      <div className="flex items-center gap-2 text-sm text-emerald-700">
-        <ArrowUpRight className="h-4 w-4" />
-        +{user.trend}% this period
-      </div>
-
       <div className="flex items-center justify-between gap-3 md:justify-end">
         <div className="text-left md:text-right">
           <p className="text-lg font-semibold text-white">
@@ -673,13 +677,15 @@ function LeaderboardRow({
       </div>
 
       <div className="flex items-center md:justify-end">
-        <Link
-          href={`/user/${user.id}`}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-sm font-semibold text-zinc-300 transition-colors hover:border-[#ff7a00]/50 hover:text-[#ffb36d]"
-        >
-          Visit profile
-          <ArrowUpRight className="h-4 w-4" />
-        </Link>
+        {!isCurrentUser && (
+          <Link
+            href={`/user/${user.id}`}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-sm font-semibold text-zinc-300 transition-colors hover:border-[#ff7a00]/50 hover:text-[#ffb36d]"
+          >
+            Visit profile
+            <ArrowUpRight className="h-4 w-4" />
+          </Link>
+        )}
       </div>
     </div>
   );

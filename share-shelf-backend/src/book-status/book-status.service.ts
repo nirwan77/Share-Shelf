@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { BookStatus } from '@prisma/client';
+import { ReadingGoalsService } from '../reading-goals/reading-goals.service';
 
 @Injectable()
 export class BookStatusService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readingGoalsService: ReadingGoalsService,
+  ) {}
 
   async toggleStatus(userId: string, data: { bookId: string; status: BookStatus }) {
     const existing = await this.prisma.userBookStatus.findFirst({
@@ -23,20 +27,32 @@ export class BookStatusService {
         return { message: 'Status removed' };
       } else {
         // Change to another status
-        return this.prisma.userBookStatus.update({
+        const updatedStatus = await this.prisma.userBookStatus.update({
           where: { id: existing.id },
           data: { status: data.status },
         });
+
+        if (data.status === 'READ') {
+          await this.readingGoalsService.evaluateReadingAchievements(userId);
+        }
+
+        return updatedStatus;
       }
     }
 
     // Create a new status
-    return this.prisma.userBookStatus.create({
+    const createdStatus = await this.prisma.userBookStatus.create({
       data: {
         userId,
         bookId: data.bookId,
         status: data.status,
       },
     });
+
+    if (data.status === 'READ') {
+      await this.readingGoalsService.evaluateReadingAchievements(userId);
+    }
+
+    return createdStatus;
   }
 }

@@ -6,10 +6,14 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { OfferType } from '@prisma/client';
+import { NotificationsService } from 'src/notifications/notifications.service';
 
 @Injectable()
 export class BookOffersService {
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private notifications: NotificationsService,
+  ) {}
 
   async create(
     userId: string,
@@ -19,10 +23,16 @@ export class BookOffersService {
       condition?: string;
       type: OfferType;
       note?: string;
+      sellerLocation?: string;
       sellerEsewaNumber?: string;
     },
   ) {
     const sellerEsewaNumber = data.sellerEsewaNumber?.trim();
+    const sellerLocation = data.sellerLocation?.trim();
+
+    if (!sellerLocation) {
+      throw new BadRequestException('Seller location is required');
+    }
 
     if (data.type === 'SELL' && !sellerEsewaNumber) {
       throw new BadRequestException('eSewa number is required for sell offers');
@@ -40,9 +50,10 @@ export class BookOffersService {
       throw new ConflictException('You already have an active offer for this book');
     }
 
-    return this.prisma.bookOffer.create({
+    const offer = await this.prisma.bookOffer.create({
       data: {
         ...data,
+        sellerLocation,
         sellerEsewaNumber:
           data.type === 'SELL' ? sellerEsewaNumber : null,
         userId,
@@ -51,6 +62,10 @@ export class BookOffersService {
         book: { select: { id: true, name: true, image: true } },
       },
     });
+
+    await this.notifyWishlistedUsers(offer.bookId, offer.userId, offer.book.name, offer.type);
+
+    return offer;
   }
 
   async findByBook(bookId: string) {
@@ -85,5 +100,32 @@ export class BookOffersService {
     }
 
     return this.prisma.bookOffer.delete({ where: { id } });
+  }
+
+  private async notifyWishlistedUsers(
+    bookId: string,
+    sellerId: string,
+    bookName: string,
+    offerType: OfferType,
+  ) {
+    const wishlistedUsers = await this.prisma.userBookStatus.findMany({
+      where: {
+        bookId,
+        status: 'PLAN_TO_READ',
+        userId: { not: sellerId },
+      },
+      select: { userId: true },
+      distinct: ['userId'],
+    });
+
+    await Promise.all(
+      wishlistedUsers.map((item) =>
+        this.notifications.create(
+          item.userId,
+          `"${bookName}" from your wishlist is now available for ${offerType === 'SELL' ? 'buying' : 'trading'}.`,
+          'WISHLIST_BOOK_AVAILABLE',
+        ),
+      ),
+    );
   }
 }

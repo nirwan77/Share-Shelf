@@ -55,6 +55,7 @@ export type MyOffer = {
   condition: string | null;
   type: "SELL" | "TRADE";
   note: string | null;
+  sellerLocation: string | null;
   isActive: boolean;
   createdAt: string;
   book: {
@@ -127,6 +128,61 @@ export const useGetMyPurchases = () => {
       return data;
     },
     enabled: !!token,
+  });
+};
+
+export type ReadingAchievement = {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  year: number | null;
+  threshold: number | null;
+  createdAt: string;
+};
+
+export type ReadingGoalSummary = {
+  year: number;
+  goal: {
+    id: string;
+    year: number;
+    targetBooks: number;
+  } | null;
+  readCount: number;
+  targetBooks: number | null;
+  progressPercent: number;
+  remainingBooks: number | null;
+  nextMilestone: number | null;
+  achievements: ReadingAchievement[];
+};
+
+export const useGetReadingGoal = () => {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: ["reading-goal"],
+    queryFn: async () => {
+      const { data } = await axios.get<ReadingGoalSummary>("/reading-goals/me");
+      return data;
+    },
+    enabled: !!token,
+  });
+};
+
+export const useSetReadingGoal = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (targetBooks: number) => {
+      const { data } = await axios.patch<ReadingGoalSummary>(
+        "/reading-goals/me",
+        { targetBooks },
+      );
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["reading-goal"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications-unread-count"] });
+    },
   });
 };
 

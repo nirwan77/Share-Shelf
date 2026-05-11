@@ -25,6 +25,8 @@ model User {
   name   String
   phone  String?
   avatar String?
+  termsAcceptedAt   DateTime?
+  privacyAcceptedAt DateTime?
 
   createdAt            DateTime               @default(now())
   updatedAt            DateTime               @updatedAt
@@ -45,6 +47,8 @@ model User {
   purchases            BookPurchase[]         @relation("purchases")
   sales                BookPurchase[]         @relation("sales")
   notifications        Notification[]
+  readingGoals         ReadingGoal[]
+  readingAchievements  ReadingAchievement[]
   followers            Follow[]               @relation("followers")
   following            Follow[]               @relation("following")
   chatConversationsOne ChatConversation[]     @relation("chatConversationUserOne")
@@ -123,6 +127,40 @@ model UserBookStatus {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   bookId String
   book   Books  @relation(fields: [bookId], references: [id], onDelete: Cascade)
+}
+
+model ReadingGoal {
+  id          String   @id @default(nanoid())
+  year        Int
+  targetBooks Int
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, year])
+  @@index([userId])
+  @@map("reading_goals")
+}
+
+model ReadingAchievement {
+  id          String  @id @default(nanoid())
+  type        String
+  title       String
+  description String
+  year        Int?
+  threshold   Int?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, type, year])
+  @@index([userId, createdAt])
+  @@map("reading_achievements")
 }
 
 model UserBookReview {
@@ -398,6 +436,7 @@ model BookOffer {
   condition         String?
   type              OfferType
   note              String?
+  sellerLocation    String?
   sellerEsewaNumber String?
   isActive          Boolean   @default(true)
 

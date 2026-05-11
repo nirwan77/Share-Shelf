@@ -26,6 +26,7 @@ import { DashboardPurchasesModule } from './dashboard-purchases/dashboard-purcha
 import { LeaderboardModule } from './leaderboard/leaderboard.module';
 import { ChatModule } from './chat/chat.module';
 import { DashboardReportsModule } from './dashboard-reports/dashboard-reports.module';
+import { ReadingGoalsModule } from './reading-goals/reading-goals.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { DashboardReportsModule } from './dashboard-reports/dashboard-reports.mo
     LeaderboardModule,
     ChatModule,
     DashboardReportsModule,
+    ReadingGoalsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
