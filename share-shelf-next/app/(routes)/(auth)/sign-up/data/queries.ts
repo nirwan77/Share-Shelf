@@ -10,6 +10,7 @@ interface SignUpBody {
   email: string;
   password: string;
   name: string;
+  phone: string;
 }
 
 export const useSignUp = () => {

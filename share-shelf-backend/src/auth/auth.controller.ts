@@ -20,9 +20,9 @@ export class AuthController {
   @ApiBody({ type: RegisterDto })
   @ApiResponse({ status: 201 })
   async register(@Body() dto: RegisterDto) {
-    const { email, password, name } = dto;
+    const { email, password, name, phone } = dto;
     try {
-      return await this.authService.register(email, password, name);
+      return await this.authService.register(email, password, name, phone);
     } catch (err) {
       throw new BadRequestException(err.message);
     }

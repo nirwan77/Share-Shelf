@@ -23,6 +23,7 @@ model User {
   money Int @default(0)
 
   name   String
+  phone  String?
   avatar String?
 
   createdAt            DateTime               @default(now())
@@ -435,6 +436,7 @@ model BookRequest {
 enum PurchaseStatus {
   PENDING
   PAID
+  BUYER_CONFIRMED
   COMPLETED
   FAILED
 }

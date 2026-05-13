@@ -26,14 +26,20 @@ export class AuthService {
     });
   }
 
-  async register(email: string, password: string, name: string) {
+  async register(email: string, password: string, name: string, phone: string) {
     const exists = await this.prisma.user.findUnique({ where: { email } });
     if (exists) throw new BadRequestException('User already exists');
 
     const hashed = await bcrypt.hash(password, 10);
 
     const user = await this.prisma.user.create({
-      data: { email, password: hashed, name, isVerified: false },
+      data: {
+        email,
+        password: hashed,
+        name,
+        phone: phone.trim(),
+        isVerified: false,
+      },
     });
 
     await this.sendOtp(email);

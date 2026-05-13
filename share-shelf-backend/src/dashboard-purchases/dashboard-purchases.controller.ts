@@ -22,9 +22,27 @@ export class DashboardPurchasesController {
     return this.dashboardPurchasesService.getPendingTransactions();
   }
 
+  @Get('all')
+  @ApiOperation({ summary: 'Get all book purchase transactions' })
+  async getAllTransactions() {
+    return this.dashboardPurchasesService.getAllTransactions();
+  }
+
+  @Get('summary')
+  @ApiOperation({ summary: 'Get purchase commission and payout summary' })
+  async getSummary() {
+    return this.dashboardPurchasesService.getSummary();
+  }
+
   @Post(':id/transfer')
   @ApiOperation({ summary: 'Transfer money to seller' })
   async completeTransfer(@Param('id') id: string) {
     return this.dashboardPurchasesService.completeTransfer(id);
+  }
+
+  @Post(':id/notify-seller')
+  @ApiOperation({ summary: 'Notify seller to prepare and coordinate delivery' })
+  async notifySeller(@Param('id') id: string) {
+    return this.dashboardPurchasesService.notifySeller(id);
   }
 }

@@ -4,7 +4,7 @@ import { axios } from '@/lib';
 export interface PurchaseTransaction {
   id: string;
   price: number;
-  status: 'PENDING' | 'PAID' | 'COMPLETED' | 'FAILED';
+  status: 'PENDING' | 'PAID' | 'BUYER_CONFIRMED' | 'COMPLETED' | 'FAILED';
   location?: string;
   commissionAmount: number;
   sellerAmount: number;
@@ -19,10 +19,12 @@ export interface PurchaseTransaction {
   buyer: {
     name: string;
     email: string;
+    phone: string | null;
   };
   seller: {
     name: string;
     email: string;
+    phone: string | null;
   };
   offer: {
     sellerEsewaNumber: string | null;
@@ -52,6 +54,18 @@ export interface AllTransactions {
   topups: TopupTransaction[];
 }
 
+export interface PurchaseSummary {
+  totalSalesAmount: number;
+  totalCommissionEarned: number;
+  completedCommission: number;
+  pendingCommission: number;
+  totalSellerPayoutSent: number;
+  pendingSellerPayout: number;
+  successfulPurchaseCount: number;
+  completedPayoutCount: number;
+  pendingPayoutCount: number;
+}
+
 export const useGetPendingTransactions = () => {
   return useQuery<PurchaseTransaction[]>({
     queryKey: ['pending-transactions'],
@@ -67,7 +81,7 @@ export const useGetAllTransactions = () => {
     queryKey: ['all-transactions'],
     queryFn: async () => {
       const [purchasesResponse, topupsResponse] = await Promise.all([
-        axios.get('/dashboard-purchases'),
+        axios.get('/dashboard-purchases/all'),
         axios.get('/topup/dashboard/all')
       ]);
       return {
@@ -88,7 +102,35 @@ export const useCompleteTransfer = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pending-transactions'] });
       queryClient.invalidateQueries({ queryKey: ['all-transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['purchase-summary'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+    },
+  });
+};
+
+export const useGetPurchaseSummary = () => {
+  return useQuery<PurchaseSummary>({
+    queryKey: ['purchase-summary'],
+    queryFn: async () => {
+      const response = await axios.get('/dashboard-purchases/summary');
+      return response.data;
+    },
+  });
+};
+
+export const useNotifySeller = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (purchaseId: string) => {
+      const response = await axios.post(
+        `/dashboard-purchases/${purchaseId}/notify-seller`,
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pending-transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['all-transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['purchase-summary'] });
     },
   });
 };

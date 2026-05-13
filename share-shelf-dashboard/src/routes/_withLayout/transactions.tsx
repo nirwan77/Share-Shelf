@@ -17,13 +17,16 @@ import {
   Image,
   Tabs,
   Card,
+  SimpleGrid,
 } from "@mantine/core";
-import { IconCash, IconCheck, IconUser, IconWallet, IconX, IconCircleCheck } from "@tabler/icons-react";
+import { IconBell, IconCash, IconCheck, IconUser, IconWallet, IconX, IconCircleCheck } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 import {
   useGetPendingTransactions,
   useGetAllTransactions,
+  useGetPurchaseSummary,
   useCompleteTransfer,
+  useNotifySeller,
   type TopupTransaction,
 } from "./transactions/-queries";
 
@@ -34,7 +37,11 @@ export const Route = createFileRoute("/_withLayout/transactions")({
 function TransactionsManagement() {
   const { data: transactions, isLoading: pendingLoading } = useGetPendingTransactions();
   const { data: allTransactions, isLoading: allLoading } = useGetAllTransactions();
+  const { data: summary, isLoading: summaryLoading } = useGetPurchaseSummary();
   const transferMutation = useCompleteTransfer();
+  const notifySellerMutation = useNotifySeller();
+  const completedPayouts =
+    allTransactions?.purchases.filter((tx) => tx.status === "COMPLETED") ?? [];
 
   const handleTransfer = (
     id: string,
@@ -56,6 +63,25 @@ function TransactionsManagement() {
         },
       });
     }
+  };
+
+  const handleNotifySeller = (id: string) => {
+    notifySellerMutation.mutate(id, {
+      onSuccess: () => {
+        notifications.show({
+          title: "Seller notified",
+          message: "Seller has been prompted with the buyer location",
+          color: "blue",
+        });
+      },
+      onError: () => {
+        notifications.show({
+          title: "Notification failed",
+          message: "Could not notify the seller. Please try again.",
+          color: "red",
+        });
+      },
+    });
   };
 
   const renderTopupTransactions = (topups: TopupTransaction[]) => {
@@ -143,9 +169,14 @@ function TransactionsManagement() {
             <Text size="xs" c="dimmed">
               {tx.buyer.email}
             </Text>
+            {tx.buyer.phone && (
+              <Text size="xs" c="dimmed">
+                {tx.buyer.phone}
+              </Text>
+            )}
             {tx.location && (
               <Badge size="xs" color="gray" variant="light" mt={4}>
-                📍 {tx.location}
+                Location: {tx.location}
               </Badge>
             )}
           </div>
@@ -161,6 +192,11 @@ function TransactionsManagement() {
             <Text size="xs" c="dimmed">
               {tx.seller.email}
             </Text>
+            {tx.seller.phone && (
+              <Text size="xs" c="dimmed">
+                {tx.seller.phone}
+              </Text>
+            )}
             <Badge
               size="xs"
               color={tx.offer.sellerEsewaNumber ? "teal" : "gray"}
@@ -188,8 +224,11 @@ function TransactionsManagement() {
         </Text>
       </Table.Td>
       <Table.Td>
-        <Badge color="blue" variant="light">
-          {tx.status}
+        <Badge
+          color={tx.status === "BUYER_CONFIRMED" ? "green" : "blue"}
+          variant="light"
+        >
+          {tx.status === "BUYER_CONFIRMED" ? "Buyer confirmed" : tx.status}
         </Badge>
       </Table.Td>
       <Table.Td>
@@ -198,19 +237,31 @@ function TransactionsManagement() {
         </Text>
       </Table.Td>
       <Table.Td>
-        <Button
-          size="xs"
-          leftSection={<IconCash size={14} />}
-          onClick={() =>
-            tx.offer.sellerEsewaNumber &&
-            handleTransfer(tx.id, tx.sellerAmount, tx.offer.sellerEsewaNumber)
-          }
-          disabled={!tx.offer.sellerEsewaNumber}
-          loading={transferMutation.isPending && transferMutation.variables === tx.id}
-          color="green"
-        >
-          Mark Sent
-        </Button>
+        <Group gap="xs" wrap="nowrap">
+          <Button
+            size="xs"
+            variant="light"
+            leftSection={<IconBell size={14} />}
+            onClick={() => handleNotifySeller(tx.id)}
+            disabled={tx.status !== "PAID"}
+            loading={notifySellerMutation.isPending && notifySellerMutation.variables === tx.id}
+          >
+            Notify Seller
+          </Button>
+          <Button
+            size="xs"
+            leftSection={<IconCash size={14} />}
+            onClick={() =>
+              tx.offer.sellerEsewaNumber &&
+              handleTransfer(tx.id, tx.sellerAmount, tx.offer.sellerEsewaNumber)
+            }
+            disabled={!tx.offer.sellerEsewaNumber}
+            loading={transferMutation.isPending && transferMutation.variables === tx.id}
+            color="green"
+          >
+            Mark Paid
+          </Button>
+        </Group>
       </Table.Td>
     </Table.Tr>
   ));
@@ -223,16 +274,94 @@ function TransactionsManagement() {
             Transactions Management
           </Title>
           <Text c="dimmed" mt={4}>
-            View all transactions including wallet topups and book purchases.
+            View wallet topups, paid book orders, seller prompts, and payouts.
           </Text>
         </div>
       </Group>
+
+      <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
+        <Paper withBorder p="md" radius="md">
+          <Group justify="space-between" align="flex-start">
+            <div>
+              <Text size="xs" c="dimmed" fw={700} tt="uppercase">
+                Commission Earned
+              </Text>
+              <Text fw={800} size="xl" mt={4}>
+                Rs. {summaryLoading ? "..." : summary?.totalCommissionEarned ?? 0}
+              </Text>
+              <Text size="xs" c="dimmed" mt={2}>
+                From paid and completed book sales
+              </Text>
+            </div>
+            <Avatar color="orange" radius="xl">
+              <IconCash size={18} />
+            </Avatar>
+          </Group>
+        </Paper>
+
+        <Paper withBorder p="md" radius="md">
+          <Group justify="space-between" align="flex-start">
+            <div>
+              <Text size="xs" c="dimmed" fw={700} tt="uppercase">
+                Paid To Sellers
+              </Text>
+              <Text fw={800} size="xl" mt={4}>
+                Rs. {summaryLoading ? "..." : summary?.totalSellerPayoutSent ?? 0}
+              </Text>
+              <Text size="xs" c="dimmed" mt={2}>
+                Marked paid by admin
+              </Text>
+            </div>
+            <Avatar color="green" radius="xl">
+              <IconWallet size={18} />
+            </Avatar>
+          </Group>
+        </Paper>
+
+        <Paper withBorder p="md" radius="md">
+          <Group justify="space-between" align="flex-start">
+            <div>
+              <Text size="xs" c="dimmed" fw={700} tt="uppercase">
+                Pending Payout
+              </Text>
+              <Text fw={800} size="xl" mt={4}>
+                Rs. {summaryLoading ? "..." : summary?.pendingSellerPayout ?? 0}
+              </Text>
+              <Text size="xs" c="dimmed" mt={2}>
+                Paid orders not sent yet
+              </Text>
+            </div>
+            <Avatar color="blue" radius="xl">
+              <IconCash size={18} />
+            </Avatar>
+          </Group>
+        </Paper>
+
+        <Paper withBorder p="md" radius="md">
+          <Group justify="space-between" align="flex-start">
+            <div>
+              <Text size="xs" c="dimmed" fw={700} tt="uppercase">
+                Completed Payouts
+              </Text>
+              <Text fw={800} size="xl" mt={4}>
+                {summaryLoading ? "..." : summary?.completedPayoutCount ?? 0}
+              </Text>
+              <Text size="xs" c="dimmed" mt={2}>
+                Seller transfers recorded
+              </Text>
+            </div>
+            <Avatar color="teal" radius="xl">
+              <IconCircleCheck size={18} />
+            </Avatar>
+          </Group>
+        </Paper>
+      </SimpleGrid>
 
       <Paper withBorder p="md" radius="md" shadow="xs">
         <Tabs defaultValue="pending" variant="outline">
           <Tabs.List>
             <Tabs.Tab value="pending" leftSection={<IconCash size={14} />}>
-              Pending Transfers ({transactions?.length || 0})
+              Paid Orders ({transactions?.length || 0})
             </Tabs.Tab>
             <Tabs.Tab value="all" leftSection={<IconWallet size={14} />}>
               All Transactions ({(allTransactions?.purchases?.length || 0) + (allTransactions?.topups?.length || 0)})
@@ -251,7 +380,7 @@ function TransactionsManagement() {
                 <Center p="xl">
                   <Stack align="center" gap="xs">
                     <IconCheck size={40} color="var(--mantine-color-dimmed)" />
-                    <Text c="dimmed">No pending transactions found.</Text>
+                    <Text c="dimmed">No paid or buyer-confirmed orders found.</Text>
                   </Stack>
                 </Center>
               )}
@@ -278,7 +407,7 @@ function TransactionsManagement() {
                   <Divider mt="md" />
                   <Group justify="space-between" mt="md">
                     <Text size="sm" c="dimmed">
-                      Showing {transactions.length} pending transactions
+                      Showing {transactions.length} paid or buyer-confirmed orders
                     </Text>
                   </Group>
                 </>
@@ -373,16 +502,93 @@ function TransactionsManagement() {
                                 </Table.Td>
                                 <Table.Td>
                                   <Badge
-                                    color={tx.status === 'COMPLETED' ? 'green' : tx.status === 'FAILED' ? 'red' : 'blue'}
+                                    color={tx.status === 'COMPLETED' || tx.status === 'BUYER_CONFIRMED' ? 'green' : tx.status === 'FAILED' ? 'red' : 'blue'}
                                     variant="light"
                                     size="xs"
                                   >
-                                    {tx.status}
+                                    {tx.status === 'BUYER_CONFIRMED' ? 'BUYER CONFIRMED' : tx.status}
                                   </Badge>
                                 </Table.Td>
                                 <Table.Td>
                                   <Text size="xs">
                                     {new Date(tx.createdAt).toLocaleDateString()}
+                                  </Text>
+                                </Table.Td>
+                              </Table.Tr>
+                            ))}
+                          </Table.Tbody>
+                        </Table>
+                      </ScrollArea>
+                    )}
+                  </Card>
+
+                  <Card withBorder p="sm" radius="md">
+                    <Group justify="space-between" mb="md">
+                      <Title order={3}>Seller Payouts Sent</Title>
+                      <Badge color="green" variant="light">
+                        Rs. {summary?.totalSellerPayoutSent ?? 0}
+                      </Badge>
+                    </Group>
+                    {completedPayouts.length === 0 ? (
+                      <Center p="md">
+                        <Text c="dimmed">No seller payouts have been marked paid yet.</Text>
+                      </Center>
+                    ) : (
+                      <ScrollArea h={300}>
+                        <Table verticalSpacing="sm" highlightOnHover>
+                          <Table.Thead>
+                            <Table.Tr>
+                              <Table.Th>Book</Table.Th>
+                              <Table.Th>Seller</Table.Th>
+                              <Table.Th>eSewa</Table.Th>
+                              <Table.Th>Amount Sent</Table.Th>
+                              <Table.Th>Commission Kept</Table.Th>
+                              <Table.Th>Paid Date</Table.Th>
+                            </Table.Tr>
+                          </Table.Thead>
+                          <Table.Tbody>
+                            {completedPayouts.map((tx) => (
+                              <Table.Tr key={tx.id}>
+                                <Table.Td>
+                                  <Group gap="sm">
+                                    <Image
+                                      src={tx.book.image}
+                                      h={30}
+                                      w={20}
+                                      radius="xs"
+                                      fallbackSrc="https://placehold.co/20x30?text=Book"
+                                    />
+                                    <Text size="xs" fw={500}>
+                                      {tx.book.name}
+                                    </Text>
+                                  </Group>
+                                </Table.Td>
+                                <Table.Td>
+                                  <div>
+                                    <Text size="xs">{tx.seller.name}</Text>
+                                    <Text size="xs" c="dimmed">
+                                      {tx.seller.email}
+                                    </Text>
+                                  </div>
+                                </Table.Td>
+                                <Table.Td>
+                                  <Text size="xs">
+                                    {tx.offer.sellerEsewaNumber || "Not provided"}
+                                  </Text>
+                                </Table.Td>
+                                <Table.Td>
+                                  <Text size="xs" fw={700} c="green">
+                                    Rs. {tx.sellerAmount}
+                                  </Text>
+                                </Table.Td>
+                                <Table.Td>
+                                  <Text size="xs" fw={700} c="orange">
+                                    Rs. {tx.commissionAmount}
+                                  </Text>
+                                </Table.Td>
+                                <Table.Td>
+                                  <Text size="xs">
+                                    {new Date(tx.updatedAt).toLocaleDateString()}
                                   </Text>
                                 </Table.Td>
                               </Table.Tr>

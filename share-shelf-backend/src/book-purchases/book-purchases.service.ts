@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import { NotificationsService } from 'src/notifications/notifications.service';
@@ -84,7 +85,11 @@ export class BookPurchasesService {
 
     const purchase = await this.prisma.bookPurchase.findUnique({
       where: { id: purchaseId },
-      include: { book: true, offer: true },
+      include: {
+        book: true,
+        offer: true,
+        buyer: { select: { name: true, phone: true } },
+      },
     });
 
     if (!purchase) {
@@ -161,7 +166,7 @@ export class BookPurchasesService {
 
       await this.notifications.create(
         purchase.sellerId,
-        `Someone has bought your book "${purchase.book.name}". Admin will send Rs. ${sellerAmount} (after 10% commission) to your eSewa number after verification.`,
+        `Someone has bought your book "${purchase.book.name}". Buyer: ${purchase.buyer.name}. Contact: ${purchase.buyer.phone || purchase.buyer.name}. Meeting/delivery location: ${purchase.location || 'Location not provided'}. Please prepare the book and coordinate with the buyer. Admin will send Rs. ${sellerAmount} (after 10% commission) to your eSewa number after verification.`,
         'BOOK_SOLD',
       );
 
@@ -179,10 +184,53 @@ export class BookPurchasesService {
     return this.prisma.bookPurchase.findMany({
       where: { buyerId: userId },
       include: {
-        book: { select: { name: true, image: true, author: true } },
-        seller: { select: { name: true, email: true } },
+        book: { select: { id: true, name: true, image: true, author: true } },
+        seller: { select: { name: true, email: true, phone: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  async confirmReceived(userId: string, purchaseId: string) {
+    const purchase = await this.prisma.bookPurchase.findUnique({
+      where: { id: purchaseId },
+      include: {
+        book: { select: { name: true } },
+        buyer: { select: { name: true } },
+      },
+    });
+
+    if (!purchase) {
+      throw new NotFoundException('Purchase record not found');
+    }
+
+    if (purchase.buyerId !== userId) {
+      throw new ForbiddenException('You can only confirm your own purchase');
+    }
+
+    if (purchase.status === 'BUYER_CONFIRMED') {
+      return { ok: true, message: 'Receipt already confirmed' };
+    }
+
+    if (purchase.status !== 'PAID') {
+      throw new BadRequestException('Only paid purchases can be confirmed');
+    }
+
+    const updatedPurchase = await this.prisma.bookPurchase.update({
+      where: { id: purchaseId },
+      data: { status: 'BUYER_CONFIRMED' },
+    });
+
+    await this.notifications.create(
+      purchase.sellerId,
+      `${purchase.buyer.name} confirmed receiving "${purchase.book.name}". Admin can now review and process your payout.`,
+      'BUYER_CONFIRMED_RECEIPT',
+    );
+
+    return {
+      ok: true,
+      message: 'Receipt confirmed. Admin can now process seller payout.',
+      purchaseId: updatedPurchase.id,
+    };
   }
 }

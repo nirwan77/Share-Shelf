@@ -7,11 +7,13 @@ import {
   useGetProfile,
   useGetMyOffers,
   useGetMyRequests,
+  useGetMyPurchases,
   useDeleteOffer,
+  useConfirmPurchaseReceived,
   useUploadImage,
   useUpdateAvatar,
 } from "./action";
-import type { MyOffer, MyBookRequest } from "./action";
+import type { MyOffer, MyBookRequest, MyPurchase } from "./action";
 import Image from "next/image";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -38,7 +40,10 @@ export default function Profile() {
   const { data, isLoading } = useGetProfile();
   const { data: offersData, isLoading: offersLoading } = useGetMyOffers();
   const { data: requestsData, isLoading: requestsLoading } = useGetMyRequests();
+  const { data: purchasesData, isLoading: purchasesLoading } =
+    useGetMyPurchases();
   const deleteOffer = useDeleteOffer();
+  const confirmPurchaseReceived = useConfirmPurchaseReceived();
   const uploadImage = useUploadImage();
   const updateAvatar = useUpdateAvatar();
 
@@ -156,6 +161,12 @@ export default function Profile() {
             className="h-auto rounded-none border-b-2 border-transparent px-0 py-4 text-xs font-bold uppercase tracking-widest text-gray-500 transition-all data-[state=active]:border-orange-500 data-[state=active]:bg-transparent data-[state=active]:text-orange-500"
           >
             My Requests
+          </TabsTrigger>
+          <TabsTrigger
+            value="MyPurchases"
+            className="h-auto rounded-none border-b-2 border-transparent px-0 py-4 text-xs font-bold uppercase tracking-widest text-gray-500 transition-all data-[state=active]:border-orange-500 data-[state=active]:bg-transparent data-[state=active]:text-orange-500"
+          >
+            My Purchases
           </TabsTrigger>
           <TabsTrigger
             value="Review"
@@ -301,6 +312,108 @@ export default function Profile() {
                     >
                       {req.status}
                     </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+        <TabsContent value="MyPurchases" className="mt-6">
+          {purchasesLoading ? (
+            <div className="py-20 flex justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+            </div>
+          ) : purchasesData?.length === 0 ? (
+            <div className="premium-empty">
+              <p className="text-gray-500 font-medium">
+                You haven&apos;t purchased any books yet.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {purchasesData?.map((purchase: MyPurchase) => (
+                <div
+                  key={purchase.id}
+                  className="app-card app-card-hover group flex flex-col gap-5 p-5 sm:flex-row"
+                >
+                  <Link
+                    href={`/book-detail/${purchase.book.id}`}
+                    className="relative h-32 w-24 shrink-0 overflow-hidden rounded-2xl border border-gray-800 shadow-lg transition-transform group-hover:scale-105"
+                  >
+                    <Image
+                      src={purchase.book.image}
+                      alt={purchase.book.name}
+                      fill
+                      className="object-cover"
+                    />
+                  </Link>
+                  <div className="flex flex-1 flex-col justify-between py-1">
+                    <div>
+                      <Link
+                        href={`/book-detail/${purchase.book.id}`}
+                        className="mb-1 block text-lg font-bold leading-tight text-white transition-colors hover:text-orange-500"
+                      >
+                        {purchase.book.name}
+                      </Link>
+                      <p className="text-sm font-medium text-gray-500">
+                        {purchase.book.author}
+                      </p>
+                      <div className="mt-3 flex flex-wrap items-center gap-2.5">
+                        <span className="text-lg font-bold text-orange-500">
+                          Rs. {purchase.price}
+                        </span>
+                        <span className="rounded-full border border-gray-700 bg-gray-800 px-2.5 py-1 text-[10px] font-bold uppercase tracking-tighter text-gray-400">
+                          {purchase.status.replace(/_/g, " ")}
+                        </span>
+                      </div>
+                      <p className="mt-3 text-xs leading-5 text-gray-500">
+                        Seller: {purchase.seller.name}
+                        {purchase.seller.phone
+                          ? ` (${purchase.seller.phone})`
+                          : ""}
+                      </p>
+                      {purchase.location && (
+                        <p className="mt-1 text-xs leading-5 text-gray-500">
+                          Location: {purchase.location}
+                        </p>
+                      )}
+                    </div>
+                    <div className="mt-4 flex justify-end gap-4">
+                      {purchase.status === "PAID" && (
+                        <button
+                          onClick={() => {
+                            confirmPurchaseReceived.mutate(purchase.id, {
+                              onSuccess: () => {
+                                toast.success(
+                                  "Admin has been notified that you received the book",
+                                );
+                              },
+                              onError: (error: any) => {
+                                toast.error(
+                                  error?.response?.data?.message ||
+                                    "Could not confirm receipt",
+                                );
+                              },
+                            });
+                          }}
+                          disabled={
+                            confirmPurchaseReceived.isPending &&
+                            confirmPurchaseReceived.variables === purchase.id
+                          }
+                          className="rounded-xl bg-[#ff7a00] px-4 py-2 text-sm font-bold text-black transition-all hover:bg-[#ff922f] disabled:opacity-50"
+                        >
+                          {confirmPurchaseReceived.isPending &&
+                          confirmPurchaseReceived.variables === purchase.id
+                            ? "Confirming..."
+                            : "I received the book"}
+                        </button>
+                      )}
+                      {purchase.status === "BUYER_CONFIRMED" && (
+                        <span className="text-sm font-bold text-green-500">
+                          Receipt confirmed
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

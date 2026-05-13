@@ -12,6 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 const signUpSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email address"),
+  phone: z.string().trim().min(7, "Phone number is required"),
   password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
@@ -76,6 +77,12 @@ export default function SignUpPage() {
               {...register("email")}
               placeholder="Email"
               error={errors.email?.message}
+            />
+            <Input
+              {...register("phone")}
+              type="tel"
+              placeholder="Phone number"
+              error={errors.phone?.message}
             />
             <Input
               {...register("password")}

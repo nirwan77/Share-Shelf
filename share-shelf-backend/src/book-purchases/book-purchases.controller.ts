@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Body,
   Param,
   UseGuards,
@@ -40,5 +41,14 @@ export class BookPurchasesController {
   @ApiOperation({ summary: 'Get current user purchases' })
   async getMyPurchases(@GetDashboardUserReqObject('id') userId: string) {
     return this.bookPurchasesService.getMyPurchases(userId);
+  }
+
+  @Patch(':id/confirm-received')
+  @ApiOperation({ summary: 'Confirm buyer received the purchased book' })
+  async confirmReceived(
+    @Param('id') id: string,
+    @GetDashboardUserReqObject('id') userId: string,
+  ) {
+    return this.bookPurchasesService.confirmReceived(userId, id);
   }
 }

@@ -1,5 +1,5 @@
 import { axios } from "@/app/lib";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts";
 
 export interface ProfileData {
@@ -98,7 +98,54 @@ export const useGetMyRequests = () => {
   });
 };
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+export type MyPurchase = {
+  id: string;
+  price: number;
+  status: "PENDING" | "PAID" | "BUYER_CONFIRMED" | "COMPLETED" | "FAILED";
+  location: string | null;
+  createdAt: string;
+  updatedAt: string;
+  book: {
+    id: string;
+    name: string;
+    author: string;
+    image: string;
+  };
+  seller: {
+    name: string;
+    email: string;
+    phone: string | null;
+  };
+};
+
+export const useGetMyPurchases = () => {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: ["my-purchases"],
+    queryFn: async () => {
+      const { data } = await axios.get<MyPurchase[]>("/book-purchases/my");
+      return data;
+    },
+    enabled: !!token,
+  });
+};
+
+export const useConfirmPurchaseReceived = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (purchaseId: string) => {
+      const { data } = await axios.patch(
+        `/book-purchases/${purchaseId}/confirm-received`,
+      );
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-purchases"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications-unread-count"] });
+    },
+  });
+};
 
 export const useDeleteOffer = () => {
   const queryClient = useQueryClient();
