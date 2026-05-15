@@ -6,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ExploreCard } from "@/components/manual/ExploreBooksCard";
+import { useAuth } from "@/contexts";
 import { useGetBooks, type BookFilters } from "./action";
 import {
   Pagination,
@@ -16,11 +17,13 @@ import {
 import { Button } from "@/components/ui/button";
 import RequestBookModal from "@/components/manual/RequestBookModal";
 import { Search } from "lucide-react";
+import { toast } from "sonner";
 
 function ExploreContent() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
+  const { token } = useAuth();
 
   const [page, setPage] = useState(0);
   const [publishedDate, setPublishedDate] = useState<string | undefined>();
@@ -96,7 +99,11 @@ function ExploreContent() {
       if (value === null || value === undefined || value === "") {
         params.delete(key);
       } else if (Array.isArray(value)) {
-        params.set(key, value.join(","));
+        if (value.length === 0) {
+          params.delete(key);
+        } else {
+          params.set(key, value.join(","));
+        }
       } else {
         params.set(key, value);
       }
@@ -104,7 +111,7 @@ function ExploreContent() {
 
     if (
       Object.keys(updates).some((key) =>
-        ["publishedDate", "priceRange", "categories", "sortBy"].includes(key),
+        ["publishedDate", "priceRange", "categories", "sortBy", "search"].includes(key),
       )
     ) {
       params.delete("page");
@@ -131,7 +138,13 @@ function ExploreContent() {
             variant="outline"
             size="sm"
             className="border-[#FF8D28] text-[#FF8D28] hover:bg-[#FF8D28] hover:text-white"
-            onClick={() => setRequestModalOpen(true)}
+            onClick={() => {
+              if (!token?.accessToken) {
+                toast.error("Please login first.");
+                return;
+              }
+              setRequestModalOpen(true);
+            }}
           >
             Request a Book
           </Button>
@@ -245,11 +258,11 @@ function ExploreContent() {
           </RadioGroup>
         </div>
 
-        {/* <div className="border-y pb-6 border-[#dbdcd2]">
+        <div className="border-t border-white/10">
           <div className="flex items-center">
-            <h2 className="body-lg py-5 grow">Price</h2>
+            <h2 className="grow py-5 text-base font-semibold text-white">Offer Price</h2>
             <button
-              className="text-sm"
+              className="text-sm text-zinc-500 hover:text-[#ff7a00]"
               onClick={() => {
                 setPriceRange(undefined);
                 updateParams({ priceRange: null });
@@ -265,7 +278,7 @@ function ExploreContent() {
               setPriceRange(value || undefined);
               updateParams({ priceRange: value || null });
             }}
-            className="space-y-2"
+            className="space-y-2 mb-6"
           >
             {[
               ["below-1000", "Below Rs.1000"],
@@ -276,13 +289,13 @@ function ExploreContent() {
             ].map(([value, label]) => (
               <div key={value} className="flex items-center gap-2">
                 <RadioGroupItem value={value} id={value} />
-                <Label className="cursor-pointer" htmlFor={value}>
+                <Label className="cursor-pointer text-sm text-zinc-300" htmlFor={value}>
                   {label}
                 </Label>
               </div>
             ))}
           </RadioGroup>
-        </div> */}
+        </div>
         </div>
       </div>
 

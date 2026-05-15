@@ -5,7 +5,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useSubmitBookRequest } from "@/app/(routes)/(with-header-and-footer)/explore/action";
+import { useAuth } from "@/contexts";
 import { toast } from "sonner";
+
+const getRequestErrorMessage = (error: unknown) => {
+  if (typeof error !== "object" || error === null || !("response" in error)) {
+    return "Failed to submit request";
+  }
+
+  const response = (error as { response?: { data?: { message?: unknown } } })
+    .response;
+
+  return typeof response?.data?.message === "string"
+    ? response.data.message
+    : "Failed to submit request";
+};
 
 export default function RequestBookModal({
   open,
@@ -19,11 +33,17 @@ export default function RequestBookModal({
   const [description, setDescription] = useState("");
 
   const { mutate, isPending } = useSubmitBookRequest();
+  const { token } = useAuth();
 
   if (!open) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!token?.accessToken) {
+      toast.error("Please login first.");
+      return;
+    }
+
     mutate(
       { title, author, description: description || undefined },
       {
@@ -34,8 +54,8 @@ export default function RequestBookModal({
           toast.success("Request submitted successfully!");
           onClose();
         },
-        onError: (err: any) => {
-          toast.error(err.response?.data?.message || "Failed to submit request");
+        onError: (err: unknown) => {
+          toast.error(getRequestErrorMessage(err));
         },
       },
     );

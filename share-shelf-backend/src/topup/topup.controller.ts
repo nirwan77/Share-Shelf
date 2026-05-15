@@ -12,6 +12,7 @@ import { TopupService } from './topup.service';
 import { CreateTopupDto } from './dto/create-topup.dto';
 import { UpdateTopupDto } from './dto/update-topup.dto';
 import { GetDashboardUserReqObject, JwtHeaderAuthGuard } from 'src/shared';
+import { DashboardAuthGuard } from 'src/shared/dashboardGuard';
 import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('topup')
@@ -34,7 +35,7 @@ export class TopupController {
   }
 
   @Get('dashboard/all')
-  @UseGuards(JwtHeaderAuthGuard)
+  @UseGuards(DashboardAuthGuard)
   @ApiBearerAuth('JWT-auth')
   async getAllTransactions() {
     return this.topupService.getAllTransactions();

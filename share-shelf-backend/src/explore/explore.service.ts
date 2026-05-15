@@ -35,34 +35,49 @@ export class ExploreService {
       search,
     } = filters;
 
-    const where: Prisma.BooksWhereInput = {
-      OR: search
-        ? [
-            { name: { contains: search, mode: 'insensitive' } },
-            { author: { contains: search, mode: 'insensitive' } },
-          ]
-        : undefined,
-    };
+    const where: Prisma.BooksWhereInput = {};
+    const andFilters: Prisma.BooksWhereInput[] = [];
+
+    if (search) {
+      andFilters.push({
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { author: { contains: search, mode: 'insensitive' } },
+        ],
+      });
+    }
 
     if (minPrice !== undefined || maxPrice !== undefined) {
-      where.price = {};
-      if (minPrice !== undefined) where.price.gte = minPrice;
-      if (maxPrice !== undefined) where.price.lte = maxPrice;
+      const priceFilter: Prisma.IntFilter = {};
+      if (minPrice !== undefined) priceFilter.gte = minPrice;
+      if (maxPrice !== undefined) priceFilter.lte = maxPrice;
+
+      andFilters.push({
+        bookOffers: {
+          some: {
+            isActive: true,
+            type: 'SELL',
+            price: priceFilter,
+          },
+        },
+      });
     }
 
     if (categories && categories.length > 0) {
-      where.AND = categories.map((category) => ({
-        bookGenres: {
-          some: {
-            genre: {
-              name: {
-                equals: category,
-                mode: 'insensitive',
+      andFilters.push({
+        OR: categories.map((category) => ({
+          bookGenres: {
+            some: {
+              genre: {
+                name: {
+                  equals: category,
+                  mode: 'insensitive',
+                },
               },
             },
           },
-        },
-      }));
+        })),
+      });
     }
 
     if (publishedDate) {
@@ -88,10 +103,17 @@ export class ExploreService {
       };
 
       if (publishedDate in yearRanges) {
-        where.releaseDate =
-          yearRanges[publishedDate as keyof typeof yearRanges];
+        andFilters.push({
+          releaseDate: yearRanges[publishedDate as keyof typeof yearRanges],
+        });
       }
     }
+
+    if (andFilters.length > 0) {
+      where.AND = andFilters;
+    }
+
+    const shouldSortByPrice = sortBy === 'price';
 
     const books = await this.prisma.books.findMany({
       where,
@@ -108,8 +130,8 @@ export class ExploreService {
           select: { price: true, type: true },
         },
       },
-      take: limit,
-      skip,
+      take: shouldSortByPrice ? undefined : limit,
+      skip: shouldSortByPrice ? undefined : skip,
       orderBy: { releaseDate: 'desc' },
     });
 
@@ -130,7 +152,7 @@ export class ExploreService {
     });
 
     // Sort by lowest offer price if requested
-    if (sortBy === 'price') {
+    if (shouldSortByPrice) {
       data.sort((a, b) => {
         if (a.lowestPrice === null && b.lowestPrice === null) return 0;
         if (a.lowestPrice === null) return 1;
@@ -141,7 +163,10 @@ export class ExploreService {
 
     const total = await this.prisma.books.count({ where });
 
-    return { data, total };
+    return {
+      data: shouldSortByPrice ? data.slice(skip, skip + limit) : data,
+      total,
+    };
   }
 
   async findOne(id: string) {

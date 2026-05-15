@@ -2,10 +2,13 @@
 
 import { useState, useRef, DragEvent, ChangeEvent, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { useAuth } from "@/contexts";
 import { useCreatePost } from "./action";
 
 function CreatePostForm() {
   const router = useRouter();
+  const { token } = useAuth();
   const searchParams = useSearchParams();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState(
@@ -37,6 +40,11 @@ function CreatePostForm() {
   };
 
   const handleSubmit = () => {
+    if (!token?.accessToken) {
+      toast.error("Please login first.");
+      return;
+    }
+
     if (!title.trim()) return;
     createPost(
       { title, description, image },

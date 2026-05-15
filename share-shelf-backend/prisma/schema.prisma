@@ -392,12 +392,13 @@ enum OfferType {
 }
 
 model BookOffer {
-  id        String    @id @default(nanoid())
-  price     Int
-  condition String?
-  type      OfferType
-  note      String?
-  isActive  Boolean   @default(true)
+  id                String    @id @default(nanoid())
+  price             Int
+  condition         String?
+  type              OfferType
+  note              String?
+  sellerEsewaNumber String?
+  isActive          Boolean   @default(true)
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)

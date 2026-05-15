@@ -244,7 +244,7 @@ export default function SocialFeed() {
             <button
               onClick={() => {
                 if (!token) {
-                  toast.error("Please login to create a post");
+                  toast.error("Please login first.");
                   return;
                 }
                 push(`/discuss/post?content=${encodeURIComponent(postText)}`);

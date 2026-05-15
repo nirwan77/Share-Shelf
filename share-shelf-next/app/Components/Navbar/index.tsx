@@ -10,7 +10,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LogOut, User, Bell, MessageSquare, Menu, X, Search } from "lucide-react";
-import { useGetNotifications, useMarkNotificationRead, useGetUnreadCount } from "./notifications-action";
+import {
+  useGetNotifications,
+  useMarkAllNotificationsRead,
+  useMarkNotificationRead,
+  useGetUnreadCount,
+} from "./notifications-action";
 import { useContext, useEffect, useState } from "react";
 import { useGetProfile } from "@/app/(routes)/(with-header-and-footer)/profile/action";
 import Image from "next/image";
@@ -25,6 +30,7 @@ export const Navbar = () => {
   const { data: notifications } = useGetNotifications();
   const { data: unreadCount } = useGetUnreadCount();
   const markRead = useMarkNotificationRead();
+  const markAllRead = useMarkAllNotificationsRead();
   const { data: profile } = useGetProfile();
 
   const [mounted, setMounted] = useState(false);
@@ -127,7 +133,13 @@ export const Navbar = () => {
                   <MessageSquare className="h-5 w-5 text-white" />
                 </Button>
 
-                <DropdownMenu>
+                <DropdownMenu
+                  onOpenChange={(open) => {
+                    if (open && unreadCount && unreadCount.count > 0) {
+                      markAllRead.mutate();
+                    }
+                  }}
+                >
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"

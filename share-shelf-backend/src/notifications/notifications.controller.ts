@@ -21,6 +21,11 @@ export class NotificationsController {
     return { count };
   }
 
+  @Patch('read-all')
+  async markAllAsRead(@GetDashboardUserReqObject('id') userId: string) {
+    return this.notificationsService.markAllAsRead(userId);
+  }
+
   @Patch(':id/read')
   async markAsRead(
     @Param('id') id: string,

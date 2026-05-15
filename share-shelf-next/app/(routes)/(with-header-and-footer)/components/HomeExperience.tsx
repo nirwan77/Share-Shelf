@@ -3,7 +3,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowUpRight, BookOpen, MessageCircle, Search, ShieldCheck, Sparkles } from "lucide-react";
+import {
+  ArrowUpRight,
+  BookOpen,
+  MessageCircle,
+  Search,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts";
 import { useGetFeatured, useGetPopular, type BookChoice } from "../action";
@@ -35,19 +42,22 @@ const fallbackBooks: BookChoice[] = [
 const pathways = [
   {
     title: "Find the copy that fits",
-    description: "Browse community listings, compare condition, and move from discovery to ownership without leaving the shelf.",
+    description:
+      "Browse community listings, compare condition, and move from discovery to ownership without leaving the shelf.",
     image: "/buy.jpg",
     href: "/explore",
   },
   {
     title: "Trade what you have read",
-    description: "Turn finished books into new finds through simple exchanges with nearby readers.",
+    description:
+      "Turn finished books into new finds through simple exchanges with nearby readers.",
     image: "/exchange.jpg",
     href: "/explore",
   },
   {
     title: "Join the conversation",
-    description: "Discuss chapters, ask for recommendations, and build a reading history around the books you care about.",
+    description:
+      "Discuss chapters, ask for recommendations, and build a reading history around the books you care about.",
     image: "/discuss.jpg",
     href: "/discuss",
   },
@@ -59,8 +69,12 @@ export function HomeExperience() {
   const { data: featured } = useGetFeatured();
   const { data: popular } = useGetPopular();
 
-  const heroBooks = (featured?.length ? featured : popular?.length ? popular : fallbackBooks).slice(0, 3);
-  const galleryBooks = (popular?.length ? popular : featured?.length ? featured : fallbackBooks).slice(0, 6);
+  const heroBooks = (
+    featured?.length ? featured : popular?.length ? popular : fallbackBooks
+  ).slice(0, 3);
+  const galleryBooks = (
+    popular?.length ? popular : featured?.length ? featured : fallbackBooks
+  ).slice(0, 6);
 
   return (
     <main className="overflow-hidden bg-black text-white">
@@ -80,14 +94,16 @@ export function HomeExperience() {
           <div className="grid w-full gap-10 lg:grid-cols-[minmax(0,1fr)_410px] lg:items-end">
             <div className="max-w-4xl">
               <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-sm font-semibold text-white backdrop-blur-md">
-                <Sparkles className="h-4 w-4 text-[#ff7a00]" />
-                A living marketplace for readers
+                <Sparkles className="h-4 w-4 text-[#ff7a00]" />A living
+                marketplace for readers
               </div>
               <h1 className="max-w-4xl text-[4rem] font-bold leading-[0.9] tracking-normal text-white sm:text-[5.4rem] lg:text-[7.4rem]">
                 Share Shelf
               </h1>
               <p className="mt-7 max-w-2xl text-base leading-8 text-zinc-200 sm:text-xl">
-                Discover books through people, not algorithms. Buy, exchange, review, and discuss with a community built around what is actually being read.
+                Discover books through people, not algorithms. Buy, exchange,
+                review, and discuss with a community built around what is
+                actually being read.
               </p>
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <Button
@@ -109,7 +125,9 @@ export function HomeExperience() {
 
             <div className="hidden rounded-2xl border border-white/15 bg-black/35 p-4 backdrop-blur-xl lg:block">
               <div className="mb-4 flex items-center justify-between">
-                <p className="text-sm font-semibold text-white">Featured shelves</p>
+                <p className="text-sm font-semibold text-white">
+                  Featured shelves
+                </p>
                 <span className="text-xs text-zinc-400">Live picks</span>
               </div>
               <div className="space-y-3">
@@ -134,10 +152,13 @@ export function HomeExperience() {
         <div className="mb-12 grid gap-6 lg:grid-cols-[0.8fr_1fr] lg:items-end">
           <div>
             <span className="tag">Explore the system</span>
-            <h2 className="mt-3 text-4xl font-bold leading-tight sm:text-5xl">A book network that feels human.</h2>
+            <h2 className="mt-3 text-4xl font-bold leading-tight sm:text-5xl">
+              A book network that feels human.
+            </h2>
           </div>
           <p className="max-w-2xl text-base leading-8 text-zinc-400">
-            Share Shelf brings the useful parts of a marketplace, reading log, and community forum into one focused experience.
+            Share Shelf brings the useful parts of a marketplace, reading log,
+            and community forum into one focused experience.
           </p>
         </div>
 
@@ -160,10 +181,16 @@ export function HomeExperience() {
               </div>
               <div className="p-6">
                 <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[#ff7a00]/12 text-[#ff7a00]">
-                  {item.href === "/discuss" ? <MessageCircle className="h-5 w-5" /> : <BookOpen className="h-5 w-5" />}
+                  {item.href === "/discuss" ? (
+                    <MessageCircle className="h-5 w-5" />
+                  ) : (
+                    <BookOpen className="h-5 w-5" />
+                  )}
                 </div>
                 <h3 className="text-xl font-semibold">{item.title}</h3>
-                <p className="mt-3 text-sm leading-6 text-zinc-400">{item.description}</p>
+                <p className="mt-3 text-sm leading-6 text-zinc-400">
+                  {item.description}
+                </p>
               </div>
             </Link>
           ))}
@@ -174,10 +201,17 @@ export function HomeExperience() {
         <div className="container mx-auto">
           <div className="mb-12 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <span className="text-xs font-bold uppercase tracking-[0.18em] text-[#9f3f00]">Popular now</span>
-              <h2 className="mt-3 text-4xl font-bold leading-tight sm:text-5xl">Books moving through the community.</h2>
+              <span className="text-xs font-bold uppercase tracking-[0.18em] text-[#9f3f00]">
+                Popular now
+              </span>
+              <h2 className="mt-3 text-4xl font-bold leading-tight sm:text-5xl">
+                Books moving through the community.
+              </h2>
             </div>
-            <Button onClick={() => router.push("/explore")} className="w-fit rounded-full">
+            <Button
+              onClick={() => router.push("/explore")}
+              className="w-fit rounded-full"
+            >
               Browse all
               <Search className="h-4 w-4" />
             </Button>
@@ -187,12 +221,18 @@ export function HomeExperience() {
             {galleryBooks.map((book, index) => (
               <Link
                 key={book.id}
-                href={book.id.startsWith("fallback") ? "/explore" : `/book-detail/${book.id}`}
+                href={
+                  book.id.startsWith("fallback")
+                    ? "/explore"
+                    : `/book-detail/${book.id}`
+                }
                 className={`group block overflow-hidden rounded-2xl bg-black text-white shadow-[0_18px_45px_rgba(0,0,0,0.18)] ${
                   index === 0 ? "lg:col-span-2 lg:row-span-2" : "lg:col-span-1"
                 }`}
               >
-                <div className={`relative ${index === 0 ? "aspect-[4/5]" : "aspect-[3/4]"}`}>
+                <div
+                  className={`relative ${index === 0 ? "aspect-[4/5]" : "aspect-[3/4]"}`}
+                >
                   <Image
                     src={book.image}
                     alt={book.name}
@@ -205,43 +245,13 @@ export function HomeExperience() {
                     <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#ffb36d]">
                       {book.bookGenres[0]?.genre.name ?? "Book"}
                     </p>
-                    <h3 className="mt-1 line-clamp-2 text-lg font-semibold">{book.name}</h3>
+                    <h3 className="mt-1 line-clamp-2 text-lg font-semibold">
+                      {book.name}
+                    </h3>
                   </div>
                 </div>
               </Link>
             ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="container mx-auto py-20 lg:py-28">
-        <div className="grid gap-8 lg:grid-cols-[1fr_0.85fr] lg:items-center">
-          <div className="relative min-h-[460px] overflow-hidden rounded-2xl border border-white/10">
-            <Image
-              src="/share-shelf-home-image.png"
-              alt="Share Shelf reading community"
-              fill
-              className="object-cover"
-              sizes="(min-width: 1024px) 50vw, 100vw"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-          </div>
-          <div>
-            <div className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/12 text-emerald-300">
-              <ShieldCheck className="h-6 w-6" />
-            </div>
-            <h2 className="text-4xl font-bold leading-tight sm:text-5xl">Built for repeat readers, not one-time transactions.</h2>
-            <p className="mt-5 text-base leading-8 text-zinc-400">
-              Profiles, follows, reviews, and discussion threads give every exchange context. The more you read and share, the more useful your shelf becomes.
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Button className="h-12 rounded-full px-7" onClick={() => router.push("/leaderboard")}>
-                See leaderboard
-              </Button>
-              <Button variant="outline" className="h-12 rounded-full px-7" onClick={() => router.push("/explore")}>
-                Find your next book
-              </Button>
-            </div>
           </div>
         </div>
       </section>
@@ -252,11 +262,19 @@ export function HomeExperience() {
 function BookPreview({ book }: { book: BookChoice }) {
   return (
     <Link
-      href={book.id.startsWith("fallback") ? "/explore" : `/book-detail/${book.id}`}
+      href={
+        book.id.startsWith("fallback") ? "/explore" : `/book-detail/${book.id}`
+      }
       className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.05] p-3 transition-colors hover:border-[#ff7a00]/45 hover:bg-white/[0.08]"
     >
       <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded-lg">
-        <Image src={book.image} alt={book.name} fill className="object-cover" sizes="48px" />
+        <Image
+          src={book.image}
+          alt={book.name}
+          fill
+          className="object-cover"
+          sizes="48px"
+        />
       </div>
       <div className="min-w-0">
         <p className="truncate text-sm font-semibold text-white">{book.name}</p>

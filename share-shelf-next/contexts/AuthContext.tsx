@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, createContext, useContext, useEffect } from "react";
+import { ReactNode, createContext, useContext } from "react";
 import { useLocalStorage } from "usehooks-ts";
 
 type Auth = {
@@ -29,17 +29,6 @@ export const AuthContextProvider = ({ children }: Props) => {
   const setAuthData = (data: Auth | null) => {
     setToken(data || undefined);
   };
-
-  // Handle redirect logic
-  useEffect(() => {
-    if (
-      !token?.accessToken &&
-      window.location.pathname !== "/" &&
-      window.location.pathname !== "/onboard"
-    ) {
-      window.location.href = "/";
-    }
-  }, [token]);
 
   return (
     <AuthContext.Provider value={{ token, setAuthData }}>

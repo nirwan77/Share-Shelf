@@ -47,3 +47,51 @@ export const useMarkNotificationRead = () => {
     },
   });
 };
+
+export const useMarkAllNotificationsRead = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      await axios.patch("/notifications/read-all");
+    },
+    onMutate: async () => {
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: ["notifications"] }),
+        queryClient.cancelQueries({ queryKey: ["notifications-unread-count"] }),
+      ]);
+
+      const previousNotifications =
+        queryClient.getQueryData<Notification[]>(["notifications"]);
+      const previousUnreadCount =
+        queryClient.getQueryData<{ count: number }>([
+          "notifications-unread-count",
+        ]);
+
+      queryClient.setQueryData<Notification[]>(["notifications"], (current) =>
+        current?.map((notification) => ({ ...notification, isRead: true })),
+      );
+      queryClient.setQueryData(["notifications-unread-count"], { count: 0 });
+
+      return { previousNotifications, previousUnreadCount };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previousNotifications) {
+        queryClient.setQueryData(
+          ["notifications"],
+          context.previousNotifications,
+        );
+      }
+
+      if (context?.previousUnreadCount) {
+        queryClient.setQueryData(
+          ["notifications-unread-count"],
+          context.previousUnreadCount,
+        );
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications-unread-count"] });
+    },
+  });
+};

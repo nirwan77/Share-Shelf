@@ -36,13 +36,21 @@ function TransactionsManagement() {
   const { data: allTransactions, isLoading: allLoading } = useGetAllTransactions();
   const transferMutation = useCompleteTransfer();
 
-  const handleTransfer = (id: string, amount: number) => {
-    if (window.confirm(`Are you sure you want to transfer Rs. ${amount} to the seller?`)) {
+  const handleTransfer = (
+    id: string,
+    amount: number,
+    sellerEsewaNumber: string,
+  ) => {
+    if (
+      window.confirm(
+        `Mark Rs. ${amount} as sent to seller eSewa number ${sellerEsewaNumber}?`,
+      )
+    ) {
       transferMutation.mutate(id, {
         onSuccess: () => {
           notifications.show({
             title: "Success",
-            message: "Amount transferred to seller wallet",
+            message: "Seller payout marked as completed",
             color: "green",
           });
         },
@@ -153,6 +161,14 @@ function TransactionsManagement() {
             <Text size="xs" c="dimmed">
               {tx.seller.email}
             </Text>
+            <Badge
+              size="xs"
+              color={tx.offer.sellerEsewaNumber ? "teal" : "gray"}
+              variant="light"
+              mt={4}
+            >
+              eSewa: {tx.offer.sellerEsewaNumber || "Not provided"}
+            </Badge>
           </div>
         </Group>
       </Table.Td>
@@ -185,11 +201,15 @@ function TransactionsManagement() {
         <Button
           size="xs"
           leftSection={<IconCash size={14} />}
-          onClick={() => handleTransfer(tx.id, tx.sellerAmount)}
+          onClick={() =>
+            tx.offer.sellerEsewaNumber &&
+            handleTransfer(tx.id, tx.sellerAmount, tx.offer.sellerEsewaNumber)
+          }
+          disabled={!tx.offer.sellerEsewaNumber}
           loading={transferMutation.isPending && transferMutation.variables === tx.id}
           color="green"
         >
-          Transfer
+          Mark Sent
         </Button>
       </Table.Td>
     </Table.Tr>

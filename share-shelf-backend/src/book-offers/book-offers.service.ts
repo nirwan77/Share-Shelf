@@ -1,4 +1,9 @@
-import { Injectable, ForbiddenException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  ForbiddenException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { OfferType } from '@prisma/client';
 
@@ -14,8 +19,15 @@ export class BookOffersService {
       condition?: string;
       type: OfferType;
       note?: string;
+      sellerEsewaNumber?: string;
     },
   ) {
+    const sellerEsewaNumber = data.sellerEsewaNumber?.trim();
+
+    if (data.type === 'SELL' && !sellerEsewaNumber) {
+      throw new BadRequestException('eSewa number is required for sell offers');
+    }
+
     const existingOffer = await this.prisma.bookOffer.findFirst({
       where: {
         userId,
@@ -31,6 +43,8 @@ export class BookOffersService {
     return this.prisma.bookOffer.create({
       data: {
         ...data,
+        sellerEsewaNumber:
+          data.type === 'SELL' ? sellerEsewaNumber : null,
         userId,
       },
       include: {

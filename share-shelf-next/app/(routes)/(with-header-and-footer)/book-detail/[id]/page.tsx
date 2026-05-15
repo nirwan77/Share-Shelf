@@ -12,6 +12,7 @@ import {
 import type { BookOffer, BookReview } from "./action";
 import { ReviewCard } from "./ReviewCard";
 import { useGetProfile } from "@/app/(routes)/(with-header-and-footer)/profile/action";
+import { useAuth } from "@/contexts";
 import Image from "next/image";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,7 @@ const BookDetail = () => {
   const initiatePurchase = useInitiatePurchase();
   const router = useRouter();
   const { data: profile } = useGetProfile();
+  const { token } = useAuth();
 
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
@@ -113,13 +115,25 @@ const BookDetail = () => {
 
   const [showSellForm, setShowSellForm] = useState(false);
   const [offerPrice, setOfferPrice] = useState("");
+  const [sellerEsewaNumber, setSellerEsewaNumber] = useState("");
   const [offerCondition, setOfferCondition] = useState("Good");
   const [offerType, setOfferType] = useState<"SELL" | "TRADE">("SELL");
   const [offerNote, setOfferNote] = useState("");
   const [reviewComment, setReviewComment] = useState("");
 
+  const requireLogin = () => {
+    if (!token?.accessToken) {
+      toast.error("Please login first.");
+      return false;
+    }
+
+    return true;
+  };
+
   const handleCreateOffer = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!requireLogin()) return;
+
     createOffer.mutate(
       {
         bookId: id,
@@ -127,11 +141,14 @@ const BookDetail = () => {
         condition: offerCondition,
         type: offerType,
         note: offerNote || undefined,
+        sellerEsewaNumber:
+          offerType === "SELL" ? sellerEsewaNumber.trim() : undefined,
       },
       {
         onSuccess: () => {
           setShowSellForm(false);
           setOfferPrice("");
+          setSellerEsewaNumber("");
           setOfferNote("");
         },
       },
@@ -197,6 +214,7 @@ const BookDetail = () => {
                 <Button
                   className="h-[51px] w-full rounded-2xl sm:w-[150px]"
                   onClick={() => {
+                    if (!requireLogin()) return;
                     setOfferType("SELL");
                     setShowSellForm(true);
                   }}
@@ -206,6 +224,7 @@ const BookDetail = () => {
                 <button
                   className="h-[51px] w-full rounded-2xl border border-[#ff7a00] text-[#ff7a00] transition-colors hover:bg-[#ff7a00] hover:text-black sm:w-[150px]"
                   onClick={() => {
+                    if (!requireLogin()) return;
                     setOfferType("TRADE");
                     setShowSellForm(true);
                   }}
@@ -234,6 +253,19 @@ const BookDetail = () => {
                       placeholder="e.g. 500"
                       required
                       min={1}
+                    />
+                  </div>
+                )}
+                {offerType === "SELL" && (
+                  <div>
+                    <Label htmlFor="seller-esewa-number">eSewa Number *</Label>
+                    <Input
+                      id="seller-esewa-number"
+                      type="tel"
+                      value={sellerEsewaNumber}
+                      onChange={(e) => setSellerEsewaNumber(e.target.value)}
+                      placeholder="e.g. 98XXXXXXXX"
+                      required
                     />
                   </div>
                 )}
@@ -275,7 +307,8 @@ const BookDetail = () => {
                     className="bg-[#FF8D28] hover:bg-[#e67d1f]"
                     disabled={
                       createOffer.isPending ||
-                      (offerType === "SELL" && !offerPrice)
+                      (offerType === "SELL" &&
+                        (!offerPrice || !sellerEsewaNumber.trim()))
                     }
                   >
                     {createOffer.isPending ? "Posting..." : "Post Offer"}
@@ -398,10 +431,7 @@ const BookDetail = () => {
                               size="sm"
                               className="bg-[#FF8D28] hover:bg-[#e67d1f] rounded-lg h-8 px-4"
                               onClick={() => {
-                                if (!profile) {
-                                  toast.error("Please log in to buy books.");
-                                  return;
-                                }
+                                if (!requireLogin()) return;
                                 setSelectedOfferId(offer.id);
                                 setLocationModalOpen(true);
                               }}
@@ -465,10 +495,7 @@ const BookDetail = () => {
                               size="sm"
                               className="h-8 rounded-lg bg-[#FF8D28] px-4 hover:bg-[#e67d1f]"
                               onClick={() => {
-                                if (!profile) {
-                                  toast.error("Please log in to message traders.");
-                                  return;
-                                }
+                                if (!requireLogin()) return;
                                 router.push(`/chat?user=${offer.user.id}`);
                               }}
                             >
@@ -775,6 +802,7 @@ const BookDetail = () => {
               type="submit"
               disabled={!purchaseLocation.trim() || initiatePurchase.isPending}
               onClick={() => {
+                if (!requireLogin()) return;
                 if (!selectedOfferId) return;
                 initiatePurchase.mutate(
                   { offerId: selectedOfferId, location: purchaseLocation },

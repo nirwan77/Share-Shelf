@@ -24,6 +24,9 @@ export interface PurchaseTransaction {
     name: string;
     email: string;
   };
+  offer: {
+    sellerEsewaNumber: string | null;
+  };
 }
 
 export interface TopupTransaction {

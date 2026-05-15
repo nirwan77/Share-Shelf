@@ -20,6 +20,7 @@ export class DashboardPurchasesService {
         book: { select: { name: true, author: true, image: true, price: true } },
         buyer: { select: { name: true, email: true } },
         seller: { select: { name: true, email: true } },
+        offer: { select: { sellerEsewaNumber: true } },
       },
       orderBy: { updatedAt: 'desc' },
     });
@@ -28,33 +29,32 @@ export class DashboardPurchasesService {
   async completeTransfer(purchaseId: string) {
     const purchase = await this.prisma.bookPurchase.findUnique({
       where: { id: purchaseId },
-      include: { book: true },
+      include: {
+        book: true,
+        offer: { select: { sellerEsewaNumber: true } },
+      },
     });
 
     if (!purchase || purchase.status !== 'PAID') {
       throw new BadRequestException('Transaction not found or already processed.');
     }
 
-    const { sellerId, sellerAmount, price, book } = purchase;
+    const { sellerId, sellerAmount, book, offer } = purchase;
+
+    if (!offer.sellerEsewaNumber) {
+      throw new BadRequestException('Seller eSewa number is missing.');
+    }
 
     await this.prisma.$transaction(async (tx) => {
-      // Mark purchase as COMPLETED
       await tx.bookPurchase.update({
         where: { id: purchaseId },
         data: { status: 'COMPLETED' },
       });
-
-      // Transfer funds to seller wallet (using sellerAmount)
-      await tx.user.update({
-        where: { id: sellerId },
-        data: { money: { increment: sellerAmount } },
-      });
     });
 
-    // Notify seller
     await this.notifications.create(
       sellerId,
-      `Admin has released Rs. ${sellerAmount} for your sold book "${book.name}". Funds are now available in your wallet.`,
+      `Admin has processed Rs. ${sellerAmount} for your sold book "${book.name}" to your eSewa number ${offer.sellerEsewaNumber}.`,
       'TRANSFER_COMPLETE',
     );
 

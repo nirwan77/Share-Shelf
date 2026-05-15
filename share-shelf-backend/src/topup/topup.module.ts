@@ -2,10 +2,11 @@ import { Module } from '@nestjs/common';
 import { TopupService } from './topup.service';
 import { TopupController } from './topup.controller';
 import { AuthModule } from 'src/auth/auth.module';
+import { DashboardAuthModule } from 'src/dashboard-auth/dashboard-auth.module';
 
 @Module({
   controllers: [TopupController],
-  imports: [AuthModule],
+  imports: [AuthModule, DashboardAuthModule],
   providers: [TopupService],
 })
 export class TopupModule {}

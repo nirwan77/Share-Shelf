@@ -161,7 +161,7 @@ export class BookPurchasesService {
 
       await this.notifications.create(
         purchase.sellerId,
-        `Someone has bought your book "${purchase.book.name}". Admin will transfer Rs. ${sellerAmount} (after 10% commission) to your wallet after verification.`,
+        `Someone has bought your book "${purchase.book.name}". Admin will send Rs. ${sellerAmount} (after 10% commission) to your eSewa number after verification.`,
         'BOOK_SOLD',
       );
 

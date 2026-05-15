@@ -72,6 +72,7 @@ export const useCreateOffer = () => {
       condition?: string;
       type: "SELL" | "TRADE";
       note?: string;
+      sellerEsewaNumber?: string;
     }) => {
       const { data } = await axios.post("/book-offers", body);
       return data;
