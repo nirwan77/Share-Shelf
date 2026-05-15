@@ -134,3 +134,23 @@ export const useVoteComment = (postId: string) => {
     },
   });
 };
+
+export const useReportComment = () => {
+  return useMutation({
+    mutationFn: async ({
+      commentId,
+      reason,
+      details,
+    }: {
+      commentId: string;
+      reason: string;
+      details?: string;
+    }) => {
+      const { data } = await axios.post(`/discuss/comment/${commentId}/report`, {
+        reason,
+        details,
+      });
+      return data;
+    },
+  });
+};

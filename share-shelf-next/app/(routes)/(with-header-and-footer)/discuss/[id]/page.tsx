@@ -4,16 +4,18 @@ import { ChangeEvent, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, Edit2, ThumbsDown, ThumbsUp, Trash2, Upload, X } from "lucide-react";
+import { Check, Edit2, Flag, ThumbsDown, ThumbsUp, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts";
-import { useDeletePost, useVotePost } from "../action";
+import { useDeletePost, useReportPost, useVotePost } from "../action";
+import { ReportModal } from "../components/ReportModal";
 import {
   Comment,
   Post,
   useAddComment,
   useComments,
   usePost,
+  useReportComment,
   useUpdatePost,
   useVoteComment,
 } from "./action";
@@ -132,7 +134,9 @@ function CommentItem({
 }) {
   const queryClient = useQueryClient();
   const voteComment = useVoteComment(postId);
+  const reportComment = useReportComment();
   const { token } = useAuth();
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   const handleVote = (reaction: "UPVOTE" | "DOWNVOTE") => {
     if (!token) {
@@ -158,50 +162,88 @@ function CommentItem({
     );
   };
 
+  const openReportModal = () => {
+    if (!token) {
+      toast.error("Please login to report comments");
+      return;
+    }
+
+    setIsReportModalOpen(true);
+  };
+
+  const handleReport = async (reason: string, details?: string) => {
+    try {
+      await reportComment.mutateAsync({ commentId: comment.id, reason, details });
+      toast.success("Report submitted");
+    } catch (err) {
+      console.error("Failed to report comment", err);
+      toast.error("Failed to submit report.");
+      throw err;
+    }
+  };
+
   return (
-    <div className="flex gap-3 py-3">
-      <Link href={`/user/${comment.user.id}`}>
-        <Avatar src={comment.user.avatar} name={comment.user.name} size="w-8 h-8" />
-      </Link>
-      <div className="min-w-0 flex-1">
-        <div className="mb-1 flex items-center gap-2">
-          <Link
-            href={`/user/${comment.user.id}`}
-            className="text-sm font-semibold text-white transition-colors hover:text-orange-500"
-          >
-            {comment.user.name}
-          </Link>
-          <span className="text-xs text-zinc-500">{timeAgo(comment.createdAt)}</span>
-        </div>
-        <p className="wrap-break-words text-sm text-zinc-300">{comment.comment}</p>
-        <div className="mt-2 flex items-center gap-2">
-          <button
-            onClick={() => handleVote("UPVOTE")}
-            disabled={voteComment.isPending}
-            className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-colors disabled:opacity-50 ${
-              comment.myVote === "UPVOTE"
-                ? "border-emerald-500 bg-emerald-500/10 text-emerald-400"
-                : "border-zinc-700 text-zinc-500 hover:border-emerald-500/70 hover:text-emerald-400"
-            }`}
-          >
-            <ThumbsUp className={`h-3.5 w-3.5 ${comment.myVote === "UPVOTE" ? "fill-current" : ""}`} />
-            <span>{comment.upvotes}</span>
-          </button>
-          <button
-            onClick={() => handleVote("DOWNVOTE")}
-            disabled={voteComment.isPending}
-            className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-colors disabled:opacity-50 ${
-              comment.myVote === "DOWNVOTE"
-                ? "border-rose-500 bg-rose-500/10 text-rose-400"
-                : "border-zinc-700 text-zinc-500 hover:border-rose-500/70 hover:text-rose-400"
-            }`}
-          >
-            <ThumbsDown className={`h-3.5 w-3.5 ${comment.myVote === "DOWNVOTE" ? "fill-current" : ""}`} />
-            <span>{comment.downvotes}</span>
-          </button>
+    <>
+      <div className="flex gap-3 py-3">
+        <Link href={`/user/${comment.user.id}`}>
+          <Avatar src={comment.user.avatar} name={comment.user.name} size="w-8 h-8" />
+        </Link>
+        <div className="min-w-0 flex-1">
+          <div className="mb-1 flex items-center gap-2">
+            <Link
+              href={`/user/${comment.user.id}`}
+              className="text-sm font-semibold text-white transition-colors hover:text-orange-500"
+            >
+              {comment.user.name}
+            </Link>
+            <span className="text-xs text-zinc-500">{timeAgo(comment.createdAt)}</span>
+          </div>
+          <p className="wrap-break-words text-sm text-zinc-300">{comment.comment}</p>
+          <div className="mt-2 flex items-center gap-2">
+            <button
+              onClick={() => handleVote("UPVOTE")}
+              disabled={voteComment.isPending}
+              className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-colors disabled:opacity-50 ${
+                comment.myVote === "UPVOTE"
+                  ? "border-emerald-500 bg-emerald-500/10 text-emerald-400"
+                  : "border-zinc-700 text-zinc-500 hover:border-emerald-500/70 hover:text-emerald-400"
+              }`}
+            >
+              <ThumbsUp className={`h-3.5 w-3.5 ${comment.myVote === "UPVOTE" ? "fill-current" : ""}`} />
+              <span>{comment.upvotes}</span>
+            </button>
+            <button
+              onClick={() => handleVote("DOWNVOTE")}
+              disabled={voteComment.isPending}
+              className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-colors disabled:opacity-50 ${
+                comment.myVote === "DOWNVOTE"
+                  ? "border-rose-500 bg-rose-500/10 text-rose-400"
+                  : "border-zinc-700 text-zinc-500 hover:border-rose-500/70 hover:text-rose-400"
+              }`}
+            >
+              <ThumbsDown className={`h-3.5 w-3.5 ${comment.myVote === "DOWNVOTE" ? "fill-current" : ""}`} />
+              <span>{comment.downvotes}</span>
+            </button>
+            <button
+              onClick={openReportModal}
+              disabled={reportComment.isPending}
+              className="flex items-center gap-1 rounded-full border border-zinc-700 px-2.5 py-1 text-xs text-zinc-500 transition-colors hover:border-amber-500/70 hover:text-amber-400 disabled:opacity-50"
+              title="Report comment"
+            >
+              <Flag className="h-3.5 w-3.5" />
+              <span>Report</span>
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+      <ReportModal
+        open={isReportModalOpen}
+        targetLabel="comment"
+        isSubmitting={reportComment.isPending}
+        onOpenChange={setIsReportModalOpen}
+        onSubmit={handleReport}
+      />
+    </>
   );
 }
 
@@ -229,6 +271,7 @@ export default function PostPage() {
   const { data: post, isLoading: postLoading, isError } = usePost(postId);
   const { data: comments = [], isLoading: commentsLoading } = useComments(postId);
   const votePost = useVotePost();
+  const reportPost = useReportPost();
   const addComment = useAddComment(postId);
 
   const [commentInput, setCommentInput] = useState("");
@@ -239,6 +282,7 @@ export default function PostPage() {
   const [editImage, setEditImage] = useState<File | string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const router = useRouter();
@@ -264,6 +308,26 @@ export default function PostPage() {
         },
       },
     );
+  };
+
+  const openReportModal = () => {
+    if (!token) {
+      toast.error("Please login to report posts");
+      return;
+    }
+
+    setIsReportModalOpen(true);
+  };
+
+  const handleReportPost = async (reason: string, details?: string) => {
+    try {
+      await reportPost.mutateAsync({ id: postId, reason, details });
+      toast.success("Report submitted");
+    } catch (err) {
+      console.error("Failed to report post", err);
+      toast.error("Failed to submit report.");
+      throw err;
+    }
   };
 
   const handleUpdate = async () => {
@@ -384,6 +448,16 @@ export default function PostPage() {
                     <Trash2 size={18} />
                   </button>
                 </>
+              )}
+              {profile?.id !== post.createdByUser.id && (
+                <button
+                  onClick={openReportModal}
+                  disabled={reportPost.isPending}
+                  className="cursor-pointer border-none bg-transparent p-2 text-zinc-500 transition-colors hover:text-amber-400 disabled:opacity-50"
+                  title="Report post"
+                >
+                  <Flag size={18} />
+                </button>
               )}
             </div>
           </div>
@@ -568,6 +642,14 @@ export default function PostPage() {
           </div>
         </div>
       )}
+
+      <ReportModal
+        open={isReportModalOpen}
+        targetLabel="post"
+        isSubmitting={reportPost.isPending}
+        onOpenChange={setIsReportModalOpen}
+        onSubmit={handleReportPost}
+      />
     </div>
   );
 }

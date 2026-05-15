@@ -69,3 +69,23 @@ export const useVotePost = () => {
     },
   });
 };
+
+export const useReportPost = () => {
+  return useMutation({
+    mutationFn: async ({
+      id,
+      reason,
+      details,
+    }: {
+      id: string;
+      reason: string;
+      details?: string;
+    }) => {
+      const { data } = await axios.post(`/discuss/${id}/report`, {
+        reason,
+        details,
+      });
+      return data;
+    },
+  });
+};
