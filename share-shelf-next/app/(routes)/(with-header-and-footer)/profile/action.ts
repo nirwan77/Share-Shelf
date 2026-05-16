@@ -6,9 +6,10 @@ export interface ProfileData {
   id: string;
   avatar: string;
   email: string;
-  isVerified: string;
+  isVerified: boolean;
+  isBanned: boolean;
   name: string;
-  money: true;
+  money: number;
   _count: {
     followers: number;
     following: number;

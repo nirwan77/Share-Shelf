@@ -1,25 +1,34 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSearchUsers } from "../profile/action";
 import Image from "next/image";
 import Link from "next/link";
 import { User } from "lucide-react";
 
-export default function UserSearchPage() {
+function UserSearchContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get("search") || "";
   const { data: users, isLoading } = useSearchUsers(query);
 
   return (
-    <div className="pt-[100px] pb-20 container mx-auto">
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-        <h1 className="text-3xl font-bold text-white">
-          {query ? `Search Results for "${query}"` : "Search Users"}
-        </h1>
+    <div className="container mx-auto pt-32 pb-20">
+      <div className="mb-10 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+        <div>
+          <span className="tag">Reader search</span>
+          <h1 className="mt-3 text-4xl font-bold leading-tight text-white">
+            {query ? `Search results` : "Search readers"}
+          </h1>
+          {query && (
+            <p className="mt-3 text-zinc-400">
+              Showing people matching <span className="font-semibold text-white">&quot;{query}&quot;</span>
+            </p>
+          )}
+        </div>
         {users && users.length > 0 && (
-          <span className="text-gray-400 bg-gray-900 border border-gray-800 px-4 py-1.5 rounded-full text-sm font-medium">
-            {users.length} {users.length === 1 ? "user" : "users"} found
+          <span className="w-fit rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-sm font-semibold text-zinc-300">
+            {users.length} {users.length === 1 ? "reader" : "readers"} found
           </span>
         )}
       </div>
@@ -34,9 +43,9 @@ export default function UserSearchPage() {
             <Link
               key={user.id}
               href={`/user/${user.id}`}
-              className="bg-gray-900 p-6 rounded-3xl shadow-sm hover:shadow-2xl hover:shadow-orange-500/10 transition-all duration-300 border border-gray-800 flex flex-col items-center text-center group"
+              className="premium-panel group flex flex-col items-center p-6 text-center transition-all duration-300 hover:-translate-y-1 hover:border-[#ff9a3d]/45"
             >
-              <div className="relative w-28 h-28 mb-6 rounded-full overflow-hidden bg-gray-800 border-4 border-gray-800 shadow-inner group-hover:scale-105 transition-transform duration-300">
+              <div className="relative mb-6 h-28 w-28 overflow-hidden rounded-full border border-white/15 bg-white/[0.06] shadow-[0_18px_45px_rgba(0,0,0,0.35)] transition-transform duration-300 group-hover:scale-105">
                 {user.avatar ? (
                   <Image
                     src={user.avatar}
@@ -45,53 +54,61 @@ export default function UserSearchPage() {
                     className="object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-800">
-                    <User className="w-14 h-14 text-gray-700" />
+                  <div className="flex h-full w-full items-center justify-center bg-white/[0.04]">
+                    <User className="h-14 w-14 text-zinc-700" />
                   </div>
                 )}
               </div>
-              <h3 className="text-xl font-bold text-white group-hover:text-orange-500 transition-colors mb-2">
+              <h3 className="mb-2 text-xl font-bold text-white transition-colors group-hover:text-[#ffb36d]">
                 {user.name}
               </h3>
               <div className="flex gap-6 mt-1">
                 <div className="flex flex-col">
                   <span className="text-lg font-bold text-white">{user._count.followers}</span>
-                  <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold">Followers</span>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Followers</span>
                 </div>
-                <div className="w-px h-8 bg-gray-800 self-center"></div>
+                <div className="h-8 w-px self-center bg-white/10"></div>
                 <div className="flex flex-col">
                   <span className="text-lg font-bold text-white">{user._count.following}</span>
-                  <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold">Following</span>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Following</span>
                 </div>
               </div>
-              <div className="mt-6 w-full py-2 bg-gray-800 rounded-xl group-hover:bg-orange-600 group-hover:text-white transition-colors text-sm font-bold text-gray-400 group-hover:text-white">
+              <div className="mt-6 w-full rounded-xl border border-white/10 bg-white/[0.04] py-2 text-sm font-bold text-zinc-300 transition-colors group-hover:border-[#ff9a3d]/45 group-hover:bg-[#ff7a00] group-hover:text-black">
                 View Profile
               </div>
             </Link>
           ))}
         </div>
       ) : query ? (
-        <div className="text-center py-24 bg-gray-900 rounded-[40px] border border-gray-800 shadow-sm">
-          <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
-            <User className="w-10 h-10 text-gray-700" />
+        <div className="premium-empty">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-white/[0.05]">
+            <User className="h-10 w-10 text-zinc-700" />
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">No users found</h2>
-          <p className="text-gray-400 max-w-sm mx-auto">
-            We couldn't find any users matching <span className="font-semibold text-white">"{query}"</span>.
+          <p className="text-zinc-400 max-w-sm mx-auto">
+            We couldn&apos;t find any users matching <span className="font-semibold text-white">&quot;{query}&quot;</span>.
             Try checking for typos or searching for a different name.
           </p>
         </div>
       ) : (
-        <div className="text-center py-24 bg-gray-900 rounded-[40px] border border-gray-800 shadow-sm">
-          <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
-            <User className="w-10 h-10 text-gray-700" />
+        <div className="premium-empty">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-white/[0.05]">
+            <User className="h-10 w-10 text-zinc-700" />
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">Find someone new</h2>
-          <p className="text-gray-400 max-w-sm mx-auto">
+          <p className="text-zinc-400 max-w-sm mx-auto">
             Use the search bar in the header to find other readers and authors on Share Shelf.
           </p>
         </div>
       )}
     </div>
+  );
+}
+
+export default function UserSearchPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-black" />}>
+      <UserSearchContent />
+    </Suspense>
   );
 }
