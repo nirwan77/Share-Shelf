@@ -7,9 +7,10 @@ export const PopularBooks = () => {
   const { data } = useGetPopular();
 
   return (
-    <div className="py-30 text-center container mx-auto">
-      <h2 className="heading-2 mb-16">Popular books</h2>
-      <div className="grid grid-cols-3 gap-8 text-start">
+    <div className="app-section container mx-auto text-center">
+      <span className="tag">Trending now</span>
+      <h2 className="heading-2 mt-3 mb-12 sm:mb-16">Popular books</h2>
+      <div className="grid grid-cols-1 gap-6 text-start md:grid-cols-3 lg:gap-8">
         {data?.map((item, idx) => (
           <BookCard
             id={item.id}

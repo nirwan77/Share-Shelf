@@ -9,6 +9,7 @@ import {
 import { ApiTags, ApiResponse, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto, RegisterDto } from './dto';
+import { BanAppealDto } from './dto/ban-appeal.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -33,6 +34,13 @@ export class AuthController {
   async login(@Body() dto: LoginDto) {
     const { email, password } = dto;
     return await this.authService.login(email, password);
+  }
+
+  @Post('ban-appeal')
+  @ApiBody({ type: BanAppealDto })
+  @ApiResponse({ status: 201 })
+  async submitBanAppeal(@Body() dto: BanAppealDto) {
+    return await this.authService.submitBanAppeal(dto.email, dto.message);
   }
 
   @Post('verify-otp')

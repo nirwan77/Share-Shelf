@@ -44,11 +44,39 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) throw new UnauthorizedException('Invalid credentials');
     if (!user.isVerified) throw new UnauthorizedException('Email not verified');
+    if (user.isBanned) throw new UnauthorizedException('Account has been banned');
 
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) throw new UnauthorizedException('Invalid credentials');
 
     return this.generateToken(user.id, user.email);
+  }
+
+  async submitBanAppeal(email: string, message: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: { id: true, isBanned: true },
+    });
+
+    if (!user) {
+      throw new BadRequestException('No account found for this email');
+    }
+
+    if (!user.isBanned) {
+      throw new BadRequestException('This account is not banned');
+    }
+
+    const appeal = await this.prisma.banAppeal.create({
+      data: {
+        userId: user.id,
+        message,
+      },
+    });
+
+    return {
+      message: 'Appeal submitted for review',
+      appealId: appeal.id,
+    };
   }
 
   async sendOtp(email: string) {
@@ -108,6 +136,17 @@ export class AuthService {
       });
     } catch {
       throw new UnauthorizedException('Invalid token');
+    }
+  }
+
+  async assertUserActive(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { isBanned: true },
+    });
+
+    if (!user || user.isBanned) {
+      throw new UnauthorizedException('Account has been banned');
     }
   }
 }

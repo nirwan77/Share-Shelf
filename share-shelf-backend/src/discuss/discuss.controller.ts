@@ -1,22 +1,26 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Param,
+  Controller,
   Delete,
+  Get,
+  Param,
+  Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import {
-  ApiOperation,
-  ApiQuery,
   ApiBearerAuth,
+  ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { DiscussService } from './discuss.service';
-import { GetDashboardUserReqObject, JwtHeaderAuthGuard, JwtOptionalAuthGuard } from 'src/shared';
+import {
+  GetDashboardUserReqObject,
+  JwtHeaderAuthGuard,
+  JwtOptionalAuthGuard,
+} from 'src/shared';
 import { FeedQueryDto } from './dto/feed-query.dto';
+import { ReportContentDto } from './dto/report-content.dto';
+import { DiscussService } from './discuss.service';
 
 @ApiTags('discussions')
 @Controller('discuss')
@@ -81,15 +85,39 @@ export class DiscussController {
     );
   }
 
-  @Post(':id/like')
+  @Post(':id/react')
   @UseGuards(JwtHeaderAuthGuard)
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'React / like a post (toggle)' })
+  @ApiOperation({ summary: 'Upvote or downvote a post (toggle)' })
   async togglePostReaction(
     @Param('id') postId: string,
     @GetDashboardUserReqObject('id') userId: string,
+    @Body() body: { reaction: 'UPVOTE' | 'DOWNVOTE' },
   ) {
-    return this.discussService.togglePostReaction(postId, userId);
+    return this.discussService.togglePostReaction(postId, userId, body.reaction);
+  }
+
+  @Post(':id/like')
+  @UseGuards(JwtHeaderAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Backward-compatible alias for post upvote toggle' })
+  async togglePostLikeAlias(
+    @Param('id') postId: string,
+    @GetDashboardUserReqObject('id') userId: string,
+  ) {
+    return this.discussService.togglePostReaction(postId, userId, 'UPVOTE');
+  }
+
+  @Post(':id/report')
+  @UseGuards(JwtHeaderAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Report a discussion post and its author' })
+  async reportPost(
+    @Param('id') postId: string,
+    @GetDashboardUserReqObject('id') userId: string,
+    @Body() body: ReportContentDto,
+  ) {
+    return this.discussService.reportPost(postId, userId, body);
   }
 
   @Delete(':id')
@@ -118,17 +146,29 @@ export class DiscussController {
   @Post('comment/:id/react')
   @UseGuards(JwtHeaderAuthGuard)
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Like or dislike a comment (toggle reaction)' })
+  @ApiOperation({ summary: 'Upvote or downvote a comment (toggle)' })
   async toggleCommentReaction(
     @Param('id') commentId: string,
     @GetDashboardUserReqObject('id') userId: string,
-    @Body() body: { reaction: string },
+    @Body() body: { reaction: 'UPVOTE' | 'DOWNVOTE' },
   ) {
     return this.discussService.toggleCommentReaction(
       commentId,
       userId,
       body.reaction,
     );
+  }
+
+  @Post('comment/:id/report')
+  @UseGuards(JwtHeaderAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Report a discussion comment and its author' })
+  async reportComment(
+    @Param('id') commentId: string,
+    @GetDashboardUserReqObject('id') userId: string,
+    @Body() body: ReportContentDto,
+  ) {
+    return this.discussService.reportComment(commentId, userId, body);
   }
 
   @Delete('comment/:id')

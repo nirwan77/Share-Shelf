@@ -13,11 +13,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
+model User {  
   id         String  @id @default(nanoid())
   email      String  @unique
   password   String
   isVerified Boolean @default(false)
+  isBanned   Boolean @default(false)
 
   money Int @default(0)
 
@@ -40,11 +41,17 @@ model User {
   postCommentReactions PostCommentReactions[]
   bookOffers           BookOffer[]
   bookRequests         BookRequest[]
-  purchases            BookPurchase[]     @relation("purchases")
-  sales                BookPurchase[]     @relation("sales")
+  purchases            BookPurchase[]         @relation("purchases")
+  sales                BookPurchase[]         @relation("sales")
   notifications        Notification[]
-  followers            Follow[]           @relation("followers")
-  following            Follow[]           @relation("following")
+  followers            Follow[]               @relation("followers")
+  following            Follow[]               @relation("following")
+  chatConversationsOne ChatConversation[]     @relation("chatConversationUserOne")
+  chatConversationsTwo ChatConversation[]     @relation("chatConversationUserTwo")
+  chatMessages         ChatMessage[]          @relation("chatMessageSender")
+  reportsMade          Report[]               @relation("reporter")
+  reportsReceived      Report[]               @relation("reportedUser")
+  banAppeals           BanAppeal[]
 }
 
 model Otp {
@@ -73,8 +80,8 @@ model Books {
   price       Int
   releaseDate DateTime
 
-  isPopular   Boolean @default(false)
-  isFeatured  Boolean @default(false)
+  isPopular  Boolean @default(false)
+  isFeatured Boolean @default(false)
 
   userBookStatuses UserBookStatus[]
   userBookReviews  UserBookReview[]
@@ -134,6 +141,8 @@ model UserBookReview {
   book   Books  @relation(fields: [bookId], references: [id], onDelete: Cascade)
 
   reviewVotes ReviewVote[]
+
+  @@index([userId, createdAt])
 }
 
 enum ReviewVoteType {
@@ -153,6 +162,7 @@ model ReviewVote {
   createdAt DateTime @default(now())
 
   @@unique([userId, reviewId])
+  @@index([reviewId, voteType, createdAt])
 }
 
 model UserRating {
@@ -211,7 +221,9 @@ model Posts {
   reactions       PostReactions[]
   comments        PostComments[]
   commentMentions PostCommentMentions[]
+  reports         Report[]
 
+  @@index([createdById, createdAt])
   @@map("posts")
 }
 
@@ -227,7 +239,8 @@ model PostReactions {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([postId, userId, reaction])
+  @@unique([postId, userId])
+  @@index([postId, reaction, createdAt])
   @@map("post_reactions")
 }
 
@@ -259,8 +272,87 @@ model PostComments {
   replies              PostComments[]         @relation("CommentReplies")
   postCommentMentions  PostCommentMentions[]
   postCommentReactions PostCommentReactions[]
+  reports              Report[]
 
+  @@index([userId, createdAt])
   @@map("post_comments")
+}
+
+enum ReportTargetType {
+  POST
+  COMMENT
+}
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+  DISMISSED
+}
+
+enum BanAppealStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Report {
+  id         String           @id @default(nanoid())
+  targetType ReportTargetType
+  reason     String
+  details    String?
+  status     ReportStatus     @default(PENDING)
+
+  reporterId String
+  reporter   User   @relation("reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  reportedUserId String
+  reportedUser   User   @relation("reportedUser", fields: [reportedUserId], references: [id], onDelete: Cascade)
+
+  postId String?
+  post   Posts?  @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  commentId String?
+  comment   PostComments? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([reporterId, postId])
+  @@unique([reporterId, commentId])
+  @@index([status, createdAt])
+  @@index([reportedUserId, createdAt])
+  @@map("reports")
+}
+
+model DeletedComment {
+  id                       String   @id @default(nanoid())
+  commentId                String   @unique
+  comment                  String
+  postId                   String
+  postTitle                String?
+  userId                   String?
+  userName                 String?
+  userEmail                String?
+  deletedByDashboardUserId String?
+  deletedAt                DateTime @default(now())
+
+  @@index([deletedAt])
+  @@index([postId])
+  @@map("deleted_comments")
+}
+
+model BanAppeal {
+  id        String          @id @default(nanoid())
+  message   String
+  status    BanAppealStatus @default(PENDING)
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([userId, status, createdAt])
+  @@index([status, createdAt])
+  @@map("ban_appeals")
 }
 
 model PostCommentMentions {
@@ -289,7 +381,8 @@ model PostCommentReactions {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([postCommentId, userId, reaction])
+  @@unique([postCommentId, userId])
+  @@index([postCommentId, reaction, createdAt])
   @@map("post_comment_reactions")
 }
 
@@ -306,13 +399,13 @@ model BookOffer {
   note      String?
   isActive  Boolean   @default(true)
 
-  userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  bookId    String
-  book      Books     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId String
+  book   Books  @relation(fields: [bookId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   bookPurchases BookPurchase[]
 }
@@ -331,11 +424,11 @@ model BookRequest {
   image       String?
   status      BookRequestStatus @default(PENDING)
 
-  userId      String
-  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum PurchaseStatus {
@@ -346,41 +439,43 @@ enum PurchaseStatus {
 }
 
 model BookPurchase {
-  id              String         @id @default(nanoid())
-  price           Int
-  status          PurchaseStatus @default(PENDING)
+  id     String         @id @default(nanoid())
+  price  Int
+  status PurchaseStatus @default(PENDING)
 
-  location        String?        // Meeting/Delivery location
-  commissionAmount Int           @default(0)
-  sellerAmount    Int           @default(0)
+  location         String? // Meeting/Delivery location
+  commissionAmount Int     @default(0)
+  sellerAmount     Int     @default(0)
 
-  buyerId         String
-  buyer           User           @relation("purchases", fields: [buyerId], references: [id])
-  sellerId        String
-  seller          User           @relation("sales", fields: [sellerId], references: [id])
-  offerId         String
-  offer           BookOffer      @relation(fields: [offerId], references: [id])
-  bookId          String
-  book            Books          @relation(fields: [bookId], references: [id])
+  buyerId  String
+  buyer    User      @relation("purchases", fields: [buyerId], references: [id])
+  sellerId String
+  seller   User      @relation("sales", fields: [sellerId], references: [id])
+  offerId  String
+  offer    BookOffer @relation(fields: [offerId], references: [id])
+  bookId   String
+  book     Books     @relation(fields: [bookId], references: [id])
 
-  transactionUuid String?        @unique
+  transactionUuid String? @unique
 
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([buyerId])
   @@index([sellerId])
   @@index([status])
+  @@index([buyerId, status, createdAt])
+  @@index([sellerId, status, createdAt])
 }
 
 model Notification {
-  id        String   @id @default(nanoid())
-  message   String
-  isRead    Boolean  @default(false)
-  type      String
+  id      String  @id @default(nanoid())
+  message String
+  isRead  Boolean @default(false)
+  type    String
 
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
@@ -397,4 +492,37 @@ model Follow {
 
   @@unique([followerId, followingId])
   @@map("follows")
+}
+
+model ChatConversation {
+  id        String @id @default(nanoid())
+  userOneId String
+  userOne   User   @relation("chatConversationUserOne", fields: [userOneId], references: [id], onDelete: Cascade)
+  userTwoId String
+  userTwo   User   @relation("chatConversationUserTwo", fields: [userTwoId], references: [id], onDelete: Cascade)
+
+  messages ChatMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userOneId, userTwoId])
+  @@index([userOneId, updatedAt])
+  @@index([userTwoId, updatedAt])
+  @@map("chat_conversations")
+}
+
+model ChatMessage {
+  id             String           @id @default(nanoid())
+  conversationId String
+  conversation   ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User             @relation("chatMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  text           String
+
+  createdAt DateTime @default(now())
+
+  @@index([conversationId, createdAt])
+  @@index([senderId, createdAt])
+  @@map("chat_messages")
 }

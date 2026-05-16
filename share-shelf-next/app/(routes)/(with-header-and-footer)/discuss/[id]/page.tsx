@@ -1,25 +1,25 @@
 "use client";
-import { useState } from "react";
-import { useParams } from "next/navigation";
-import { useLikePost } from "../action";
+
+import { ChangeEvent, useRef, useState } from "react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import { Check, Edit2, Flag, ThumbsDown, ThumbsUp, Trash2, Upload, X } from "lucide-react";
+import { toast } from "sonner";
+import { useAuth } from "@/contexts";
+import { useDeletePost, useReportPost, useVotePost } from "../action";
+import { ReportModal } from "../components/ReportModal";
 import {
   Comment,
   Post,
   useAddComment,
   useComments,
-  useLikeComment,
   usePost,
+  useReportComment,
+  useUpdatePost,
+  useVoteComment,
 } from "./action";
-import { useQueryClient } from "@tanstack/react-query";
-import { useDeletePost } from "../action";
 import { useGetProfile } from "../../profile/action";
-import { Trash2, Edit2, X, Check, Image as ImageIcon, Upload } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useUpdatePost } from "./action";
-import { useRef, ChangeEvent } from "react";
-import Link from "next/link";
-import { toast } from "sonner";
-import { useAuth } from "@/contexts";
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -51,33 +51,14 @@ function Avatar({
     .toUpperCase();
   return (
     <div
-      className={`${size} rounded-full overflow-hidden shrink-0 bg-zinc-700 flex items-center justify-center`}
+      className={`${size} flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-zinc-700`}
     >
       {src ? (
-        <img src={src} alt={name} className="w-full h-full object-cover" />
+        <img src={src} alt={name} className="h-full w-full object-cover" />
       ) : (
         <span className="text-xs font-semibold text-zinc-300">{initials}</span>
       )}
     </div>
-  );
-}
-
-function HeartIcon({ filled }: { filled?: boolean }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill={filled ? "currentColor" : "none"}
-      stroke="currentColor"
-      strokeWidth={2}
-      className="w-4 h-4"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
-      />
-    </svg>
   );
 }
 
@@ -89,7 +70,7 @@ function CommentIcon() {
       viewBox="0 0 24 24"
       strokeWidth={2}
       stroke="currentColor"
-      className="w-4 h-4"
+      className="h-4 w-4"
     >
       <path
         strokeLinecap="round"
@@ -100,29 +81,49 @@ function CommentIcon() {
   );
 }
 
-function EyeIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth={2}
-      stroke="currentColor"
-      className="w-4 h-4"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M2.036 12.322a1.012 1.012 0 010-.644C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
-      />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-      />
-    </svg>
-  );
-}
+const applyCommentVoteTransition = (
+  current: Comment,
+  nextVote: "UPVOTE" | "DOWNVOTE",
+): Comment => {
+  const updated = { ...current };
+
+  if (current.myVote === nextVote) {
+    updated.myVote = null;
+    if (nextVote === "UPVOTE") updated.upvotes = Math.max(0, current.upvotes - 1);
+    if (nextVote === "DOWNVOTE") updated.downvotes = Math.max(0, current.downvotes - 1);
+    return updated;
+  }
+
+  if (current.myVote === "UPVOTE") updated.upvotes = Math.max(0, current.upvotes - 1);
+  if (current.myVote === "DOWNVOTE") updated.downvotes = Math.max(0, current.downvotes - 1);
+
+  updated.myVote = nextVote;
+  if (nextVote === "UPVOTE") updated.upvotes += 1;
+  if (nextVote === "DOWNVOTE") updated.downvotes += 1;
+  return updated;
+};
+
+const applyPostVoteTransition = (
+  current: Post,
+  nextVote: "UPVOTE" | "DOWNVOTE",
+): Post => {
+  const updated = { ...current };
+
+  if (current.myVote === nextVote) {
+    updated.myVote = null;
+    if (nextVote === "UPVOTE") updated.upvotes = Math.max(0, current.upvotes - 1);
+    if (nextVote === "DOWNVOTE") updated.downvotes = Math.max(0, current.downvotes - 1);
+    return updated;
+  }
+
+  if (current.myVote === "UPVOTE") updated.upvotes = Math.max(0, current.upvotes - 1);
+  if (current.myVote === "DOWNVOTE") updated.downvotes = Math.max(0, current.downvotes - 1);
+
+  updated.myVote = nextVote;
+  if (nextVote === "UPVOTE") updated.upvotes += 1;
+  if (nextVote === "DOWNVOTE") updated.downvotes += 1;
+  return updated;
+};
 
 function CommentItem({
   comment,
@@ -132,90 +133,132 @@ function CommentItem({
   postId: string;
 }) {
   const queryClient = useQueryClient();
-  const likeComment = useLikeComment(postId);
+  const voteComment = useVoteComment(postId);
+  const reportComment = useReportComment();
   const { token } = useAuth();
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
-  const handleLike = () => {
+  const handleVote = (reaction: "UPVOTE" | "DOWNVOTE") => {
     if (!token) {
-      toast.error("Please login to like comments");
+      toast.error("Please login to vote on comments");
       return;
     }
-    // Optimistic update against the comments cache
-    queryClient.setQueryData(
-      ["comments", postId],
-      (old: Comment[] | undefined) => {
-        if (!old) return old;
-        return old.map((c) => {
-          if (c.id !== comment.id) return c;
-          const liked = c.isLikedByMe;
-          return {
-            ...c,
-            isLikedByMe: !liked,
-            _count: {
-              reactions: (c._count?.reactions ?? 0) + (liked ? -1 : 1),
-            },
-          };
-        });
-      },
+
+    const previousComment = comment;
+    queryClient.setQueryData(["comments", postId], (old: Comment[] | undefined) =>
+      old?.map((c) => (c.id === comment.id ? applyCommentVoteTransition(c, reaction) : c)) ?? old,
     );
 
-    likeComment.mutate(comment.id);
+    voteComment.mutate(
+      { commentId: comment.id, reaction },
+      {
+        onError: () => {
+          queryClient.setQueryData(["comments", postId], (old: Comment[] | undefined) =>
+            old?.map((c) => (c.id === comment.id ? previousComment : c)) ?? old,
+          );
+          toast.error("Failed to register vote.");
+        },
+      },
+    );
   };
 
-  const reactionCount = comment._count?.reactions ?? 0;
+  const openReportModal = () => {
+    if (!token) {
+      toast.error("Please login to report comments");
+      return;
+    }
+
+    setIsReportModalOpen(true);
+  };
+
+  const handleReport = async (reason: string, details?: string) => {
+    try {
+      await reportComment.mutateAsync({ commentId: comment.id, reason, details });
+      toast.success("Report submitted");
+    } catch (err) {
+      console.error("Failed to report comment", err);
+      toast.error("Failed to submit report.");
+      throw err;
+    }
+  };
 
   return (
-    <div className="flex gap-3 py-3">
-      <Link href={`/user/${comment.user.id}`}>
-        <Avatar
-          src={comment.user.avatar}
-          name={comment.user.name}
-          size="w-8 h-8"
-        />
-      </Link>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <Link
-            href={`/user/${comment.user.id}`}
-            className="text-sm font-semibold text-white hover:text-orange-500 transition-colors"
-          >
-            {comment.user.name}
-          </Link>
-          <span className="text-xs text-zinc-500">
-            {timeAgo(comment.createdAt)}
-          </span>
+    <>
+      <div className="flex gap-3 py-3">
+        <Link href={`/user/${comment.user.id}`}>
+          <Avatar src={comment.user.avatar} name={comment.user.name} size="w-8 h-8" />
+        </Link>
+        <div className="min-w-0 flex-1">
+          <div className="mb-1 flex items-center gap-2">
+            <Link
+              href={`/user/${comment.user.id}`}
+              className="text-sm font-semibold text-white transition-colors hover:text-orange-500"
+            >
+              {comment.user.name}
+            </Link>
+            <span className="text-xs text-zinc-500">{timeAgo(comment.createdAt)}</span>
+          </div>
+          <p className="wrap-break-words text-sm text-zinc-300">{comment.comment}</p>
+          <div className="mt-2 flex items-center gap-2">
+            <button
+              onClick={() => handleVote("UPVOTE")}
+              disabled={voteComment.isPending}
+              className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-colors disabled:opacity-50 ${
+                comment.myVote === "UPVOTE"
+                  ? "border-emerald-500 bg-emerald-500/10 text-emerald-400"
+                  : "border-zinc-700 text-zinc-500 hover:border-emerald-500/70 hover:text-emerald-400"
+              }`}
+            >
+              <ThumbsUp className={`h-3.5 w-3.5 ${comment.myVote === "UPVOTE" ? "fill-current" : ""}`} />
+              <span>{comment.upvotes}</span>
+            </button>
+            <button
+              onClick={() => handleVote("DOWNVOTE")}
+              disabled={voteComment.isPending}
+              className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-colors disabled:opacity-50 ${
+                comment.myVote === "DOWNVOTE"
+                  ? "border-rose-500 bg-rose-500/10 text-rose-400"
+                  : "border-zinc-700 text-zinc-500 hover:border-rose-500/70 hover:text-rose-400"
+              }`}
+            >
+              <ThumbsDown className={`h-3.5 w-3.5 ${comment.myVote === "DOWNVOTE" ? "fill-current" : ""}`} />
+              <span>{comment.downvotes}</span>
+            </button>
+            <button
+              onClick={openReportModal}
+              disabled={reportComment.isPending}
+              className="flex items-center gap-1 rounded-full border border-zinc-700 px-2.5 py-1 text-xs text-zinc-500 transition-colors hover:border-amber-500/70 hover:text-amber-400 disabled:opacity-50"
+              title="Report comment"
+            >
+              <Flag className="h-3.5 w-3.5" />
+              <span>Report</span>
+            </button>
+          </div>
         </div>
-        <p className="text-sm text-zinc-300 wrap-break-words">
-          {comment.comment}
-        </p>
-        <button
-          onClick={handleLike}
-          disabled={likeComment.isPending}
-          className={`mt-1.5 flex items-center gap-1 text-xs transition-colors disabled:opacity-50 ${comment.isLikedByMe
-            ? "text-red-400"
-            : "text-zinc-500 hover:text-red-400"
-            }`}
-        >
-          <HeartIcon filled={comment.isLikedByMe} />
-          {reactionCount > 0 && <span>{reactionCount}</span>}
-        </button>
       </div>
-    </div>
+      <ReportModal
+        open={isReportModalOpen}
+        targetLabel="comment"
+        isSubmitting={reportComment.isPending}
+        onOpenChange={setIsReportModalOpen}
+        onSubmit={handleReport}
+      />
+    </>
   );
 }
 
 function PostSkeleton() {
   return (
     <div className="animate-pulse space-y-4 p-4">
-      <div className="flex gap-3 items-center">
-        <div className="w-10 h-10 rounded-full bg-zinc-700" />
-        <div className="space-y-2 flex-1">
-          <div className="h-3 bg-zinc-700 rounded w-1/4" />
-          <div className="h-3 bg-zinc-700 rounded w-1/6" />
+      <div className="flex items-center gap-3">
+        <div className="h-10 w-10 rounded-full bg-zinc-700" />
+        <div className="flex-1 space-y-2">
+          <div className="h-3 w-1/4 rounded bg-zinc-700" />
+          <div className="h-3 w-1/6 rounded bg-zinc-700" />
         </div>
       </div>
-      <div className="h-4 bg-zinc-700 rounded w-3/4" />
-      <div className="h-4 bg-zinc-700 rounded w-1/2" />
+      <div className="h-4 w-3/4 rounded bg-zinc-700" />
+      <div className="h-4 w-1/2 rounded bg-zinc-700" />
     </div>
   );
 }
@@ -225,11 +268,10 @@ export default function PostPage() {
   const postId = params?.id as string;
   const queryClient = useQueryClient();
   const { token } = useAuth();
-
   const { data: post, isLoading: postLoading, isError } = usePost(postId);
-  const { data: comments = [], isLoading: commentsLoading } =
-    useComments(postId);
-  const likePost = useLikePost();
+  const { data: comments = [], isLoading: commentsLoading } = useComments(postId);
+  const votePost = useVotePost();
+  const reportPost = useReportPost();
   const addComment = useAddComment(postId);
 
   const [commentInput, setCommentInput] = useState("");
@@ -239,38 +281,53 @@ export default function PostPage() {
   const [editContent, setEditContent] = useState("");
   const [editImage, setEditImage] = useState<File | string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const router = useRouter();
   const { data: profile } = useGetProfile();
   const { mutateAsync: deletePost, isPending: isDeleting } = useDeletePost();
-  const {
-    mutateAsync: updatePost,
-    isPending: isUpdating,
-  } = useUpdatePost(postId);
+  const { mutateAsync: updatePost, isPending: isUpdating } = useUpdatePost(postId);
 
-  const handleLike = () => {
+  const handleVote = (reaction: "UPVOTE" | "DOWNVOTE") => {
     if (!token) {
-      toast.error("Please login to like posts");
+      toast.error("Please login to vote on posts");
       return;
     }
-    queryClient.setQueryData(["post", postId], (old: Post | undefined) => {
-      if (!old) return old;
-      const liked = old.isLikedByMe;
-      return {
-        ...old,
-        isLikedByMe: !liked,
-        _count: {
-          ...old._count,
-          reactions: old._count.reactions + (liked ? -1 : 1),
+    const previousPost = post;
+    queryClient.setQueryData(["post", postId], (old: Post | undefined) =>
+      old ? applyPostVoteTransition(old, reaction) : old,
+    );
+    votePost.mutate(
+      { id: postId, reaction },
+      {
+        onError: () => {
+          queryClient.setQueryData(["post", postId], previousPost);
+          toast.error("Failed to register vote.");
         },
-      };
-    });
-    likePost.mutate(postId, {
-      onError: () => {
-        queryClient.invalidateQueries({ queryKey: ["post", postId] });
       },
-    });
+    );
+  };
+
+  const openReportModal = () => {
+    if (!token) {
+      toast.error("Please login to report posts");
+      return;
+    }
+
+    setIsReportModalOpen(true);
+  };
+
+  const handleReportPost = async (reason: string, details?: string) => {
+    try {
+      await reportPost.mutateAsync({ id: postId, reason, details });
+      toast.success("Report submitted");
+    } catch (err) {
+      console.error("Failed to report post", err);
+      toast.error("Failed to submit report.");
+      throw err;
+    }
   };
 
   const handleUpdate = async () => {
@@ -283,7 +340,7 @@ export default function PostPage() {
       await updatePost({
         title: editTitle,
         content: editContent,
-        image: editImage
+        image: editImage,
       });
       setIsEditing(false);
       setPreview(null);
@@ -347,36 +404,26 @@ export default function PostPage() {
     }
   };
 
-  const isLiked = post?.isLikedByMe ?? false;
   const isLoading = postLoading || commentsLoading;
-  const [isExpanded, setIsExpanded] = useState(false);
-
   const truncatedContent =
     post?.content && post.content.length > 500 && !isExpanded
-      ? post.content.slice(0, 500) + "..."
+      ? `${post.content.slice(0, 500)}...`
       : post?.content;
 
   return (
-    <div className="pt-16 container mx-auto">
+    <div className="container mx-auto pt-16">
       {isLoading && <PostSkeleton />}
-      {isError && (
-        <div className="text-red-400 text-sm text-center py-8">
-          Failed to load post.
-        </div>
-      )}
+      {isError && <div className="py-8 text-center text-sm text-red-400">Failed to load post.</div>}
       {post && (
-        <div className="">
+        <div>
           <div className="flex items-center gap-3 p-4 pb-3">
             <Link href={`/user/${post.createdByUser.id}`}>
-              <Avatar
-                src={post.createdByUser.avatar}
-                name={post.createdByUser.name}
-              />
+              <Avatar src={post.createdByUser.avatar} name={post.createdByUser.name} />
             </Link>
             <div>
               <Link
                 href={`/user/${post.createdByUser.id}`}
-                className="text-sm font-semibold text-white hover:text-orange-500 transition-colors"
+                className="text-sm font-semibold text-white transition-colors hover:text-orange-500"
               >
                 {post.createdByUser.name}
               </Link>
@@ -388,19 +435,29 @@ export default function PostPage() {
                 <>
                   <button
                     onClick={startEditing}
-                    className="p-2 text-zinc-500 hover:text-[#e8630a] transition-colors bg-transparent border-none cursor-pointer"
+                    className="cursor-pointer border-none bg-transparent p-2 text-zinc-500 transition-colors hover:text-[#e8630a]"
                     title="Edit post"
                   >
                     <Edit2 size={18} />
                   </button>
                   <button
                     onClick={() => setIsDeleteModalOpen(true)}
-                    className="p-2 text-zinc-500 hover:text-red-400 transition-colors bg-transparent border-none cursor-pointer"
+                    className="cursor-pointer border-none bg-transparent p-2 text-zinc-500 transition-colors hover:text-red-400"
                     title="Delete post"
                   >
                     <Trash2 size={18} />
                   </button>
                 </>
+              )}
+              {profile?.id !== post.createdByUser.id && (
+                <button
+                  onClick={openReportModal}
+                  disabled={reportPost.isPending}
+                  className="cursor-pointer border-none bg-transparent p-2 text-zinc-500 transition-colors hover:text-amber-400 disabled:opacity-50"
+                  title="Report post"
+                >
+                  <Flag size={18} />
+                </button>
               )}
             </div>
           </div>
@@ -408,17 +465,17 @@ export default function PostPage() {
           <div className="px-4 pb-3">
             {isEditing ? (
               <div className="space-y-3">
-                <div className="relative group/image">
+                <div className="group/image relative">
                   {editImage ? (
-                    <div className="relative rounded-xl overflow-hidden bg-zinc-800 border border-zinc-700">
+                    <div className="relative overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800">
                       <img
-                        src={preview || (typeof editImage === 'string' ? editImage : '')}
+                        src={preview || (typeof editImage === "string" ? editImage : "")}
                         alt="preview"
-                        className="w-full h-auto max-h-[300px] object-contain"
+                        className="max-h-[300px] h-auto w-full object-contain"
                       />
                       <button
                         onClick={removeImage}
-                        className="absolute top-2 right-2 p-2 bg-red-600/80 hover:bg-red-600 text-white rounded-full transition-colors shadow-lg border-none cursor-pointer"
+                        className="absolute right-2 top-2 cursor-pointer rounded-full border-none bg-red-600/80 p-2 text-white shadow-lg transition-colors hover:bg-red-600"
                         title="Remove image"
                       >
                         <Trash2 size={16} />
@@ -427,9 +484,9 @@ export default function PostPage() {
                   ) : (
                     <button
                       onClick={() => fileInputRef.current?.click()}
-                      className="w-full h-32 rounded-xl border-2 border-dashed border-zinc-700 hover:border-[#e8630a] bg-zinc-800 flex flex-col items-center justify-center gap-2 text-zinc-500 hover:text-[#e8630a] transition-all cursor-pointer group"
+                      className="group flex h-32 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-700 bg-zinc-800 text-zinc-500 transition-all hover:border-[#e8630a] hover:text-[#e8630a]"
                     >
-                      <Upload size={24} className="group-hover:scale-110 transition-transform" />
+                      <Upload size={24} className="transition-transform group-hover:scale-110" />
                       <span className="text-xs font-semibold">Add Image</span>
                     </button>
                   )}
@@ -445,26 +502,26 @@ export default function PostPage() {
                   type="text"
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-lg font-bold text-white outline-none focus:border-[#e8630a] transition-colors"
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2 text-lg font-bold text-white outline-none transition-colors focus:border-[#e8630a]"
                   placeholder="Post title"
                 />
                 <textarea
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-200 leading-relaxed outline-none focus:border-[#e8630a] transition-colors min-h-[150px] resize-y"
+                  className="min-h-[150px] w-full resize-y rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm leading-relaxed text-zinc-200 outline-none transition-colors focus:border-[#e8630a]"
                   placeholder="What's on your mind?"
                 />
-                <div className="flex gap-2 justify-end">
+                <div className="flex justify-end gap-2">
                   <button
                     onClick={() => setIsEditing(false)}
-                    className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-500 hover:bg-zinc-800 transition-colors bg-transparent border-none cursor-pointer flex items-center gap-1.5"
+                    className="flex cursor-pointer items-center gap-1.5 rounded-xl border-none bg-transparent px-4 py-2 text-xs font-semibold text-zinc-500 transition-colors hover:bg-zinc-800"
                   >
                     <X size={14} /> Cancel
                   </button>
                   <button
                     onClick={handleUpdate}
                     disabled={isUpdating}
-                    className="px-6 py-2 rounded-xl text-xs font-semibold text-white bg-[#e8630a] hover:bg-[#ff7a21] transition-colors border-none cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                    className="flex cursor-pointer items-center gap-1.5 rounded-xl border-none bg-[#e8630a] px-6 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#ff7a21] disabled:opacity-50"
                   >
                     <Check size={14} /> {isUpdating ? "Saving..." : "Save Changes"}
                   </button>
@@ -472,14 +529,14 @@ export default function PostPage() {
               </div>
             ) : (
               <>
-                <h1 className="text-xl font-bold text-white mb-3">{post.title}</h1>
-                <p className="text-sm text-zinc-200 leading-relaxed whitespace-pre-wrap">
+                <h1 className="mb-3 text-xl font-bold text-white">{post.title}</h1>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-zinc-200">
                   {truncatedContent}
                 </p>
                 {post.content && post.content.length > 500 && (
                   <button
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className="text-blue-400 hover:text-blue-300 text-xs font-semibold mt-2 bg-transparent border-none cursor-pointer"
+                    className="mt-2 cursor-pointer border-none bg-transparent text-xs font-semibold text-blue-400 hover:text-blue-300"
                   >
                     {isExpanded ? "See Less" : "See More"}
                   </button>
@@ -493,23 +550,33 @@ export default function PostPage() {
               <img
                 src={post.image}
                 alt="post"
-                className="rounded-xl w-full h-auto max-h-[600px] object-contain bg-zinc-900/50"
+                className="max-h-[600px] h-auto w-full rounded-xl bg-zinc-900/50 object-contain"
               />
             </div>
           )}
 
-          <div className="flex items-center gap-4 px-4 pb-4 pt-1 border-b border-zinc-800">
-            <div className="flex items-center gap-1.5 text-sm text-zinc-500">
-              {/* <EyeIcon />
-              <span>{post.viewsCount.toLocaleString()}</span> */}
-            </div>
+          <div className="flex items-center gap-4 border-b border-zinc-800 px-4 pb-4 pt-1">
             <button
-              onClick={handleLike}
-              className={`flex items-center gap-1.5 text-sm transition-colors ${isLiked ? "text-red-400" : "text-zinc-500 hover:text-red-400"
-                }`}
+              onClick={() => handleVote("UPVOTE")}
+              className={`flex items-center gap-1.5 text-sm transition-colors ${
+                post.myVote === "UPVOTE"
+                  ? "text-emerald-400"
+                  : "text-zinc-500 hover:text-emerald-400"
+              }`}
             >
-              <HeartIcon filled={isLiked} />
-              <span>{post._count.reactions}</span>
+              <ThumbsUp className={`h-4 w-4 ${post.myVote === "UPVOTE" ? "fill-current" : ""}`} />
+              <span>{post.upvotes}</span>
+            </button>
+            <button
+              onClick={() => handleVote("DOWNVOTE")}
+              className={`flex items-center gap-1.5 text-sm transition-colors ${
+                post.myVote === "DOWNVOTE"
+                  ? "text-rose-400"
+                  : "text-zinc-500 hover:text-rose-400"
+              }`}
+            >
+              <ThumbsDown className={`h-4 w-4 ${post.myVote === "DOWNVOTE" ? "fill-current" : ""}`} />
+              <span>{post.downvotes}</span>
             </button>
             <div className="flex items-center gap-1.5 text-sm text-zinc-500">
               <CommentIcon />
@@ -517,30 +584,29 @@ export default function PostPage() {
             </div>
           </div>
 
-          {/* Comment input */}
-          <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-800">
+          <div className="flex items-center gap-3 border-b border-zinc-800 px-4 py-3">
             <input
               value={commentInput}
               onChange={(e) => setCommentInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="join conversation"
               disabled={addComment.isPending}
-              className="flex-1 bg-zinc-800 border border-zinc-700 rounded-full px-4 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-zinc-500 transition-colors disabled:opacity-60"
+              className="flex-1 rounded-full border border-zinc-700 bg-zinc-800 px-4 py-2 text-sm text-white outline-none transition-colors placeholder:text-zinc-500 focus:border-zinc-500 disabled:opacity-60"
             />
             {commentInput.trim() && (
               <button
                 onClick={submitComment}
                 disabled={addComment.isPending}
-                className="text-sm font-semibold text-blue-400 hover:text-blue-300 disabled:opacity-50 transition-colors"
+                className="text-sm font-semibold text-blue-400 transition-colors hover:text-blue-300 disabled:opacity-50"
               >
                 {addComment.isPending ? "Posting..." : "Post"}
               </button>
             )}
           </div>
 
-          <div className="px-4 divide-y divide-zinc-800">
+          <div className="divide-y divide-zinc-800 px-4">
             {!commentsLoading && comments.length === 0 && (
-              <p className="text-sm text-zinc-500 text-center py-6">
+              <p className="py-6 text-center text-sm text-zinc-500">
                 No comments yet. Be the first!
               </p>
             )}
@@ -551,25 +617,24 @@ export default function PostPage() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in fade-in zoom-in duration-200">
-            <h3 className="text-lg font-bold text-white mb-2">Delete Post?</h3>
-            <p className="text-zinc-400 text-sm mb-6 leading-relaxed">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm animate-in zoom-in rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl duration-200 fade-in">
+            <h3 className="mb-2 text-lg font-bold text-white">Delete Post?</h3>
+            <p className="mb-6 text-sm leading-relaxed text-zinc-400">
               Are you sure you want to delete this post? This action cannot be undone and will remove all associated comments.
             </p>
-            <div className="flex gap-3 justify-end">
+            <div className="flex justify-end gap-3">
               <button
                 onClick={() => setIsDeleteModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-[13px] font-semibold text-zinc-500 hover:bg-zinc-800 transition-colors bg-transparent border-none cursor-pointer"
+                className="cursor-pointer rounded-xl border-none bg-transparent px-4 py-2 text-[13px] font-semibold text-zinc-500 transition-colors hover:bg-zinc-800"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
                 disabled={isDeleting}
-                className="px-6 py-2 rounded-xl text-[13px] font-semibold text-white bg-red-600 hover:bg-red-500 transition-colors border-none cursor-pointer disabled:opacity-50"
+                className="cursor-pointer rounded-xl border-none bg-red-600 px-6 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-red-500 disabled:opacity-50"
               >
                 {isDeleting ? "Deleting..." : "Delete"}
               </button>
@@ -577,6 +642,14 @@ export default function PostPage() {
           </div>
         </div>
       )}
+
+      <ReportModal
+        open={isReportModalOpen}
+        targetLabel="post"
+        isSubmitting={reportPost.isPending}
+        onOpenChange={setIsReportModalOpen}
+        onSubmit={handleReportPost}
+      />
     </div>
   );
 }

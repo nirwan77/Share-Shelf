@@ -194,7 +194,6 @@ function DashboardHome() {
               <Table.Tr>
                 <Table.Th>Book</Table.Th>
                 <Table.Th>Author</Table.Th>
-                <Table.Th>Price</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -216,11 +215,6 @@ function DashboardHome() {
                   <Table.Td>
                     <Text size="sm" c="dimmed">
                       {book.author}
-                    </Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <Text size="sm" fw={600}>
-                      Rs. {book.price}
                     </Text>
                   </Table.Td>
                 </Table.Tr>

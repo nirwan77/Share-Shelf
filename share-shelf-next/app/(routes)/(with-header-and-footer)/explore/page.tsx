@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { Suspense, useState, useEffect, useMemo } from "react";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import RequestBookModal from "@/components/manual/RequestBookModal";
 import { Search } from "lucide-react";
 
-export default function Explore() {
+function ExploreContent() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
@@ -122,9 +122,10 @@ export default function Explore() {
   };
 
   return (
-    <div className="pt-[138px] pb-20 container mx-auto grid grid-cols-12 gap-4">
-      <div className="col-span-3">
-        <div className="flex items-center justify-between mb-6">
+    <div className="container mx-auto grid grid-cols-1 gap-8 pt-36 pb-20 lg:grid-cols-12">
+      <div className="lg:col-span-3">
+        <div className="app-card sticky top-28 p-5">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between lg:flex-col lg:items-start xl:flex-row xl:items-center">
           <h2 className="heading-4">Filters</h2>
           <Button
             variant="outline"
@@ -136,11 +137,11 @@ export default function Explore() {
           </Button>
         </div>
 
-        <div className="border-t border-[#dbdcd2]">
+        <div className="border-t border-white/10">
           <div className="flex items-center">
-            <h2 className="body-lg py-5 grow">Sort By</h2>
+            <h2 className="grow py-5 text-base font-semibold text-white">Sort By</h2>
             <button
-              className="text-sm"
+              className="text-sm text-zinc-500 hover:text-[#ff7a00]"
               onClick={() => {
                 setSortBy(undefined);
                 updateParams({ sortBy: null });
@@ -167,11 +168,11 @@ export default function Explore() {
           </RadioGroup>
         </div>
 
-        <div className="border-t border-[#dbdcd2]">
+        <div className="border-t border-white/10">
           <div className="flex items-center">
-            <h2 className="body-lg py-5 grow">Category</h2>
+            <h2 className="grow py-5 text-base font-semibold text-white">Category</h2>
             <button
-              className="text-sm"
+              className="text-sm text-zinc-500 hover:text-[#ff7a00]"
               onClick={() => {
                 setCategories([]);
                 updateParams({ categories: null });
@@ -195,7 +196,7 @@ export default function Explore() {
                       updateParams({ categories: newCats });
                     }}
                   />
-                  <Label htmlFor={item}>
+                  <Label htmlFor={item} className="cursor-pointer text-sm text-zinc-300">
                     {item.charAt(0).toUpperCase() + item.slice(1)}
                   </Label>
                 </div>
@@ -204,11 +205,11 @@ export default function Explore() {
           </div>
         </div>
 
-        <div className="border-t border-[#dbdcd2]">
+        <div className="border-t border-white/10">
           <div className="flex items-center">
-            <h2 className="body-lg py-5 grow">Published Date</h2>
+            <h2 className="grow py-5 text-base font-semibold text-white">Published Date</h2>
             <button
-              className="text-sm"
+              className="text-sm text-zinc-500 hover:text-[#ff7a00]"
               onClick={() => {
                 setPublishedDate(undefined);
                 updateParams({ publishedDate: null });
@@ -236,7 +237,7 @@ export default function Explore() {
             ].map(([value, label]) => (
               <div key={value} className="flex items-center gap-2">
                 <RadioGroupItem value={value} id={value} />
-                <Label className="cursor-pointer" htmlFor={value}>
+                <Label className="cursor-pointer text-sm text-zinc-300" htmlFor={value}>
                   {label}
                 </Label>
               </div>
@@ -282,9 +283,10 @@ export default function Explore() {
             ))}
           </RadioGroup>
         </div> */}
+        </div>
       </div>
 
-      <div className="col-start-4 col-span-9">
+      <div className="lg:col-span-9">
         <div className="mb-8 relative group">
           <input
             type="text"
@@ -300,7 +302,7 @@ export default function Explore() {
               }
             }}
             placeholder="Search books by title or author..."
-            className="w-full bg-gray-900 border border-gray-800 text-white rounded-2xl py-4 pl-14 pr-4 focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all shadow-sm text-lg placeholder:text-gray-500"
+            className="w-full rounded-2xl border border-white/10 bg-white/[0.05] py-4 pl-14 pr-16 text-base text-white shadow-sm outline-none transition-all placeholder:text-zinc-500 focus:border-[#ff7a00]/60 focus:bg-white/[0.07] focus:ring-4 focus:ring-[#ff7a00]/15 sm:text-lg"
           />
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-orange-500 transition-colors w-6 h-6" />
           {search && (
@@ -309,17 +311,17 @@ export default function Explore() {
                 setSearch(undefined);
                 updateParams({ search: null });
               }}
-              className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white font-medium text-sm transition-colors"
+              className="absolute right-5 top-1/2 -translate-y-1/2 text-sm font-medium text-zinc-500 transition-colors hover:text-white"
             >
               Clear
             </button>
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
           {(data?.data ?? []).map((book) => (
             <ExploreCard
-              link={`book-detail/${book.id}`}
+              link={`/book-detail/${book.id}`}
               key={book.id}
               aurthur={book.author}
               name={book.name}
@@ -401,5 +403,13 @@ export default function Explore() {
         onClose={() => setRequestModalOpen(false)}
       />
     </div>
+  );
+}
+
+export default function Explore() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-black" />}>
+      <ExploreContent />
+    </Suspense>
   );
 }

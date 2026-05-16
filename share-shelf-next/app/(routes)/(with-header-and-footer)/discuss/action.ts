@@ -1,9 +1,11 @@
 import { axios } from "@/app/lib";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
+export type DiscussVote = "UPVOTE" | "DOWNVOTE" | null;
+
 export type DiscussData = {
   posts: Array<{
-    _count: { comments: number; reactions: number };
+    _count: { comments: number };
     content: string | null;
     image: string | null;
     createdByUser: {
@@ -14,7 +16,9 @@ export type DiscussData = {
     title: string;
     createdAt: string;
     id: string;
-    isLikedByMe: boolean;
+    myVote: DiscussVote;
+    upvotes: number;
+    downvotes: number;
     viewsCount: number;
   }>;
   meta: {
@@ -51,10 +55,36 @@ export const useGetPostData = (params?: FeedParams) => {
   });
 };
 
-export const useLikePost = () => {
+export const useVotePost = () => {
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { data } = await axios.post<DiscussData>(`/discuss/${id}/like`);
+    mutationFn: async ({
+      id,
+      reaction,
+    }: {
+      id: string;
+      reaction: Exclude<DiscussVote, null>;
+    }) => {
+      const { data } = await axios.post(`/discuss/${id}/react`, { reaction });
+      return data;
+    },
+  });
+};
+
+export const useReportPost = () => {
+  return useMutation({
+    mutationFn: async ({
+      id,
+      reason,
+      details,
+    }: {
+      id: string;
+      reason: string;
+      details?: string;
+    }) => {
+      const { data } = await axios.post(`/discuss/${id}/report`, {
+        reason,
+        details,
+      });
       return data;
     },
   });

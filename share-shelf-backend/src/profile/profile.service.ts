@@ -16,6 +16,7 @@ export class ProfileService {
         money: true,
         email: true,
         isVerified: true,
+        isBanned: true,
         name: true,
         _count: {
           select: {
@@ -62,6 +63,7 @@ export class ProfileService {
         id: true,
         avatar: true,
         name: true,
+        isBanned: true,
         _count: {
           select: {
             followers: true,

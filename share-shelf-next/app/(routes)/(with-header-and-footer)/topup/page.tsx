@@ -1,10 +1,10 @@
 "use client";
 
 import CryptoJS from "crypto-js";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-export default function Topup() {
+function TopupContent() {
   const searchParams = useSearchParams();
   const purchaseId = searchParams.get("purchaseId");
   const initialAmount = searchParams.get("amount");
@@ -119,6 +119,14 @@ export default function Topup() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function Topup() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-black" />}>
+      <TopupContent />
+    </Suspense>
   );
 }
 
