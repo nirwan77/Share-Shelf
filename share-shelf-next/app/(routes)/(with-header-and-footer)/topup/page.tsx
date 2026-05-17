@@ -4,13 +4,17 @@ import { axios } from "@/app/lib";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
+const getAppUrl = () =>
+  (
+    process.env.NEXT_PUBLIC_SHARE_SHELF_APP_URL ||
+    (typeof window !== "undefined" ? window.location.origin : "")
+  ).replace(/\/$/, "");
+
 function TopupContent() {
   const searchParams = useSearchParams();
   const purchaseId = searchParams.get("purchaseId");
   const initialAmount = searchParams.get("amount");
-  const appUrl =
-    process.env.NEXT_PUBLIC_SHARE_SHELF_APP_URL ||
-    (typeof window !== "undefined" ? window.location.origin : "");
+  const appUrl = getAppUrl();
 
   const [form, setForm] = useState({
     amount: initialAmount || "100",
@@ -43,8 +47,7 @@ function TopupContent() {
   }, []);
 
   useEffect(() => {
-    const baseUrl =
-      process.env.NEXT_PUBLIC_SHARE_SHELF_APP_URL || window.location.origin;
+    const baseUrl = getAppUrl();
 
     setForm((prev) => ({
       ...prev,

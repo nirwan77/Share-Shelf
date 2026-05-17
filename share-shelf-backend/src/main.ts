@@ -3,6 +3,17 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { SwaggerTheme, SwaggerThemeNameEnum } from 'swagger-themes';
 
+const defaultCorsOrigins = [
+  'http://localhost:3001',
+  'http://localhost:3002',
+  'https://share-shelf-main-mqdv3ckjs-nirwanrai67-gmailcoms-projects.vercel.app',
+];
+
+const corsOrigins = (
+  process.env.CORS_ORIGINS?.split(',').map((origin) => origin.trim()) ??
+  defaultCorsOrigins
+).filter(Boolean);
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
@@ -24,7 +35,7 @@ async function bootstrap() {
     .build();
 
   app.enableCors({
-    origin: ['http://localhost:3001', 'http://localhost:3002'],
+    origin: corsOrigins,
     credentials: true,
   });
 
