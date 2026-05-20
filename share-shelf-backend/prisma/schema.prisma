@@ -134,6 +134,8 @@ model UserBookReview {
   book   Books  @relation(fields: [bookId], references: [id], onDelete: Cascade)
 
   reviewVotes ReviewVote[]
+
+  @@index([userId, createdAt])
 }
 
 enum ReviewVoteType {
@@ -153,6 +155,7 @@ model ReviewVote {
   createdAt DateTime @default(now())
 
   @@unique([userId, reviewId])
+  @@index([reviewId, voteType, createdAt])
 }
 
 model UserRating {
@@ -212,6 +215,7 @@ model Posts {
   comments        PostComments[]
   commentMentions PostCommentMentions[]
 
+  @@index([createdById, createdAt])
   @@map("posts")
 }
 
@@ -228,6 +232,7 @@ model PostReactions {
   updatedAt DateTime @updatedAt
 
   @@unique([postId, userId])
+  @@index([postId, reaction, createdAt])
   @@map("post_reactions")
 }
 
@@ -260,6 +265,7 @@ model PostComments {
   postCommentMentions  PostCommentMentions[]
   postCommentReactions PostCommentReactions[]
 
+  @@index([userId, createdAt])
   @@map("post_comments")
 }
 
@@ -290,6 +296,7 @@ model PostCommentReactions {
   updatedAt DateTime @updatedAt
 
   @@unique([postCommentId, userId])
+  @@index([postCommentId, reaction, createdAt])
   @@map("post_comment_reactions")
 }
 
@@ -371,6 +378,8 @@ model BookPurchase {
   @@index([buyerId])
   @@index([sellerId])
   @@index([status])
+  @@index([buyerId, status, createdAt])
+  @@index([sellerId, status, createdAt])
 }
 
 model Notification {

@@ -14,6 +14,7 @@ import { useGetNotifications, useMarkNotificationRead, useGetUnreadCount } from 
 import { useContext, useEffect, useState } from "react";
 import { useGetProfile } from "@/app/(routes)/(with-header-and-footer)/profile/action";
 import Image from "next/image";
+import Link from "next/link";
 
 export const Navbar = () => {
   const router = useRouter();
@@ -28,7 +29,8 @@ export const Navbar = () => {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const id = window.setTimeout(() => setMounted(true), 0);
+    return () => window.clearTimeout(id);
   }, []);
 
   const handleLogout = () => {
@@ -86,30 +88,30 @@ export const Navbar = () => {
           </div>
 
           <div className="flex items-center space-x-8 shrink-0">
-            <a
+            <Link
               href="/"
               className="text-gray-300 hover:text-white transition-colors"
             >
               Home
-            </a>
-            <a
+            </Link>
+            <Link
               href="/explore"
               className="text-gray-300 hover:text-white transition-colors"
             >
               Explore
-            </a>
-            <a
+            </Link>
+            <Link
               href="/discuss"
               className="text-gray-300 hover:text-white transition-colors"
             >
               Discuss
-            </a>
-            <a
-              href="#"
+            </Link>
+            <Link
+              href="/leaderboard"
               className="text-gray-300 hover:text-white transition-colors"
             >
               Leaderboard
-            </a>
+            </Link>
           </div>
 
           <div className="flex gap-4 items-center justify-center">
