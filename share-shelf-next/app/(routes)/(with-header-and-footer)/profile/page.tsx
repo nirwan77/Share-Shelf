@@ -13,6 +13,7 @@ import {
 } from "./action";
 import type { MyOffer, MyBookRequest } from "./action";
 import Image from "next/image";
+import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Library, FollowerListModal } from "./components";
 import { toast } from "sonner";
@@ -49,25 +50,25 @@ export default function Profile() {
       const uploadResult = await uploadImage.mutateAsync(file);
       await updateAvatar.mutateAsync(uploadResult.url);
       toast.success("Profile picture updated successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to update profile picture");
     }
   };
 
   return (
-    <div className="mt-34 container mx-auto">
+    <div className="container mx-auto pt-36 pb-20">
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
         </div>
       ) : (
         <>
-          <div className="flex justify-between items-center bg-gray-900 p-8 rounded-3xl border border-gray-800 shadow-sm relative overflow-hidden group">
+          <div className="app-card relative flex flex-col-reverse items-center justify-between gap-8 overflow-hidden p-6 text-center sm:p-8 md:flex-row md:text-left">
             <div className="relative z-10">
               <h2 className="text-3xl font-bold text-white mb-2">
                 {data?.name}
               </h2>
-              <div className="flex gap-6 text-sm text-gray-400 items-center">
+              <div className="flex justify-center gap-6 text-sm text-gray-400 md:justify-start">
                 <span
                   className="cursor-pointer hover:text-white transition-colors items-center flex flex-col sm:flex-row sm:gap-1.5"
                   onClick={() => setModalType("following")}
@@ -91,8 +92,8 @@ export default function Profile() {
                   </span>
                 </span>
               </div>
-              <div className="mt-6 flex flex-wrap gap-4 items-center">
-                <div className="text-xs uppercase tracking-[0.2em] font-bold text-gray-600 bg-gray-800/50 px-3 py-1 rounded">
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-4 md:justify-start">
+                <div className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-zinc-500">
                   0 books exchanged
                 </div>
               </div>
@@ -106,7 +107,7 @@ export default function Profile() {
                 accept="image/*"
               />
               <figure
-                className="rounded-full overflow-hidden w-28 h-28 bg-gray-800 flex items-center justify-center cursor-pointer border-4 border-gray-900 shadow-xl group-hover:scale-105 transition-all duration-300 relative"
+                className="relative flex h-28 w-28 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/[0.06] shadow-[0_18px_45px_rgba(0,0,0,0.35)] transition-all duration-300 group-hover:scale-105"
                 onClick={() => fileInputRef.current?.click()}
               >
                 {data?.avatar ? (
@@ -132,35 +133,33 @@ export default function Profile() {
                 </div>
               )}
             </div>
-            {/* Subtle background glow */}
-            <div className="absolute -top-24 -right-24 w-64 h-64 bg-orange-500/5 rounded-full blur-3xl pointer-events-none"></div>
           </div>
         </>
       )}
 
       <Tabs defaultValue="Library" className="my-10">
-        <TabsList className="bg-transparent border-b border-gray-800 rounded-none w-full justify-start h-auto p-0 gap-10">
+        <TabsList className="h-auto w-full justify-start gap-6 rounded-none border-b border-white/10 bg-transparent p-0">
           <TabsTrigger
             value="Library"
-            className="data-[state=active]:bg-transparent data-[state=active]:border-orange-500 data-[state=active]:text-orange-500 border-b-2 border-transparent text-gray-500 rounded-none px-0 py-4 font-bold transition-all h-auto uppercase text-xs tracking-widest"
+            className="h-auto rounded-none border-b-2 border-transparent px-0 py-4 text-xs font-bold uppercase tracking-widest text-gray-500 transition-all data-[state=active]:border-orange-500 data-[state=active]:bg-transparent data-[state=active]:text-orange-500"
           >
             Library
           </TabsTrigger>
           <TabsTrigger
             value="MyOffers"
-            className="data-[state=active]:bg-transparent data-[state=active]:border-orange-500 data-[state=active]:text-orange-500 border-b-2 border-transparent text-gray-500 rounded-none px-0 py-4 font-bold transition-all h-auto uppercase text-xs tracking-widest"
+            className="h-auto rounded-none border-b-2 border-transparent px-0 py-4 text-xs font-bold uppercase tracking-widest text-gray-500 transition-all data-[state=active]:border-orange-500 data-[state=active]:bg-transparent data-[state=active]:text-orange-500"
           >
             My Offers
           </TabsTrigger>
           <TabsTrigger
             value="MyRequests"
-            className="data-[state=active]:bg-transparent data-[state=active]:border-orange-500 data-[state=active]:text-orange-500 border-b-2 border-transparent text-gray-500 rounded-none px-0 py-4 font-bold transition-all h-auto uppercase text-xs tracking-widest"
+            className="h-auto rounded-none border-b-2 border-transparent px-0 py-4 text-xs font-bold uppercase tracking-widest text-gray-500 transition-all data-[state=active]:border-orange-500 data-[state=active]:bg-transparent data-[state=active]:text-orange-500"
           >
             My Requests
           </TabsTrigger>
           <TabsTrigger
             value="Review"
-            className="data-[state=active]:bg-transparent data-[state=active]:border-orange-500 data-[state=active]:text-orange-500 border-b-2 border-transparent text-gray-500 rounded-none px-0 py-4 font-bold transition-all h-auto uppercase text-xs tracking-widest"
+            className="h-auto rounded-none border-b-2 border-transparent px-0 py-4 text-xs font-bold uppercase tracking-widest text-gray-500 transition-all data-[state=active]:border-orange-500 data-[state=active]:bg-transparent data-[state=active]:text-orange-500"
           >
             Reviews
           </TabsTrigger>
@@ -174,31 +173,37 @@ export default function Profile() {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
             </div>
           ) : offersData?.length === 0 ? (
-            <div className="py-20 text-center bg-gray-900 rounded-[32px] border-2 border-dashed border-gray-800">
+            <div className="premium-empty">
               <p className="text-gray-500 font-medium">
                 You haven&apos;t posted any offers yet.
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {offersData?.map((offer: MyOffer) => (
                 <div
                   key={offer.id}
-                  className="bg-gray-900 border border-gray-800 rounded-[32px] p-5 flex gap-5 hover:border-gray-700 transition-all group"
+                  className="app-card app-card-hover group flex flex-col gap-5 p-5 sm:flex-row"
                 >
-                  <div className="relative w-24 h-32 shrink-0 overflow-hidden rounded-2xl border border-gray-800 shadow-lg group-hover:scale-105 transition-transform">
+                  <Link
+                    href={`/book-detail/${offer.book.id}`}
+                    className="relative w-24 h-32 shrink-0 overflow-hidden rounded-2xl border border-gray-800 shadow-lg transition-transform group-hover:scale-105"
+                  >
                     <Image
                       src={offer.book.image}
                       alt={offer.book.name}
                       fill
                       className="object-cover"
                     />
-                  </div>
+                  </Link>
                   <div className="flex-1 flex flex-col justify-between py-1">
                     <div>
-                      <h4 className="font-bold text-white text-lg leading-tight mb-1">
+                      <Link
+                        href={`/book-detail/${offer.book.id}`}
+                        className="mb-1 block font-bold text-white text-lg leading-tight transition-colors hover:text-orange-500"
+                      >
                         {offer.book.name}
-                      </h4>
+                      </Link>
                       <p className="text-sm text-gray-500 font-medium">
                         {offer.book.author}
                       </p>
@@ -220,7 +225,13 @@ export default function Profile() {
                         )}
                       </div>
                     </div>
-                    <div className="mt-4 flex justify-end">
+                    <div className="mt-4 flex justify-end gap-4">
+                      <Link
+                        href={`/book-detail/${offer.book.id}`}
+                        className="text-sm font-bold text-orange-500 hover:text-orange-400"
+                      >
+                        View Book
+                      </Link>
                       <button
                         onClick={() => {
                           if (
@@ -249,7 +260,7 @@ export default function Profile() {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
             </div>
           ) : requestsData?.length === 0 ? (
-            <div className="py-20 text-center bg-gray-900 rounded-[32px] border-2 border-dashed border-gray-800">
+            <div className="premium-empty">
               <p className="text-gray-500 font-medium">
                 You haven&apos;t made any book requests.
               </p>
@@ -259,7 +270,7 @@ export default function Profile() {
               {requestsData?.map((req: MyBookRequest) => (
                 <div
                   key={req.id}
-                  className="bg-gray-900 border border-gray-800 rounded-[32px] p-8 flex justify-between items-center hover:border-gray-700 transition-all group"
+                  className="app-card app-card-hover group flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8"
                 >
                   <div>
                     <h4 className="font-bold text-white text-xl mb-1">
@@ -298,7 +309,7 @@ export default function Profile() {
         </TabsContent>
         <TabsContent value="Review" className="mt-6">
           {data?.userBookReviews?.length === 0 ? (
-            <div className="py-20 text-center bg-gray-900 rounded-[32px] border-2 border-dashed border-gray-800">
+            <div className="premium-empty">
               <p className="text-gray-500 font-medium">
                 You haven&apos;t reviewed any books yet.
               </p>
@@ -306,9 +317,10 @@ export default function Profile() {
           ) : (
             <div className="grid grid-cols-1 gap-4">
               {data?.userBookReviews?.map((review) => (
-                <div
+                <Link
                   key={review.id}
-                  className="bg-gray-900 border border-gray-800 rounded-[32px] p-6 flex gap-6 hover:border-gray-700 transition-all group"
+                  href={`/book-detail/${review.book.id}`}
+                  className="app-card app-card-hover group flex flex-col gap-6 p-6 sm:flex-row"
                 >
                   <div className="relative w-20 h-28 shrink-0 overflow-hidden rounded-2xl border border-gray-800 shadow-lg group-hover:scale-105 transition-transform">
                     <Image
@@ -340,7 +352,7 @@ export default function Profile() {
                       &quot;{review.comment}&quot;
                     </p>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}

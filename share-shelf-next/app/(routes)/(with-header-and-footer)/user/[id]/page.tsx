@@ -1,13 +1,14 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useGetUserProfile, useFollowUser, useUnfollowUser, type ProfileData } from "../../profile/action";
+import { useGetUserProfile, useFollowUser, useUnfollowUser } from "../../profile/action";
 import Image from "next/image";
+import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Library, FollowerListModal } from "../../profile/components";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { UserPlus, UserMinus } from "lucide-react";
+import { Ban, MessageCircle, UserPlus, UserMinus } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts";
 
@@ -31,9 +32,32 @@ export default function UserProfile() {
 
   if (error || !data) {
     return (
-      <div className="mt-34 container mx-auto py-20 text-center">
+      <div className="container mx-auto pt-36 pb-20 text-center">
         <h2 className="text-2xl font-bold text-white mb-4">User not found</h2>
-        <Button onClick={() => router.back()} className="rounded-full bg-gray-900 border-gray-800 hover:bg-gray-800 text-white">Go Back</Button>
+        <Button onClick={() => router.back()} variant="outline" className="rounded-full">Go Back</Button>
+      </div>
+    );
+  }
+
+  if (data.isBanned) {
+    return (
+      <div className="container mx-auto px-4 pt-36 pb-20">
+        <div className="premium-panel mx-auto max-w-md p-8 text-center">
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-red-500/10 text-red-400">
+            <Ban className="h-7 w-7" />
+          </div>
+          <h2 className="mb-3 text-2xl font-bold text-white">User banned</h2>
+          <p className="mb-6 text-sm leading-6 text-gray-400">
+            This account has been banned and the profile is not available.
+          </p>
+          <Button
+            onClick={() => router.back()}
+            variant="outline"
+            className="rounded-full"
+          >
+            Go Back
+          </Button>
+        </div>
       </div>
     );
   }
@@ -51,33 +75,33 @@ export default function UserProfile() {
         await follow.mutateAsync(id);
         toast.success(`Following ${data.name}`);
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to update follow status");
     }
   };
 
   return (
-    <div className="mt-34 container mx-auto">
-      <div className="flex justify-between items-center bg-gray-900 p-8 rounded-[32px] border border-gray-800 shadow-sm relative overflow-hidden group">
+    <div className="container mx-auto pt-36 pb-20">
+      <div className="premium-panel group relative flex flex-col justify-between gap-8 overflow-hidden p-8 sm:flex-row sm:items-center">
         <div className="flex gap-8 items-center relative z-10">
-          <figure className="rounded-full overflow-hidden w-28 h-28 bg-gray-800 flex items-center justify-center border-4 border-gray-900 shadow-xl group-hover:scale-105 transition-transform duration-300">
+          <figure className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/[0.06] shadow-[0_18px_45px_rgba(0,0,0,0.35)] transition-transform duration-300 group-hover:scale-105">
             {data.avatar ? (
               <Image
                 alt={data.name}
                 src={data.avatar}
                 height={112}
                 width={112}
-                className="object-cover w-full h-full"
+                className="h-full w-full object-cover"
               />
             ) : (
-              <span className="text-4xl font-bold text-gray-600">
+              <span className="text-4xl font-bold text-zinc-600">
                 {data.name?.charAt(0).toUpperCase()}
               </span>
             )}
           </figure>
           <div>
             <h2 className="text-3xl font-bold text-white mb-2">{data.name}</h2>
-            <div className="flex gap-6 text-sm text-gray-400">
+            <div className="flex gap-6 text-sm text-zinc-400">
               <span
                 className="cursor-pointer hover:text-white transition-colors flex items-center gap-1.5"
                 onClick={() => setModalType("following")}
@@ -93,14 +117,14 @@ export default function UserProfile() {
                 <span className="uppercase text-[10px] tracking-widest font-bold">followers</span>
               </span>
             </div>
-            <div className="mt-6">
+            <div className="mt-6 flex flex-wrap gap-3">
               <Button
                 variant={data.isFollowing ? "outline" : "default"}
                 size="sm"
                 className={`rounded-full h-10 px-8 font-bold uppercase text-[10px] tracking-widest transition-all ${
                   data.isFollowing 
-                    ? "border-gray-700 text-gray-400 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20" 
-                    : "bg-orange-600 hover:bg-orange-500 text-white shadow-lg shadow-orange-500/20"
+                    ? "border-white/15 text-zinc-300 hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400" 
+                    : "bg-[#ff7a00] text-black hover:bg-[#ff922f] shadow-lg shadow-orange-500/20"
                 }`}
                 onClick={handleFollowToggle}
                 disabled={follow.isPending || unfollow.isPending}
@@ -117,24 +141,37 @@ export default function UserProfile() {
                   </>
                 )}
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-10 rounded-full border-white/15 px-8 text-[10px] font-bold uppercase tracking-widest text-zinc-300 hover:border-orange-500/30 hover:bg-orange-500/10 hover:text-orange-400"
+                onClick={() => {
+                  if (!token) {
+                    toast.error("Please login to message users");
+                    return;
+                  }
+                  router.push(`/chat?user=${id}`);
+                }}
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Message
+              </Button>
             </div>
           </div>
         </div>
-        {/* Subtle background glow */}
-        <div className="absolute -top-24 -right-24 w-64 h-64 bg-orange-500/5 rounded-full blur-3xl pointer-events-none"></div>
       </div>
 
       <Tabs defaultValue="Library" className="my-10">
-        <TabsList className="bg-transparent border-b border-gray-800 rounded-none w-full justify-start h-auto p-0 gap-10">
+        <TabsList className="h-auto w-full justify-start gap-10 rounded-none border-b border-white/10 bg-transparent p-0">
           <TabsTrigger
             value="Library"
-            className="data-[state=active]:bg-transparent data-[state=active]:border-orange-500 data-[state=active]:text-orange-500 border-b-2 border-transparent text-gray-500 rounded-none px-0 py-4 font-bold transition-all h-auto uppercase text-xs tracking-widest"
+            className="h-auto rounded-none border-b-2 border-transparent px-0 py-4 text-xs font-bold uppercase tracking-widest text-zinc-500 transition-all data-[state=active]:border-orange-500 data-[state=active]:bg-transparent data-[state=active]:text-orange-500"
           >
             Library
           </TabsTrigger>
           <TabsTrigger
             value="Review"
-            className="data-[state=active]:bg-transparent data-[state=active]:border-orange-500 data-[state=active]:text-orange-500 border-b-2 border-transparent text-gray-500 rounded-none px-0 py-4 font-bold transition-all h-auto uppercase text-xs tracking-widest"
+            className="h-auto rounded-none border-b-2 border-transparent px-0 py-4 text-xs font-bold uppercase tracking-widest text-zinc-500 transition-all data-[state=active]:border-orange-500 data-[state=active]:bg-transparent data-[state=active]:text-orange-500"
           >
             Reviews
           </TabsTrigger>
@@ -144,14 +181,18 @@ export default function UserProfile() {
         </TabsContent>
         <TabsContent value="Review" className="mt-6">
           {data.userBookReviews?.length === 0 ? (
-            <div className="py-20 text-center bg-gray-900 rounded-[32px] border-2 border-dashed border-gray-800">
-              <p className="text-gray-500 font-medium">{data.name} hasn&apos;t reviewed any books yet.</p>
+            <div className="premium-empty">
+              <p className="font-medium text-zinc-500">{data.name} hasn&apos;t reviewed any books yet.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4">
               {data.userBookReviews?.map((review) => (
-                <div key={review.id} className="bg-gray-900 border border-gray-800 rounded-[32px] p-6 flex gap-6 hover:border-gray-700 transition-all group">
-                  <div className="relative w-16 h-24 shrink-0 overflow-hidden rounded-xl border border-gray-800 shadow-lg group-hover:scale-105 transition-transform">
+                <Link
+                  key={review.id}
+                  href={`/book-detail/${review.book.id}`}
+                  className="premium-panel group flex gap-6 p-6 transition-all hover:-translate-y-1 hover:border-[#ff9a3d]/45"
+                >
+                  <div className="relative h-24 w-16 shrink-0 overflow-hidden rounded-xl border border-white/10 shadow-lg transition-transform group-hover:scale-105">
                     <Image
                       src={review.book.image}
                       alt={review.book.name}
@@ -179,7 +220,7 @@ export default function UserProfile() {
                       &quot;{review.comment}&quot;
                     </p>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}

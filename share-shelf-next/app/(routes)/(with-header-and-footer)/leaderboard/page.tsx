@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { ComponentType } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -326,26 +327,26 @@ export default function LeaderboardPage() {
   const podiumUsers = rankedUsers.slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-[#f7f6f2] pt-24 pb-16 text-stone-950">
+    <div className="min-h-screen bg-black pt-28 pb-16 text-white">
       <div className="container mx-auto px-4">
         <section className="mb-8 grid gap-5 lg:grid-cols-[1fr_320px]">
-          <div className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm md:p-7">
+          <div className="app-card p-5 md:p-7">
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <div>
-                <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-sm font-medium text-amber-800">
+                <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#ff7a00]/25 bg-[#ff7a00]/10 px-3 py-1 text-sm font-medium text-[#ffb36d]">
                   <Sparkles className="h-4 w-4" />
                   Live community standings
                 </div>
                 <h1 className="text-3xl font-semibold leading-tight md:text-4xl">
                   Leaderboard
                 </h1>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-stone-600 md:text-base">
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400 md:text-base">
                   See who is exchanging, reviewing, and keeping the Share Shelf
                   community active.
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">
+              <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm font-medium text-emerald-300">
                 <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
                 Real-time updates
               </div>
@@ -365,32 +366,32 @@ export default function LeaderboardPage() {
                       setPage(1);
                     }}
                     className={cn(
-                      "group rounded-lg border bg-white p-4 text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-md",
+                      "group rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#ff7a00]/40 hover:bg-white/[0.06]",
                       isActive &&
-                        "border-stone-900 bg-stone-950 text-white shadow-md hover:border-stone-900",
+                        "border-[#ff7a00]/70 bg-[#ff7a00] text-black shadow-[0_16px_40px_rgba(255,122,0,0.2)] hover:translate-y-0 hover:border-[#ff7a00]/70 hover:bg-[#ff7a00] hover:text-black",
                     )}
                   >
                     <div className="mb-4 flex items-center justify-between gap-3">
                       <span
                         className={cn(
-                          "inline-flex h-10 w-10 items-center justify-center rounded-md bg-stone-100 text-stone-700",
-                          isActive && "bg-white/10 text-white",
+                          "inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-zinc-300",
+                          isActive && "bg-black/15 text-black",
                         )}
                       >
                         <Icon className="h-5 w-5" />
                       </span>
                       <ArrowUpRight
                         className={cn(
-                          "h-4 w-4 text-stone-400 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5",
-                          isActive && "text-white/70",
+                          "h-4 w-4 text-zinc-500 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5",
+                          isActive && "text-black/70",
                         )}
                       />
                     </div>
                     <span className="block text-sm font-semibold">{item.label}</span>
                     <span
                       className={cn(
-                        "mt-1 block text-xs text-stone-500",
-                        isActive && "text-white/65",
+                        "mt-1 block text-xs text-zinc-500",
+                        isActive && "text-black/65",
                       )}
                     >
                       Ranked by {item.unit}
@@ -401,50 +402,50 @@ export default function LeaderboardPage() {
             </div>
           </div>
 
-          <aside className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
+          <aside className="app-card p-5">
             <div className="mb-4 flex items-center gap-3">
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-amber-100 text-amber-700">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#ff7a00]/10 text-[#ff7a00]">
                 <ShieldCheck className="h-5 w-5" />
               </span>
               <div>
-                <p className="text-sm font-semibold text-stone-900">
+                <p className="text-sm font-semibold text-white">
                   Your standing
                 </p>
-                <p className="text-xs text-stone-500">Highlighted in every list</p>
+                <p className="text-xs text-zinc-500">Highlighted in every list</p>
               </div>
             </div>
 
             {currentUser ? (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+              <div className="rounded-2xl border border-[#ff7a00]/25 bg-[#ff7a00]/10 p-4">
                 <div className="flex items-center gap-3">
                   <Avatar user={currentUser} size="lg" />
                   <div className="min-w-0">
                     <p className="truncate font-semibold">{currentUser.username}</p>
-                    <p className="text-sm text-stone-600">Rank #{currentUser.rank}</p>
+                    <p className="text-sm text-zinc-400">Rank #{currentUser.rank}</p>
                   </div>
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
                   <div>
-                    <p className="text-stone-500">Score</p>
+                    <p className="text-zinc-500">Score</p>
                     <p className="text-xl font-semibold">
                       {currentUser.score.toLocaleString()}
                     </p>
                   </div>
                   <div>
-                    <p className="text-stone-500">Badge</p>
+                    <p className="text-zinc-500">Badge</p>
                     <p className="font-semibold">{currentUser.badge}</p>
                   </div>
                 </div>
               </div>
             ) : (
-              <p className="rounded-lg border border-stone-200 bg-stone-50 p-4 text-sm text-stone-600">
+              <p className="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-sm text-zinc-400">
                 Sign in to see your standing.
               </p>
             )}
           </aside>
         </section>
 
-        <section className="mb-8 rounded-lg border border-stone-200 bg-white p-4 shadow-sm md:p-5">
+        <section className="app-card mb-8 p-4 md:p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-wrap gap-2">
               {timeRanges.map((item) => (
@@ -456,9 +457,9 @@ export default function LeaderboardPage() {
                     setPage(1);
                   }}
                   className={cn(
-                    "rounded-md border border-stone-200 px-4 py-2 text-sm font-medium text-stone-600 transition-all hover:border-stone-300 hover:bg-stone-50",
+                    "rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-zinc-400 transition-all hover:border-[#ff7a00]/40 hover:bg-white/[0.06] hover:text-white",
                     timeRange === item.key &&
-                      "border-stone-900 bg-stone-950 text-white hover:bg-stone-950",
+                      "border-[#ff7a00] bg-[#ff7a00] text-black hover:bg-[#ff922f]",
                   )}
                 >
                   {item.label}
@@ -475,7 +476,7 @@ export default function LeaderboardPage() {
                   setPage(1);
                 }}
                 placeholder="Search users by username"
-                className="h-11 rounded-md border-stone-200 bg-stone-50 pl-10 text-sm focus-visible:ring-stone-200"
+                className="h-11 pl-10 text-sm"
               />
             </div>
           </div>
@@ -498,17 +499,17 @@ export default function LeaderboardPage() {
               ))}
             </section>
 
-            <section className="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm">
-              <div className="flex flex-col gap-3 border-b border-stone-200 p-4 md:flex-row md:items-center md:justify-between">
+            <section className="overflow-hidden rounded-2xl border border-white/10 bg-[#111114] shadow-sm">
+              <div className="flex flex-col gap-3 border-b border-white/10 p-4 md:flex-row md:items-center md:justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-stone-100 text-stone-700">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-[#ff7a00]">
                     <SelectedIcon className="h-5 w-5" />
                   </span>
                   <div>
-                    <h2 className="font-semibold text-stone-950">
+                    <h2 className="font-semibold text-white">
                       {selectedCategory.label}
                     </h2>
-                    <p className="text-sm text-stone-500">
+                    <p className="text-sm text-zinc-500">
                       {filteredUsers.length} users in this view
                     </p>
                   </div>
@@ -516,7 +517,7 @@ export default function LeaderboardPage() {
               </div>
 
               {visibleUsers.length > 0 ? (
-                <div className="divide-y divide-stone-100">
+                <div className="divide-y divide-white/10">
                   {visibleUsers.map((user) => (
                     <LeaderboardRow
                       key={user.id}
@@ -533,7 +534,7 @@ export default function LeaderboardPage() {
 
             {visibleUsers.length > 0 && (
               <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm text-stone-500">
+                <p className="text-sm text-zinc-500">
                   Page {page} of {totalPages}
                 </p>
                 <div className="flex items-center gap-2">
@@ -577,23 +578,23 @@ function PodiumUser({
   position: number;
 }) {
   const podiumStyles = [
-    "md:order-2 border-amber-300 bg-amber-50 pt-8 md:min-h-[250px]",
-    "md:order-1 border-stone-300 bg-white pt-5 md:min-h-[220px]",
-    "md:order-3 border-orange-200 bg-orange-50 pt-5 md:min-h-[205px]",
+    "md:order-2 border-[#ff7a00]/45 bg-[#ff7a00]/12 pt-8 md:min-h-[250px]",
+    "md:order-1 border-white/10 bg-[#111114] pt-5 md:min-h-[220px]",
+    "md:order-3 border-orange-500/25 bg-orange-500/10 pt-5 md:min-h-[205px]",
   ];
 
   return (
     <article
       className={cn(
-        "relative rounded-lg border p-5 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md",
+        "relative rounded-2xl border p-5 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#ff7a00]/50",
         podiumStyles[position],
       )}
     >
-      <div className="absolute left-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-sm font-bold text-stone-800 shadow-sm">
+      <div className="absolute left-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full bg-black text-sm font-bold text-white shadow-sm">
         #{user.rank}
       </div>
       {position === 0 && (
-        <div className="mx-auto mb-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-amber-200 text-amber-800">
+        <div className="mx-auto mb-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#ff7a00] text-black">
           <Crown className="h-6 w-6" />
         </div>
       )}
@@ -601,8 +602,15 @@ function PodiumUser({
         <Avatar user={user} size={position === 0 ? "xl" : "lg"} />
       </div>
       <h3 className="mt-4 truncate text-lg font-semibold">{user.username}</h3>
-      <p className="mt-1 text-sm text-stone-500">{user.badge}</p>
+      <p className="mt-1 text-sm text-zinc-500">{user.badge}</p>
       <p className="mt-4 text-3xl font-semibold">{user.score.toLocaleString()}</p>
+      <Link
+        href={`/user/${user.id}`}
+        className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-zinc-300 transition-colors hover:border-[#ff7a00]/50 hover:text-[#ffb36d]"
+      >
+        Visit profile
+        <ArrowUpRight className="h-3.5 w-3.5" />
+      </Link>
     </article>
   );
 }
@@ -619,15 +627,15 @@ function LeaderboardRow({
   return (
     <div
       className={cn(
-        "grid gap-4 p-4 transition-colors duration-300 hover:bg-stone-50 md:grid-cols-[72px_1fr_170px_160px]",
-        isCurrentUser && "bg-amber-50 hover:bg-amber-50",
+        "grid gap-4 p-4 transition-colors duration-300 hover:bg-white/[0.04] md:grid-cols-[72px_1fr_150px_150px_150px]",
+        isCurrentUser && "bg-[#ff7a00]/10 hover:bg-[#ff7a00]/10",
       )}
     >
       <div className="flex items-center">
         <span
           className={cn(
-            "inline-flex h-10 w-10 items-center justify-center rounded-full border border-stone-200 bg-white font-semibold text-stone-700",
-            user.rank <= 3 && "border-amber-200 bg-amber-100 text-amber-800",
+            "inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] font-semibold text-zinc-300",
+            user.rank <= 3 && "border-[#ff7a00]/40 bg-[#ff7a00]/15 text-[#ffb36d]",
           )}
         >
           {user.rank}
@@ -638,14 +646,14 @@ function LeaderboardRow({
         <Avatar user={user} size="md" />
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="truncate font-semibold text-stone-950">{user.username}</p>
+            <p className="truncate font-semibold text-white">{user.username}</p>
             {isCurrentUser && (
-              <span className="rounded-full bg-amber-200 px-2 py-0.5 text-xs font-semibold text-amber-900">
+              <span className="rounded-full bg-[#ff7a00] px-2 py-0.5 text-xs font-semibold text-black">
                 You
               </span>
             )}
           </div>
-          <p className="mt-1 text-sm text-stone-500">{user.badge}</p>
+          <p className="mt-1 text-sm text-zinc-500">{user.badge}</p>
         </div>
       </div>
 
@@ -656,12 +664,22 @@ function LeaderboardRow({
 
       <div className="flex items-center justify-between gap-3 md:justify-end">
         <div className="text-left md:text-right">
-          <p className="text-lg font-semibold text-stone-950">
+          <p className="text-lg font-semibold text-white">
             {user.score.toLocaleString()}
           </p>
-          <p className="text-xs uppercase tracking-wide text-stone-500">{unit}</p>
+          <p className="text-xs uppercase tracking-wide text-zinc-500">{unit}</p>
         </div>
-        <Award className="h-5 w-5 text-stone-400" />
+        <Award className="h-5 w-5 text-zinc-500" />
+      </div>
+
+      <div className="flex items-center md:justify-end">
+        <Link
+          href={`/user/${user.id}`}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-sm font-semibold text-zinc-300 transition-colors hover:border-[#ff7a00]/50 hover:text-[#ffb36d]"
+        >
+          Visit profile
+          <ArrowUpRight className="h-4 w-4" />
+        </Link>
       </div>
     </div>
   );
@@ -685,7 +703,7 @@ function Avatar({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-full border-2 border-white bg-stone-200 shadow-sm",
+        "relative overflow-hidden rounded-full border-2 border-white/15 bg-zinc-800 shadow-sm",
         dimensions[size],
       )}
     >
@@ -708,25 +726,25 @@ function LoadingState() {
         {[0, 1, 2].map((item) => (
           <div
             key={item}
-            className="h-56 animate-pulse rounded-lg border border-stone-200 bg-white p-5 shadow-sm"
+            className="h-56 animate-pulse rounded-2xl border border-white/10 bg-white/[0.04] p-5 shadow-sm"
           >
-            <div className="mx-auto h-16 w-16 rounded-full bg-stone-200" />
-            <div className="mx-auto mt-5 h-4 w-32 rounded bg-stone-200" />
-            <div className="mx-auto mt-3 h-3 w-24 rounded bg-stone-100" />
-            <div className="mx-auto mt-6 h-8 w-20 rounded bg-stone-200" />
+            <div className="mx-auto h-16 w-16 rounded-full bg-white/10" />
+            <div className="mx-auto mt-5 h-4 w-32 rounded bg-white/10" />
+            <div className="mx-auto mt-3 h-3 w-24 rounded bg-white/5" />
+            <div className="mx-auto mt-6 h-8 w-20 rounded bg-white/10" />
           </div>
         ))}
       </div>
-      <div className="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#111114] shadow-sm">
         {[0, 1, 2, 3, 4, 5].map((item) => (
           <div key={item} className="flex animate-pulse items-center gap-4 p-4">
-            <div className="h-10 w-10 rounded-full bg-stone-200" />
-            <div className="h-12 w-12 rounded-full bg-stone-200" />
+            <div className="h-10 w-10 rounded-full bg-white/10" />
+            <div className="h-12 w-12 rounded-full bg-white/10" />
             <div className="flex-1">
-              <div className="h-4 w-36 rounded bg-stone-200" />
-              <div className="mt-2 h-3 w-24 rounded bg-stone-100" />
+              <div className="h-4 w-36 rounded bg-white/10" />
+              <div className="mt-2 h-3 w-24 rounded bg-white/5" />
             </div>
-            <div className="h-6 w-20 rounded bg-stone-200" />
+            <div className="h-6 w-20 rounded bg-white/10" />
           </div>
         ))}
       </div>
@@ -737,11 +755,11 @@ function LoadingState() {
 function EmptyState({ search }: { search: string }) {
   return (
     <div className="px-6 py-14 text-center">
-      <div className="mx-auto mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-stone-100 text-stone-500">
+      <div className="mx-auto mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-zinc-500">
         <Search className="h-6 w-6" />
       </div>
       <h3 className="text-lg font-semibold">No users found</h3>
-      <p className="mx-auto mt-2 max-w-md text-sm text-stone-500">
+      <p className="mx-auto mt-2 max-w-md text-sm text-zinc-500">
         No leaderboard users match &quot;{search}&quot;. Try a different
         username.
       </p>

@@ -1,10 +1,10 @@
 "use client";
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useVerifyPayment } from "./action";
 import { Button } from "@/components/ui/button";
 
-export default function PaymentFailurePage() {
+function PaymentFailureContent() {
   const searchParams = useSearchParams();
   const verifyPayment = useVerifyPayment();
 
@@ -42,5 +42,13 @@ export default function PaymentFailurePage() {
         </Button>
       </div>
     </div>
+  );
+}
+
+export default function PaymentFailurePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-black" />}>
+      <PaymentFailureContent />
+    </Suspense>
   );
 }

@@ -54,13 +54,13 @@ export default function RequestBookModal({
         {/* Decorative top accent */}
         <div className="absolute -top-px left-8 right-8 h-px bg-gradient-to-r from-transparent via-[#FF8D28] to-transparent" />
 
-        <div className="relative bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#111114] shadow-2xl shadow-black/60">
           {/* Header */}
-          <div className="px-6 pt-6 pb-5 border-b border-gray-100">
+          <div className="border-b border-white/10 px-6 pt-6 pb-5">
             <div className="flex items-start justify-between gap-4">
               <div>
                 {/* Icon */}
-                <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center mb-3">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#ff7a00]/10">
                   <svg
                     className="w-5 h-5 text-[#FF8D28]"
                     fill="none"
@@ -75,10 +75,10 @@ export default function RequestBookModal({
                     />
                   </svg>
                 </div>
-                <h2 className="text-lg font-semibold text-gray-900 tracking-tight">
+                <h2 className="text-lg font-semibold tracking-tight text-white">
                   Request a Book
                 </h2>
-                <p className="text-sm text-gray-500 mt-0.5">
+                <p className="mt-0.5 text-sm text-zinc-400">
                   Can&apos;t find it? Ask the admin to add it.
                 </p>
               </div>
@@ -86,7 +86,7 @@ export default function RequestBookModal({
               {/* Close button */}
               <button
                 onClick={onClose}
-                className="mt-0.5 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                className="mt-0.5 rounded-lg p-1.5 text-zinc-500 transition-colors hover:bg-white/10 hover:text-white"
               >
                 <svg
                   className="w-4 h-4"
@@ -111,7 +111,7 @@ export default function RequestBookModal({
             <div className="space-y-1.5">
               <Label
                 htmlFor="req-title"
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-medium text-zinc-300"
               >
                 Book Title
                 <span className="text-[#FF8D28] ml-0.5">*</span>
@@ -122,7 +122,7 @@ export default function RequestBookModal({
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. The Great Gatsby"
                 required
-                className="h-10 border-gray-200 focus:border-[#FF8D28] focus:ring-[#FF8D28]/20 placeholder:text-gray-300 text-sm text-black"
+                className="h-10 text-sm"
               />
             </div>
 
@@ -130,7 +130,7 @@ export default function RequestBookModal({
             <div className="space-y-1.5">
               <Label
                 htmlFor="req-author"
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-medium text-zinc-300"
               >
                 Author
                 <span className="text-[#FF8D28] ml-0.5">*</span>
@@ -141,7 +141,7 @@ export default function RequestBookModal({
                 onChange={(e) => setAuthor(e.target.value)}
                 placeholder="e.g. F. Scott Fitzgerald"
                 required
-                className="h-10 border-gray-200 focus:border-[#FF8D28] focus:ring-[#FF8D28]/20 placeholder:text-gray-300 text-sm text-black"
+                className="h-10 text-sm"
               />
             </div>
 
@@ -150,17 +150,17 @@ export default function RequestBookModal({
               <div className="flex items-center justify-between">
                 <Label
                   htmlFor="req-desc"
-                  className="text-sm font-medium text-gray-700"
+                  className="text-sm font-medium text-zinc-300"
                 >
                   Description
                 </Label>
-                <span className="text-xs text-gray-400">Optional</span>
+                <span className="text-xs text-zinc-500">Optional</span>
               </div>
               <textarea
                 id="req-desc"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-black placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#FF8D28]/20 focus:border-[#FF8D28] min-h-[88px] resize-none transition-colors"
+                className="min-h-[88px] w-full resize-none rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder:text-zinc-500 transition-colors focus:border-[#ff7a00]/60 focus:outline-none focus:ring-4 focus:ring-[#ff7a00]/15"
                 placeholder="Any additional details about the book…"
               />
             </div>
@@ -170,14 +170,14 @@ export default function RequestBookModal({
               <Button
                 type="button"
                 variant="outline"
-                className="flex-1 h-10 text-sm font-medium border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-800 rounded-lg"
+                className="h-10 flex-1 rounded-xl text-sm font-medium"
                 onClick={onClose}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                className="flex-1 h-10 text-sm font-medium bg-[#FF8D28] hover:bg-[#f07d18] text-white rounded-lg shadow-sm shadow-orange-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="h-10 flex-1 rounded-xl text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={isPending || !title || !author}
               >
                 {isPending ? (

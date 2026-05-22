@@ -35,10 +35,23 @@ import {
   Lock,
   Pen,
   MapPin,
+  MessageCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 
 const ratingLabels = ["", "Poor", "Fair", "Good", "Great", "Excellent"];
+
+const getApiErrorMessage = (error: unknown, fallback: string) => {
+  if (typeof error !== "object" || error === null || !("response" in error)) {
+    return fallback;
+  }
+
+  const response = (error as { response?: { data?: { message?: unknown } } })
+    .response;
+  return typeof response?.data?.message === "string"
+    ? response.data.message
+    : fallback;
+};
 
 /* ─────────────────────────────── page ────────────────────────────────── */
 
@@ -80,7 +93,7 @@ const BookDetail = () => {
     toggleStatus.mutate(
       { bookId: id, status },
       {
-        onSuccess: (data: any) => {
+        onSuccess: (data) => {
           const statusLabels: Record<string, string> = {
             READING: "Currently Reading",
             PLAN_TO_READ: "Plan to Read",
@@ -148,11 +161,11 @@ const BookDetail = () => {
       {isLoading ? (
         <>loading...</>
       ) : (
-        <div className="pt-[138px] container mx-auto grid grid-cols-12 gap-4">
+        <div className="container mx-auto grid grid-cols-1 gap-8 pt-36 pb-20 lg:grid-cols-12">
           {/* Book image col */}
-          <div className="col-span-4">
-            <div className="pt-[100%] relative bg-[#F7F8EE] hover:bg-gray-200">
-              <figure className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 cursor-pointer max-h-[420px] max-w-[90%] shadow-[10px_10px_20px_5px_rgba(0,0,0,0.12)]">
+          <div className="lg:col-span-4">
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#111114] pt-[100%]">
+              <figure className="absolute left-1/2 top-1/2 max-h-[420px] max-w-[82%] -translate-x-1/2 -translate-y-1/2 cursor-pointer shadow-[16px_22px_40px_rgba(0,0,0,0.5)]">
                 <Image
                   alt={data?.name ?? ""}
                   src={data?.image ?? ""}
@@ -165,13 +178,13 @@ const BookDetail = () => {
           </div>
 
           {/* Book info col */}
-          <div className="col-start-5 col-span-4">
+          <div className="lg:col-span-5">
             <h1 className="heading-3 mb-2">{data?.name}</h1>
-            <p className="text-sm">
+            <p className="text-sm text-zinc-300">
               <span className="font-semibold">By </span>
               {data?.author}
             </p>
-            <p className="my-[18px] text-sm text-gray-400">
+            <p className="my-[18px] text-sm text-zinc-500">
               {sellOffers.length > 0 && `${sellOffers.length} available to buy`}
               {sellOffers.length > 0 && tradeOffers.length > 0 && " · "}
               {tradeOffers.length > 0 && `${tradeOffers.length} open for trade`}
@@ -180,9 +193,9 @@ const BookDetail = () => {
                 "No offers yet"}
             </p>
             {!hasActiveOffer && (
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-3 sm:flex-row">
                 <Button
-                  className="bg-[#FF8D28] hover:bg-[#e67d1f] h-[51px] w-[133px] rounded-2xl"
+                  className="h-[51px] w-full rounded-2xl sm:w-[150px]"
                   onClick={() => {
                     setOfferType("SELL");
                     setShowSellForm(true);
@@ -191,7 +204,7 @@ const BookDetail = () => {
                   Sell This Book
                 </Button>
                 <button
-                  className="border border-[#FF8D28] text-[#FF8D28] h-[51px] w-[133px] rounded-2xl hover:bg-[#FF8D28] hover:text-white transition-colors"
+                  className="h-[51px] w-full rounded-2xl border border-[#ff7a00] text-[#ff7a00] transition-colors hover:bg-[#ff7a00] hover:text-black sm:w-[150px]"
                   onClick={() => {
                     setOfferType("TRADE");
                     setShowSellForm(true);
@@ -205,7 +218,7 @@ const BookDetail = () => {
             {showSellForm && (
               <form
                 onSubmit={handleCreateOffer}
-                className="mt-6 p-4 border border-[#dbdcd2] rounded-xl space-y-3"
+                className="app-card mt-6 space-y-3 p-4"
               >
                 <h3 className="font-semibold text-sm">
                   {offerType === "SELL" ? "Sell" : "Trade"} This Book
@@ -273,8 +286,8 @@ const BookDetail = () => {
           </div>
 
           {/* Status icons col */}
-          <div className="col-start-11 col-span-2">
-            <div className="flex items-center justify-center gap-4 rounded-2xl backdrop-blur-sm">
+          <div className="lg:col-span-3">
+            <div className="flex items-center justify-start gap-4 rounded-2xl backdrop-blur-sm lg:justify-center">
               {[
                 {
                   status: "PLAN_TO_READ" as const,
@@ -306,10 +319,10 @@ const BookDetail = () => {
                   title={title}
                 >
                   <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${active ? "bg-white border-white" : "bg-transparent border-white/80"}`}
+                    className={`flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all duration-300 ${active ? "border-[#ff7a00] bg-[#ff7a00]" : "border-white/20 bg-white/[0.04]"}`}
                   >
                     <Icon
-                      className={`w-6 h-6 transition-colors duration-300 ${active ? "text-slate-700" : "text-white"}`}
+                      className={`h-6 w-6 transition-colors duration-300 ${active ? "text-black" : "text-white"}`}
                       strokeWidth={2}
                     />
                   </div>
@@ -319,7 +332,7 @@ const BookDetail = () => {
           </div>
 
           {/* Tabs */}
-          <div className="col-span-12">
+          <div className="lg:col-span-12">
             <Tabs defaultValue="Description" className="my-10">
               <TabsList>
                 <TabsTrigger value="Description" className="body-lg">
@@ -336,7 +349,9 @@ const BookDetail = () => {
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="Description">{data?.description}</TabsContent>
+              <TabsContent value="Description" className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 leading-7 text-zinc-300">
+                {data?.description}
+              </TabsContent>
 
               <TabsContent value="Sellers">
                 {sellOffers.length === 0 ? (
@@ -348,10 +363,10 @@ const BookDetail = () => {
                     {sellOffers.map((offer: BookOffer) => (
                       <div
                         key={offer.id}
-                        className="flex items-center justify-between border border-[#dbdcd2] rounded-xl px-4 py-3"
+                        className="flex flex-col gap-4 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-[#F7F8EE] flex items-center justify-center text-sm font-semibold">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-sm font-semibold">
                             {offer.user.avatar ? (
                               <Image
                                 src={offer.user.avatar}
@@ -415,10 +430,10 @@ const BookDetail = () => {
                     {tradeOffers.map((offer: BookOffer) => (
                       <div
                         key={offer.id}
-                        className="flex items-center justify-between border border-[#dbdcd2] rounded-xl px-4 py-3"
+                        className="flex flex-col gap-4 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-[#F7F8EE] flex items-center justify-center text-sm font-semibold">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-sm font-semibold">
                             {offer.user.avatar ? (
                               <Image
                                 src={offer.user.avatar}
@@ -441,9 +456,27 @@ const BookDetail = () => {
                             </p>
                           </div>
                         </div>
-                        <span className="font-semibold text-[#FF8D28]">
-                          Rs. 0
-                        </span>
+                        <div className="flex items-center gap-3">
+                          <span className="font-semibold text-[#FF8D28]">
+                            Rs. 0
+                          </span>
+                          {offer.user.id !== profile?.id && (
+                            <Button
+                              size="sm"
+                              className="h-8 rounded-lg bg-[#FF8D28] px-4 hover:bg-[#e67d1f]"
+                              onClick={() => {
+                                if (!profile) {
+                                  toast.error("Please log in to message traders.");
+                                  return;
+                                }
+                                router.push(`/chat?user=${offer.user.id}`);
+                              }}
+                            >
+                              <MessageCircle className="mr-2 h-4 w-4" />
+                              Chat
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -452,33 +485,33 @@ const BookDetail = () => {
 
               {/* ── REVIEW TAB ── */}
               <TabsContent value="Review">
-                <div className="py-8 space-y-8">
+                <div className="space-y-8 py-8">
 
                   {/* ── Rating summary hero ── */}
                   {reviews.length > 0 && (
-                    <div className="rounded-2xl border border-[#ebebdf] overflow-hidden">
-                      <div className="grid grid-cols-[auto_1fr]">
+                    <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#111114] shadow-[0_18px_60px_rgba(0,0,0,0.35)]">
+                      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr]">
                         {/* Left: big score */}
-                        <div className="flex flex-col items-center justify-center gap-2 px-10 py-8 bg-gradient-to-br from-[#FF8D28] to-[#e67d1f] text-white">
-                          <span className="text-6xl font-black leading-none tracking-tighter">
+                        <div className="flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-[#ff7a00] via-[#ff8d28] to-[#ffb36d] px-10 py-9 text-black">
+                          <span className="text-6xl font-black leading-none">
                             {avgRating.toFixed(1)}
                           </span>
                           <div className="flex gap-0.5">
                             {[1, 2, 3, 4, 5].map((s) => (
                               <Star
                                 key={s}
-                                className={`w-3.5 h-3.5 ${s <= Math.round(avgRating) ? "fill-white text-white" : "fill-white/30 text-white/30"}`}
+                                className={`h-4 w-4 ${s <= Math.round(avgRating) ? "fill-black text-black" : "fill-black/25 text-black/25"}`}
                               />
                             ))}
                           </div>
-                          <span className="text-[11px] font-medium text-white/80 mt-0.5">
+                          <span className="mt-0.5 text-xs font-bold uppercase tracking-[0.18em] text-black/70">
                             {reviews.length} review
                             {reviews.length !== 1 ? "s" : ""}
                           </span>
                         </div>
 
                         {/* Right: bar chart */}
-                        <div className="flex flex-col justify-center gap-2.5 px-8 py-6 bg-[#fafaf7]">
+                        <div className="flex flex-col justify-center gap-3 px-5 py-6 sm:px-8">
                           {[5, 4, 3, 2, 1].map((s) => {
                             const count = reviews.filter(
                               (r) => r.rating === s,
@@ -489,18 +522,18 @@ const BookDetail = () => {
                             return (
                               <div key={s} className="flex items-center gap-3">
                                 <div className="flex items-center gap-1 w-8 shrink-0">
-                                  <span className="text-xs text-gray-500 font-medium">
+                                  <span className="text-xs font-medium text-zinc-400">
                                     {s}
                                   </span>
                                   <Star className="w-3 h-3 fill-[#FF8D28] text-[#FF8D28]" />
                                 </div>
-                                <div className="flex-1 h-2 bg-[#ebebdf] rounded-full overflow-hidden">
+                                <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/10">
                                   <div
-                                    className="h-full bg-gradient-to-r from-[#FF8D28] to-[#e67d1f] rounded-full transition-all duration-700"
+                                    className="h-full rounded-full bg-gradient-to-r from-[#ff7a00] to-[#ffb36d] transition-all duration-700"
                                     style={{ width: `${pct}%` }}
                                   />
                                 </div>
-                                <span className="text-xs text-gray-400 w-5 text-right shrink-0">
+                                <span className="w-5 shrink-0 text-right text-xs text-zinc-500">
                                   {count}
                                 </span>
                               </div>
@@ -513,36 +546,36 @@ const BookDetail = () => {
 
                   {/* ── Write a review / gated states ── */}
                   {!profile ? (
-                    <div className="flex items-center gap-4 px-6 py-5 rounded-2xl border border-dashed border-gray-200 bg-gray-50">
-                      <div className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center shrink-0 shadow-sm">
-                        <Lock className="w-4 h-4 text-gray-400" />
+                    <div className="flex items-center gap-4 rounded-2xl border border-dashed border-white/15 bg-white/[0.04] px-6 py-5">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] shadow-sm">
+                        <Lock className="h-4 w-4 text-zinc-500" />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-gray-700">
+                        <p className="text-sm font-semibold text-white">
                           Log in to leave a review
                         </p>
-                        <p className="text-xs text-gray-400 mt-0.5">
+                        <p className="mt-0.5 text-xs text-zinc-500">
                           Share your thoughts with fellow readers.
                         </p>
                       </div>
                     </div>
                   ) : alreadyReviewed ? (
-                    <div className="flex items-center gap-3 px-5 py-4 rounded-xl bg-emerald-50 border border-emerald-200">
+                    <div className="flex items-center gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-5 py-4">
                       <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <p className="text-sm font-medium text-emerald-700">
+                      <p className="text-sm font-medium text-emerald-300">
                         You&apos;ve already reviewed this book — thanks!
                       </p>
                     </div>
                   ) : !isCheckActive ? (
-                    <div className="flex items-center gap-4 px-6 py-5 rounded-2xl border border-dashed border-[#FF8D28]/25 bg-[#fff9f4]">
-                      <div className="w-10 h-10 rounded-full bg-[#FF8D28]/10 flex items-center justify-center shrink-0">
-                        <BookOpen className="w-4 h-4 text-[#FF8D28]" />
+                    <div className="flex items-center gap-4 rounded-2xl border border-dashed border-[#ff7a00]/30 bg-[#ff7a00]/10 px-6 py-5">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#ff7a00]/15">
+                        <BookOpen className="h-4 w-4 text-[#ffb36d]" />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-gray-700">
+                        <p className="text-sm font-semibold text-white">
                           Finish the book first
                         </p>
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        <p className="mt-0.5 text-xs text-zinc-400">
                           Mark as{" "}
                           <span className="font-semibold text-[#FF8D28]">
                             Read
@@ -553,13 +586,13 @@ const BookDetail = () => {
                     </div>
                   ) : (
                     /* ── Actual review form ── */
-                    <div className="rounded-2xl border border-[#ebebdf] overflow-hidden shadow-sm">
+                    <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#111114] shadow-[0_18px_60px_rgba(0,0,0,0.3)]">
                       {/* Header bar */}
-                      <div className="flex items-center gap-2.5 px-6 py-4 border-b border-[#ebebdf] bg-[#fafaf7]">
-                        <div className="w-8 h-8 rounded-full bg-[#FF8D28]/10 flex items-center justify-center">
-                          <Pen className="w-3.5 h-3.5 text-[#FF8D28]" />
+                      <div className="flex items-center gap-2.5 border-b border-white/10 bg-white/[0.03] px-6 py-4">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#ff7a00]/10">
+                          <Pen className="h-3.5 w-3.5 text-[#ff7a00]" />
                         </div>
-                        <p className="text-sm font-semibold text-gray-800">
+                        <p className="text-sm font-semibold text-white">
                           Write a Review
                         </p>
                       </div>
@@ -567,7 +600,7 @@ const BookDetail = () => {
                       <div className="p-6 space-y-5">
                         {/* Star picker */}
                         <div>
-                          <p className="text-xs font-medium text-gray-500 uppercase tracking-widest mb-3">
+                          <p className="mb-3 text-xs font-medium uppercase tracking-widest text-zinc-500">
                             Your Rating
                           </p>
                           <div className="flex items-center gap-3">
@@ -583,7 +616,7 @@ const BookDetail = () => {
                                   <Star
                                     className={`w-8 h-8 transition-all duration-150 ${s <= (hoveredRating || rating)
                                       ? "fill-[#FF8D28] text-[#FF8D28]"
-                                      : "text-gray-200 fill-gray-100"
+                                      : "fill-zinc-800 text-zinc-700"
                                       }`}
                                   />
                                 </button>
@@ -599,17 +632,17 @@ const BookDetail = () => {
 
                         {/* Textarea */}
                         <div>
-                          <p className="text-xs font-medium text-gray-500 uppercase tracking-widest mb-3">
+                          <p className="mb-3 text-xs font-medium uppercase tracking-widest text-zinc-500">
                             Your Thoughts
                           </p>
                           <div className="relative">
                             <textarea
-                              className="w-full bg-[#fafaf7] border border-[#ebebdf] rounded-xl px-4 pt-3.5 pb-9 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#FF8D28]/20 focus:border-[#FF8D28]/40 min-h-[120px] resize-none leading-relaxed placeholder:text-gray-300 transition-colors"
+                              className="min-h-[120px] w-full resize-none rounded-xl border border-white/10 bg-white/[0.04] px-4 pt-3.5 pb-9 text-sm leading-relaxed text-white placeholder:text-zinc-500 transition-colors focus:border-[#ff7a00]/50 focus:outline-none focus:ring-4 focus:ring-[#ff7a00]/15"
                               placeholder="What did you think? Would you recommend it?"
                               value={reviewComment}
                               onChange={(e) => setReviewComment(e.target.value)}
                             />
-                            <span className="absolute bottom-3 right-4 text-[11px] text-gray-300 pointer-events-none select-none">
+                            <span className="pointer-events-none absolute right-4 bottom-3 select-none text-[11px] text-zinc-600">
                               {reviewComment.length} chars
                             </span>
                           </div>
@@ -633,10 +666,12 @@ const BookDetail = () => {
                                   setRating(0);
                                   setReviewComment("");
                                 },
-                                onError: (error: any) => {
+                                onError: (error) => {
                                   toast.error(
-                                    error?.response?.data?.message ||
-                                    "Failed to submit review",
+                                    getApiErrorMessage(
+                                      error,
+                                      "Failed to submit review",
+                                    ),
                                   );
                                 },
                               },
@@ -655,10 +690,10 @@ const BookDetail = () => {
                   {reviews.length > 0 && (
                     <div>
                       <div className="flex items-center justify-between mb-5">
-                        <h3 className="text-base font-bold text-gray-900">
+                        <h3 className="text-base font-bold text-white">
                           Reader Reviews
                         </h3>
-                        <span className="text-xs text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full font-medium">
+                        <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs font-medium text-zinc-400">
                           {reviews.length} review
                           {reviews.length !== 1 ? "s" : ""}
                         </span>
@@ -680,14 +715,14 @@ const BookDetail = () => {
 
                   {/* Empty state */}
                   {reviews.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-14 text-center">
-                      <div className="w-14 h-14 rounded-2xl bg-[#F7F8EE] flex items-center justify-center mb-4 shadow-inner">
-                        <Star className="w-6 h-6 text-gray-300" />
+                    <div className="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] py-14 text-center">
+                      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#ff7a00]/10 shadow-inner">
+                        <Star className="h-6 w-6 text-[#ff7a00]" />
                       </div>
-                      <p className="text-sm font-semibold text-gray-600">
+                      <p className="text-sm font-semibold text-white">
                         No reviews yet
                       </p>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="mt-1 text-xs text-zinc-500">
                         Be the first to share your thoughts!
                       </p>
                     </div>
@@ -700,22 +735,22 @@ const BookDetail = () => {
       )}
       {/* Location Modal */}
       <Dialog open={locationModalOpen} onOpenChange={setLocationModalOpen}>
-        <DialogContent className="sm:max-w-[425px] rounded-3xl border-none shadow-2xl bg-[#fafaf7] p-8">
+        <DialogContent className="rounded-3xl border border-white/10 bg-[#111114] p-8 shadow-2xl sm:max-w-[425px]">
           <DialogHeader>
             <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center mb-4 self-center mx-auto">
-              <MapPin className="text-orange-600 w-6 h-6" />
+              <MapPin className="h-6 w-6 text-[#ff7a00]" />
             </div>
-            <DialogTitle className="text-2xl font-bold text-center text-gray-900 leading-tight">
+            <DialogTitle className="text-center text-2xl font-bold leading-tight text-white">
               Where should we meet?
             </DialogTitle>
-            <DialogDescription className="text-center text-gray-500 pt-2 pb-4">
+            <DialogDescription className="pt-2 pb-4 text-center text-zinc-400">
               Please suggest a common meeting point or delivery location for the
               seller.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="location" className="text-sm font-semibold text-gray-700">
+              <Label htmlFor="location" className="text-sm font-semibold text-zinc-300">
                 Meeting Point / Location
               </Label>
               <Input
@@ -723,7 +758,7 @@ const BookDetail = () => {
                 placeholder="e.g. Pulchowk Campus Gate, Kathmandu"
                 value={purchaseLocation}
                 onChange={(e) => setPurchaseLocation(e.target.value)}
-                className="rounded-xl border-gray-200 h-12 focus:ring-orange-500/20 focus:border-orange-500 transition-all text-black shadow-sm bg-white"
+                className="h-12 rounded-xl"
               />
             </div>
           </div>
@@ -750,10 +785,12 @@ const BookDetail = () => {
                         `/topup?purchaseId=${data.purchaseId}&amount=${data.price}`,
                       );
                     },
-                    onError: (error: any) => {
+                    onError: (error) => {
                       toast.error(
-                        error?.response?.data?.message ||
-                        "Failed to initiate purchase",
+                        getApiErrorMessage(
+                          error,
+                          "Failed to initiate purchase",
+                        ),
                       );
                     },
                   },
